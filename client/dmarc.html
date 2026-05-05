@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DMARC Evaluator</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dmarc.css">
+</head>
+<body>
+
+  <div class="glow-orb"></div>
+  <div class="glow-orb2"></div>
+
+  <div class="container">
+
+    <header>
+      <div class="badge">Email Authentication POC</div>
+      <h1>DMARC <span>Evaluator</span></h1>
+      <p class="subtitle">Simulate SPF, DKIM & DMARC authentication against a domain policy</p>
+    </header>
+
+    <!-- Input Card -->
+    <div class="card">
+      <div class="card-title">Input Parameters</div>
+
+      <div class="form-group full">
+        <label>Quick Scenarios</label>
+        <div class="scenarios">
+          <button class="scenario-btn" onclick="loadScenario('legit-spf')">✅ Legit via SPF</button>
+          <button class="scenario-btn" onclick="loadScenario('legit-dkim')">✅ Legit via DKIM</button>
+          <button class="scenario-btn" onclick="loadScenario('spoof-reject')">❌ Spoof → Reject</button>
+          <button class="scenario-btn" onclick="loadScenario('spoof-quarantine')">⚠️ Spoof → Quarantine</button>
+          <button class="scenario-btn" onclick="loadScenario('spoof-none')">👀 Spoof → None</button>
+          <button class="scenario-btn" onclick="loadScenario('misaligned')">🔀 SPF Pass, Misaligned</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="form-grid">
+
+        <div class="form-group">
+          <label>SPF Status</label>
+          <select id="spf-status">
+            <option value="pass">pass</option>
+            <option value="fail">fail</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>SPF Domain</label>
+          <input id="spf-domain" type="text" value="legitbank.com" placeholder="e.g. legitbank.com">
+        </div>
+
+        <div class="form-group">
+          <label>DKIM Status</label>
+          <select id="dkim-status">
+            <option value="fail">fail</option>
+            <option value="pass">pass</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>DKIM Domain</label>
+          <input id="dkim-domain" type="text" value="" placeholder="e.g. legitbank.com">
+        </div>
+
+        <div class="form-group">
+          <label>DMARC Policy (p=)</label>
+          <select id="dmarc-policy">
+            <option value="reject">reject</option>
+            <option value="quarantine">quarantine</option>
+            <option value="none">none</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>PCT (%)</label>
+          <input id="dmarc-pct" type="number" value="100" min="0" max="100">
+        </div>
+
+        <div class="form-group full">
+          <label>From: Domain (sender domain in email header)</label>
+          <input id="from-domain" type="text" value="legitbank.com" placeholder="e.g. legitbank.com">
+        </div>
+
+      </div>
+
+      <button class="btn-evaluate" id="evalBtn" onclick="runDMARC()">
+        ⚡ &nbsp; Evaluate DMARC
+      </button>
+    </div>
+
+    <!-- Results Card -->
+    <div class="card" id="result">
+      <div class="card-title">Evaluation Result</div>
+
+      <div class="result-header">
+        <div class="verdict-badge" id="verdict-badge">
+          <span class="verdict-icon" id="verdict-icon"></span>
+          <span id="verdict-text"></span>
+        </div>
+      </div>
+
+      <div class="result-details">
+        <div class="detail-chip">
+          <div class="chip-label">Status</div>
+          <div class="chip-value" id="res-status"></div>
+        </div>
+        <div class="detail-chip">
+          <div class="chip-label">Action</div>
+          <div class="chip-value" id="res-action"></div>
+        </div>
+        <div class="detail-chip">
+          <div class="chip-label">Policy Applied</div>
+          <div class="chip-value" id="res-policy"></div>
+        </div>
+      </div>
+
+      <div class="reason-box" id="res-reason"></div>
+
+      <div class="alignment-row">
+        <div class="align-chip">
+          <div class="align-dot" id="spf-dot"></div>
+          <span id="spf-align-text">SPF Alignment</span>
+        </div>
+        <div class="align-chip">
+          <div class="align-dot" id="dkim-dot"></div>
+          <span id="dkim-align-text">DKIM Alignment</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="dmarc_ui.js"></script>
+
+</body>
+</html>
