@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DMARC Evaluator</title>
+  <title>DMARC Policy Engine</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="dmarc.css">
 </head>
@@ -15,126 +15,330 @@
   <div class="container">
 
     <header>
-      <div class="badge">Email Authentication POC</div>
-      <h1>DMARC <span>Evaluator</span></h1>
-      <p class="subtitle">Simulate SPF, DKIM & DMARC authentication against a domain policy</p>
+      <div class="badge">DMARC Policy Engine</div>
+      <h1>Email <span>Authentication</span> Simulator</h1>
+      <p class="subtitle">Explore DMARC, SPF, DKIM alignment and policy enforcement</p>
     </header>
 
-    <!-- Input Card -->
-    <div class="card">
-      <div class="card-title">Input Parameters</div>
-
-      <div class="form-group full">
-        <label>Quick Scenarios</label>
-        <div class="scenarios">
-          <button class="scenario-btn" onclick="loadScenario('legit-spf')">✅ Legit via SPF</button>
-          <button class="scenario-btn" onclick="loadScenario('legit-dkim')">✅ Legit via DKIM</button>
-          <button class="scenario-btn" onclick="loadScenario('spoof-reject')">❌ Spoof → Reject</button>
-          <button class="scenario-btn" onclick="loadScenario('spoof-quarantine')">⚠️ Spoof → Quarantine</button>
-          <button class="scenario-btn" onclick="loadScenario('spoof-none')">👀 Spoof → None</button>
-          <button class="scenario-btn" onclick="loadScenario('misaligned')">🔀 SPF Pass, Misaligned</button>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="form-grid">
-
-        <div class="form-group">
-          <label>SPF Status</label>
-          <select id="spf-status">
-            <option value="pass">pass</option>
-            <option value="fail">fail</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>SPF Domain</label>
-          <input id="spf-domain" type="text" value="legitbank.com" placeholder="e.g. legitbank.com">
-        </div>
-
-        <div class="form-group">
-          <label>DKIM Status</label>
-          <select id="dkim-status">
-            <option value="fail">fail</option>
-            <option value="pass">pass</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>DKIM Domain</label>
-          <input id="dkim-domain" type="text" value="" placeholder="e.g. legitbank.com">
-        </div>
-
-        <div class="form-group">
-          <label>DMARC Policy (p=)</label>
-          <select id="dmarc-policy">
-            <option value="reject">reject</option>
-            <option value="quarantine">quarantine</option>
-            <option value="none">none</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>PCT (%)</label>
-          <input id="dmarc-pct" type="number" value="100" min="0" max="100">
-        </div>
-
-        <div class="form-group full">
-          <label>From: Domain (sender domain in email header)</label>
-          <input id="from-domain" type="text" value="legitbank.com" placeholder="e.g. legitbank.com">
-        </div>
-
-      </div>
-
-      <button class="btn-evaluate" id="evalBtn" onclick="runDMARC()">
-        ⚡ &nbsp; Evaluate DMARC
-      </button>
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('scenarios')">Scenarios</button>
+      <button class="tab-btn" onclick="switchTab('comparison')">Before / After</button>
+      <button class="tab-btn" onclick="switchTab('reports')">Reports</button>
     </div>
 
-    <!-- Results Card -->
-    <div class="card" id="result">
-      <div class="card-title">Evaluation Result</div>
+    <!-- ===================== SCENARIOS TAB ===================== -->
+    <div id="tab-scenarios" class="tab-content active">
 
-      <div class="result-header">
+      <div class="card">
+        <div class="card-title">Step 1 — Choose a Scenario</div>
+        <div class="scenario-grid">
+
+          <button class="scenario-card" onclick="loadScenario('legitimate')">
+            <span class="scenario-icon">✅</span>
+            <span class="scenario-name">Legitimate Email</span>
+            <span class="scenario-tag tag-pass">DELIVER</span>
+          </button>
+
+          <button class="scenario-card" onclick="loadScenario('basic-spoof')">
+            <span class="scenario-icon">❌</span>
+            <span class="scenario-name">Basic Spoofed Sender</span>
+            <span class="scenario-tag tag-reject">REJECT</span>
+          </button>
+
+          <button class="scenario-card" onclick="loadScenario('ceo-fraud')">
+            <span class="scenario-icon">🎭</span>
+            <span class="scenario-name">CEO Fraud</span>
+            <span class="scenario-tag tag-quarantine">QUARANTINE</span>
+          </button>
+
+          <button class="scenario-card" onclick="loadScenario('banking-phish')">
+            <span class="scenario-icon">🏦</span>
+            <span class="scenario-name">Banking Phishing</span>
+            <span class="scenario-tag tag-reject">REJECT</span>
+          </button>
+
+          <button class="scenario-card" onclick="loadScenario('monitor-only')">
+            <span class="scenario-icon">👀</span>
+            <span class="scenario-name">Weak DMARC Policy</span>
+            <span class="scenario-tag tag-warn">MONITOR ONLY</span>
+          </button>
+
+          <button class="scenario-card" onclick="loadScenario('spf-misalign')">
+            <span class="scenario-icon">🔀</span>
+            <span class="scenario-name">SPF Pass, Misaligned</span>
+            <span class="scenario-tag tag-reject">REJECT</span>
+          </button>
+
+          <button class="scenario-card" onclick="loadScenario('strict-fail')">
+            <span class="scenario-icon">🔒</span>
+            <span class="scenario-name">Strict Alignment Fail</span>
+            <span class="scenario-tag tag-warn">EDGE CASE</span>
+          </button>
+
+          <button class="scenario-card" onclick="loadScenario('relaxed-pass')">
+            <span class="scenario-icon">🔓</span>
+            <span class="scenario-name">Relaxed Alignment Pass</span>
+            <span class="scenario-tag tag-pass">DELIVER</span>
+          </button>
+
+          <button class="scenario-card" onclick="loadScenario('forwarded-email')">
+            <span class="scenario-icon">📧</span>
+            <span class="scenario-name">Forwarded Email</span>
+            <span class="scenario-tag tag-warn">EDGE CASE</span>
+          </button>
+
+          <button class="scenario-card" onclick="loadScenario('subdomain-spoof')">
+            <span class="scenario-icon">🚨</span>
+            <span class="scenario-name">Subdomain Spoof Attack</span>
+            <span class="scenario-tag tag-reject">REJECT</span>
+          </button>
+
+          <button class="scenario-card" onclick="loadScenario('pct-50-pass')">
+            <span class="scenario-icon">50️⃣</span>
+            <span class="scenario-name">Partial Enforcement (Pass)</span>
+            <span class="scenario-tag tag-pass">DELIVER</span>
+          </button>
+
+          <button class="scenario-card" onclick="loadScenario('pct-50-fail')">
+            <span class="scenario-icon">⚠️</span>
+            <span class="scenario-name">Partial Enforcement (Fail)</span>
+            <span class="scenario-tag tag-warn">RISKY</span>
+          </button>
+
+          <button class="scenario-card" onclick="loadScenario('subdomain-policy')">
+            <span class="scenario-icon">🔗</span>
+            <span class="scenario-name">Subdomain Policy (sp=)</span>
+            <span class="scenario-tag tag-warn">ADVANCED</span>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Step 2: Scenario description + policy -->
+      <div class="card" id="scenario-detail" style="display:none">
+        <div class="card-title">Step 2 — Scenario Details</div>
+
+        <div class="scenario-info">
+          <div class="scenario-info-header">
+            <span id="detail-icon" class="detail-icon"></span>
+            <div>
+              <div class="detail-name" id="detail-name"></div>
+              <div class="detail-desc" id="detail-desc"></div>
+            </div>
+          </div>
+          <div class="attack-box">
+            <div class="attack-box-label">What the attacker does</div>
+            <div id="detail-attack"></div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="policy-row">
+          <div class="form-group">
+            <label>SPF Alignment (aspf=)</label>
+            <select id="aspf-mode">
+              <option value="r">r — relaxed (default)</option>
+              <option value="s">s — strict</option>
+            </select>
+            <span class="field-hint">Relaxed allows subdomains to align</span>
+          </div>
+
+          <div class="form-group">
+            <label>DKIM Alignment (adkim=)</label>
+            <select id="adkim-mode">
+              <option value="r">r — relaxed (default)</option>
+              <option value="s">s — strict</option>
+            </select>
+            <span class="field-hint">Strict requires exact domain match</span>
+          </div>
+
+          <div class="form-group">
+            <label>DMARC Policy (p=) — try changing this</label>
+            <select id="dmarc-policy">
+              <option value="reject">reject</option>
+              <option value="quarantine">quarantine</option>
+              <option value="none">none — monitor only</option>
+            </select>
+            <span class="field-hint">This is what the domain owner has published in DNS</span>
+          </div>
+
+          <div class="form-group">
+            <label>Subdomain Policy (sp=) — optional</label>
+            <select id="sp-mode">
+              <option value="">— not set (inherit from p=)</option>
+              <option value="reject">reject</option>
+              <option value="quarantine">quarantine</option>
+              <option value="none">none — monitor only</option>
+            </select>
+            <span class="field-hint">Applies only to subdomains when alignment fails</span>
+          </div>
+
+          <div class="form-group">
+            <label>From: Domain</label>
+            <input id="from-domain" type="text" readonly>
+            <span class="field-hint">The sender domain visible to the recipient</span>
+          </div>
+        </div>
+
+        <button class="btn-evaluate" onclick="runDMARC()">
+          ⚡ &nbsp; Run DMARC Policy Engine
+        </button>
+      </div>
+
+      <!-- Step 3: Result -->
+      <div class="card" id="result" style="display:none">
+        <div class="card-title">Step 3 — Policy Engine Result</div>
+
         <div class="verdict-badge" id="verdict-badge">
           <span class="verdict-icon" id="verdict-icon"></span>
           <span id="verdict-text"></span>
         </div>
+
+        <div class="result-details">
+          <div class="detail-chip">
+            <div class="chip-label">Status</div>
+            <div class="chip-value" id="res-status"></div>
+          </div>
+          <div class="detail-chip">
+            <div class="chip-label">Action Taken</div>
+            <div class="chip-value" id="res-action"></div>
+          </div>
+          <div class="detail-chip">
+            <div class="chip-label">Policy Applied</div>
+            <div class="chip-value" id="res-policy"></div>
+          </div>
+          <div class="detail-chip">
+            <div class="chip-label">Risk Score</div>
+            <div class="chip-value" id="res-risk">N/A</div>
+          </div>
+        </div>
+
+        <div class="reason-box" id="res-reason"></div>
+
+        <div class="alignment-row">
+          <div class="align-chip">
+            <div class="align-dot" id="spf-dot"></div>
+            <span id="spf-align-text">SPF Alignment</span>
+          </div>
+          <div class="align-chip">
+            <div class="align-dot" id="dkim-dot"></div>
+            <span id="dkim-align-text">DKIM Alignment</span>
+          </div>
+        </div>
+
+        <div class="explain-box" id="explain-box"></div>
       </div>
 
-      <div class="result-details">
-        <div class="detail-chip">
-          <div class="chip-label">Status</div>
-          <div class="chip-value" id="res-status"></div>
+    </div><!-- end tab-scenarios -->
+
+    <!-- ===================== BEFORE/AFTER COMPARISON TAB ===================== -->
+    <div id="tab-comparison" class="tab-content" style="display:none">
+
+      <div class="card">
+        <div class="card-title">Policy Impact Comparison</div>
+        <p style="color:var(--muted); font-size:14px; margin-bottom:20px;">
+          Run the same spoofed email through four different DMARC configurations at once.
+          See how a single DNS record change determines whether an attack succeeds or fails.
+        </p>
+
+        <label style="font-family:var(--mono); font-size:11px; font-weight:600; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase;">Choose an Attack</label>
+        <div class="scenarios" style="margin-top:8px; margin-bottom:20px;">
+          <button class="scenario-btn" onclick="loadComparison('basic-spoof')">❌ Basic Spoof</button>
+          <button class="scenario-btn" onclick="loadComparison('ceo-fraud')">🎭 CEO Fraud</button>
+          <button class="scenario-btn" onclick="loadComparison('banking-phish')">🏦 Banking Phishing</button>
+          <button class="scenario-btn" onclick="loadComparison('spf-misalign')">🔀 SPF Misaligned</button>
         </div>
-        <div class="detail-chip">
-          <div class="chip-label">Action</div>
-          <div class="chip-value" id="res-action"></div>
-        </div>
-        <div class="detail-chip">
-          <div class="chip-label">Policy Applied</div>
-          <div class="chip-value" id="res-policy"></div>
+
+        <div id="comparison-attack-box" style="display:none" class="attack-box">
+          <div class="attack-box-label">What the attacker does</div>
+          <div id="comparison-attack-text"></div>
         </div>
       </div>
 
-      <div class="reason-box" id="res-reason"></div>
+      <div id="comparison-result" style="display:none">
+        <div class="comparison-grid">
 
-      <div class="alignment-row">
-        <div class="align-chip">
-          <div class="align-dot" id="spf-dot"></div>
-          <span id="spf-align-text">SPF Alignment</span>
+          <div class="comparison-col">
+            <div class="comparison-header col-none">
+              <div class="col-policy-label">No DMARC</div>
+              <div class="col-policy-sub">No DMARC record published</div>
+            </div>
+            <div class="comparison-body" id="comp-col-nodmarc"></div>
+          </div>
+
+          <div class="comparison-col">
+            <div class="comparison-header col-monitor">
+              <div class="col-policy-label">p=none</div>
+              <div class="col-policy-sub">Monitor only — no enforcement</div>
+            </div>
+            <div class="comparison-body" id="comp-col-none"></div>
+          </div>
+
+          <div class="comparison-col">
+            <div class="comparison-header col-quarantine">
+              <div class="col-policy-label">p=quarantine</div>
+              <div class="col-policy-sub">Suspicious emails go to spam</div>
+            </div>
+            <div class="comparison-body" id="comp-col-quarantine"></div>
+          </div>
+
+          <div class="comparison-col">
+            <div class="comparison-header col-reject">
+              <div class="col-policy-label">p=reject</div>
+              <div class="col-policy-sub">Spoofed emails blocked entirely</div>
+            </div>
+            <div class="comparison-body" id="comp-col-reject"></div>
+          </div>
+
         </div>
-        <div class="align-chip">
-          <div class="align-dot" id="dkim-dot"></div>
-          <span id="dkim-align-text">DKIM Alignment</span>
+
+        <div class="card" style="margin-top:16px;">
+          <div class="card-title">Key Takeaway</div>
+          <div class="explain-box" id="comparison-takeaway"></div>
         </div>
       </div>
-    </div>
 
-  </div>
+    </div><!-- end tab-comparison -->
+    
+    <!-- ===================== REPORTS TAB ===================== -->
+    <div id="tab-reports" class="tab-content" style="display:none">
+
+      <div class="card">
+        <div class="card-title">DMARC Evaluation Reports</div>
+        <p style="color:var(--muted); font-size:14px; margin-bottom:20px;">
+          Aggregate log of all evaluated scenarios and raw headers. Each evaluation with
+          <code style="font-family:var(--mono); background:var(--surface2); padding:2px 6px; border-radius:4px;">log: true</code>
+          is recorded here automatically.
+        </p>
+        <button class="btn-secondary" onclick="loadReportSummary()">Load Reports</button>
+        <div id="report-summary"></div>
+      </div>
+
+    </div><!-- end tab-reports -->
+
+  </div><!-- end container -->
 
   <script src="dmarc_ui.js"></script>
+  <script>
+    function switchTab(tabName) {
+  // Remove active class from all tab divs AND hide them
+  document.querySelectorAll('.tab-content').forEach(t => {
+    t.style.display = 'none';
+    t.classList.remove('active');  // ← this line was missing
+  });
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+  // Show selected tab and add active class
+  const activeTab = document.getElementById('tab-' + tabName);
+  activeTab.style.display = 'block';
+  activeTab.classList.add('active');  // ← add active to the correct tab div
+  event.currentTarget.classList.add('active');
+
+  if (tabName === 'reports') loadReportSummary();
+}
+  </script>
 
 </body>
 </html>
