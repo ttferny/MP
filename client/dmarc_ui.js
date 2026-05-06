@@ -1,5 +1,6 @@
 // Scenario metadata for the frontend (icons, descriptions, attack info)
 // The actual SPF/DKIM values and policy logic live in scenarioService.js on the backend
+// Zircon
 const scenarioMeta = {
   "legitimate":         { icon: "✅", name: "Legitimate Email",        defaultPolicy: "reject",     fromDomain: "legitbank.com",    desc: "A real email from legitbank.com, sent from their authorised server with a valid DKIM signature.",                               attack: "No attack. This is the baseline — a genuine email that should always be delivered."                                                                             },
   "basic-spoof":        { icon: "❌", name: "Basic Spoofed Sender",    defaultPolicy: "reject",     fromDomain: "legitbank.com",    desc: "An attacker sends an email pretending to be legitbank.com but from their own server with no valid signature.",                   attack: "Attacker sets From: legitbank.com but sends from evil.com. SPF and DKIM both fail alignment."                                                                   },
@@ -63,6 +64,7 @@ async function runDMARC() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ policy, aspf, adkim, sp, log: true })
+
     });
 
     if (!response.ok) throw new Error("Server error: " + response.status);
