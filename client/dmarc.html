@@ -4,108 +4,148 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DMARC Policy Engine</title>
+
+  <!--
+    DMARC Policy Engine — Frontend
+    Author:  Zircon Lee
+    Scope:   DMARC policy engine, attack scenarios, Before/After comparison,
+             DMARC record auditor, aggregate reports
+    Backend: Node.js Express server (server/app.js)
+    API:     All fetch calls go to /api/dmarc/* (see server/routes/dmarcRoutes.js)
+  -->
+
+  <!-- Google Fonts: JetBrains Mono for code/labels, DM Sans for body text -->
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- All styling in dmarc.css -->
   <link rel="stylesheet" href="dmarc.css">
 </head>
 <body>
 
+  <!-- Background decorative glow orbs (purely visual, defined in dmarc.css) -->
   <div class="glow-orb"></div>
   <div class="glow-orb2"></div>
 
+  <!-- Main page wrapper — max-width 900px, centred -->
   <div class="container">
 
+    <!-- Page header -->
     <header>
       <div class="badge">DMARC Policy Engine</div>
       <h1>Email <span>Authentication</span> Simulator</h1>
       <p class="subtitle">Explore DMARC, SPF, DKIM alignment and policy enforcement</p>
     </header>
 
-    <!-- Tab Navigation -->
+    <!-- Tab navigation bar
+         switchTab() is defined in the inline <script> at the bottom of this file.
+         Each button shows/hides the matching tab-content div. -->
     <div class="tab-nav">
       <button class="tab-btn active" onclick="switchTab('scenarios')">Scenarios</button>
       <button class="tab-btn" onclick="switchTab('comparison')">Before / After</button>
+      <button class="tab-btn" onclick="switchTab('audit')">DMARC Audit</button>
       <button class="tab-btn" onclick="switchTab('reports')">Reports</button>
     </div>
 
-    <!-- ===================== SCENARIOS TAB ===================== -->
+
+    <!-- ====================================================
+         TAB 1 — SCENARIOS
+         Shows 13 pre-built attack and authentication scenarios.
+         Each card calls loadScenario(key) in dmarc_ui.js which
+         populates Step 2. Step 2 sends the scenario to the backend
+         via POST /api/dmarc/scenarios/:key and renders Step 3.
+         ==================================================== -->
     <div id="tab-scenarios" class="tab-content active">
 
+      <!-- Step 1: Scenario selection grid -->
       <div class="card">
         <div class="card-title">Step 1 — Choose a Scenario</div>
         <div class="scenario-grid">
 
+          <!-- Legitimate email — baseline, all checks pass -->
           <button class="scenario-card" onclick="loadScenario('legitimate')">
             <span class="scenario-icon">✅</span>
             <span class="scenario-name">Legitimate Email</span>
             <span class="scenario-tag tag-pass">DELIVER</span>
           </button>
 
+          <!-- Basic spoof — SPF and DKIM both fail -->
           <button class="scenario-card" onclick="loadScenario('basic-spoof')">
             <span class="scenario-icon">❌</span>
             <span class="scenario-name">Basic Spoofed Sender</span>
             <span class="scenario-tag tag-reject">REJECT</span>
           </button>
 
+          <!-- CEO fraud — SPF passes on lookalike domain, DKIM missing -->
           <button class="scenario-card" onclick="loadScenario('ceo-fraud')">
             <span class="scenario-icon">🎭</span>
             <span class="scenario-name">CEO Fraud</span>
             <span class="scenario-tag tag-quarantine">QUARANTINE</span>
           </button>
 
+          <!-- Banking phishing — full domain spoof -->
           <button class="scenario-card" onclick="loadScenario('banking-phish')">
             <span class="scenario-icon">🏦</span>
             <span class="scenario-name">Banking Phishing</span>
             <span class="scenario-tag tag-reject">REJECT</span>
           </button>
 
+          <!-- Weak policy — p=none, spoof detected but email still delivered -->
           <button class="scenario-card" onclick="loadScenario('monitor-only')">
             <span class="scenario-icon">👀</span>
             <span class="scenario-name">Weak DMARC Policy</span>
             <span class="scenario-tag tag-warn">MONITOR ONLY</span>
           </button>
 
+          <!-- SPF misalign — SPF passes but on the wrong domain -->
           <button class="scenario-card" onclick="loadScenario('spf-misalign')">
             <span class="scenario-icon">🔀</span>
             <span class="scenario-name">SPF Pass, Misaligned</span>
             <span class="scenario-tag tag-reject">REJECT</span>
           </button>
 
+          <!-- Strict alignment — subdomain fails strict mode -->
           <button class="scenario-card" onclick="loadScenario('strict-fail')">
             <span class="scenario-icon">🔒</span>
             <span class="scenario-name">Strict Alignment Fail</span>
             <span class="scenario-tag tag-warn">EDGE CASE</span>
           </button>
 
+          <!-- Relaxed alignment — same subdomain passes relaxed mode -->
           <button class="scenario-card" onclick="loadScenario('relaxed-pass')">
             <span class="scenario-icon">🔓</span>
             <span class="scenario-name">Relaxed Alignment Pass</span>
             <span class="scenario-tag tag-pass">DELIVER</span>
           </button>
 
+          <!-- Forwarded email — SPF breaks on forwarding, shows DMARC edge case -->
           <button class="scenario-card" onclick="loadScenario('forwarded-email')">
             <span class="scenario-icon">📧</span>
             <span class="scenario-name">Forwarded Email</span>
             <span class="scenario-tag tag-warn">EDGE CASE</span>
           </button>
 
+          <!-- Subdomain spoof — attacker registers lookalike subdomain -->
           <button class="scenario-card" onclick="loadScenario('subdomain-spoof')">
             <span class="scenario-icon">🚨</span>
             <span class="scenario-name">Subdomain Spoof Attack</span>
             <span class="scenario-tag tag-reject">REJECT</span>
           </button>
 
+          <!-- Partial enforcement pass — pct=50, legitimate email passes anyway -->
           <button class="scenario-card" onclick="loadScenario('pct-50-pass')">
             <span class="scenario-icon">50️⃣</span>
             <span class="scenario-name">Partial Enforcement (Pass)</span>
             <span class="scenario-tag tag-pass">DELIVER</span>
           </button>
 
+          <!-- Partial enforcement fail — pct=50 means 50% of spoofs slip through -->
           <button class="scenario-card" onclick="loadScenario('pct-50-fail')">
             <span class="scenario-icon">⚠️</span>
             <span class="scenario-name">Partial Enforcement (Fail)</span>
             <span class="scenario-tag tag-warn">RISKY</span>
           </button>
 
+          <!-- Subdomain policy — sp= tag overrides main p= for subdomains -->
           <button class="scenario-card" onclick="loadScenario('subdomain-policy')">
             <span class="scenario-icon">🔗</span>
             <span class="scenario-name">Subdomain Policy (sp=)</span>
@@ -115,10 +155,13 @@
         </div>
       </div>
 
-      <!-- Step 2: Scenario description + policy -->
+      <!-- Step 2: Scenario detail + adjustable DMARC settings
+           Hidden by default. Shown by loadScenario() in dmarc_ui.js.
+           User can override policy, alignment modes, and sp= before running. -->
       <div class="card" id="scenario-detail" style="display:none">
         <div class="card-title">Step 2 — Scenario Details</div>
 
+        <!-- Scenario description — populated by loadScenario() -->
         <div class="scenario-info">
           <div class="scenario-info-header">
             <span id="detail-icon" class="detail-icon"></span>
@@ -127,6 +170,7 @@
               <div class="detail-desc" id="detail-desc"></div>
             </div>
           </div>
+          <!-- Attack description box — explains what the attacker does -->
           <div class="attack-box">
             <div class="attack-box-label">What the attacker does</div>
             <div id="detail-attack"></div>
@@ -135,7 +179,10 @@
 
         <div class="divider"></div>
 
+        <!-- DMARC settings the user can adjust before running the engine -->
         <div class="policy-row">
+
+          <!-- aspf= controls whether SPF alignment is strict or relaxed -->
           <div class="form-group">
             <label>SPF Alignment (aspf=)</label>
             <select id="aspf-mode">
@@ -145,6 +192,7 @@
             <span class="field-hint">Relaxed allows subdomains to align</span>
           </div>
 
+          <!-- adkim= controls whether DKIM alignment is strict or relaxed -->
           <div class="form-group">
             <label>DKIM Alignment (adkim=)</label>
             <select id="adkim-mode">
@@ -154,6 +202,7 @@
             <span class="field-hint">Strict requires exact domain match</span>
           </div>
 
+          <!-- p= is the main DMARC policy — try changing this to see different outcomes -->
           <div class="form-group">
             <label>DMARC Policy (p=) — try changing this</label>
             <select id="dmarc-policy">
@@ -164,6 +213,7 @@
             <span class="field-hint">This is what the domain owner has published in DNS</span>
           </div>
 
+          <!-- sp= is an optional override policy for subdomains only -->
           <div class="form-group">
             <label>Subdomain Policy (sp=) — optional</label>
             <select id="sp-mode">
@@ -175,6 +225,7 @@
             <span class="field-hint">Applies only to subdomains when alignment fails</span>
           </div>
 
+          <!-- From: domain — read-only, set by loadScenario() from scenarioMeta -->
           <div class="form-group">
             <label>From: Domain</label>
             <input id="from-domain" type="text" readonly>
@@ -182,20 +233,25 @@
           </div>
         </div>
 
+        <!-- Triggers runDMARC() in dmarc_ui.js — sends to POST /api/dmarc/scenarios/:key -->
         <button class="btn-evaluate" onclick="runDMARC()">
           ⚡ &nbsp; Run DMARC Policy Engine
         </button>
       </div>
 
-      <!-- Step 3: Result -->
+      <!-- Step 3: Result card
+           Hidden by default. Shown and populated by renderResult() in dmarc_ui.js.
+           Data comes from the backend evaluateDMARC() function in dmarc.js. -->
       <div class="card" id="result" style="display:none">
         <div class="card-title">Step 3 — Policy Engine Result</div>
 
+        <!-- Main verdict: DELIVER / QUARANTINE / REJECT -->
         <div class="verdict-badge" id="verdict-badge">
           <span class="verdict-icon" id="verdict-icon"></span>
           <span id="verdict-text"></span>
         </div>
 
+        <!-- Four detail chips: status, action, policy, risk score -->
         <div class="result-details">
           <div class="detail-chip">
             <div class="chip-label">Status</div>
@@ -209,14 +265,17 @@
             <div class="chip-label">Policy Applied</div>
             <div class="chip-value" id="res-policy"></div>
           </div>
+          <!-- Risk score (0-100) calculated by calculateRiskScore() in dmarc.js -->
           <div class="detail-chip">
             <div class="chip-label">Risk Score</div>
             <div class="chip-value" id="res-risk">N/A</div>
           </div>
         </div>
 
+        <!-- One-line reason from evaluateDMARC() in dmarc.js -->
         <div class="reason-box" id="res-reason"></div>
 
+        <!-- SPF and DKIM alignment dots — green = aligned, red = not aligned -->
         <div class="alignment-row">
           <div class="align-chip">
             <div class="align-dot" id="spf-dot"></div>
@@ -228,12 +287,20 @@
           </div>
         </div>
 
+        <!-- Plain-English explanation from scenarioService.js on the backend -->
         <div class="explain-box" id="explain-box"></div>
       </div>
 
     </div><!-- end tab-scenarios -->
 
-    <!-- ===================== BEFORE/AFTER COMPARISON TAB ===================== -->
+
+    <!-- ====================================================
+         TAB 2 — BEFORE / AFTER COMPARISON
+         Runs the same spoofed email through four DMARC
+         configurations simultaneously and shows results
+         side by side. Calls loadComparison() in dmarc_ui.js
+         which fires four parallel POST /api/dmarc/evaluate calls.
+         ==================================================== -->
     <div id="tab-comparison" class="tab-content" style="display:none">
 
       <div class="card">
@@ -243,6 +310,7 @@
           See how a single DNS record change determines whether an attack succeeds or fails.
         </p>
 
+        <!-- Attack selection buttons — each loads a different spoofed email type -->
         <label style="font-family:var(--mono); font-size:11px; font-weight:600; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase;">Choose an Attack</label>
         <div class="scenarios" style="margin-top:8px; margin-bottom:20px;">
           <button class="scenario-btn" onclick="loadComparison('basic-spoof')">❌ Basic Spoof</button>
@@ -251,15 +319,19 @@
           <button class="scenario-btn" onclick="loadComparison('spf-misalign')">🔀 SPF Misaligned</button>
         </div>
 
+        <!-- Attack description — shown after a button is clicked -->
         <div id="comparison-attack-box" style="display:none" class="attack-box">
           <div class="attack-box-label">What the attacker does</div>
           <div id="comparison-attack-text"></div>
         </div>
       </div>
 
+      <!-- Four-column comparison grid — shown after attack is selected
+           Each column is populated by renderComparisonColumn() in dmarc_ui.js -->
       <div id="comparison-result" style="display:none">
         <div class="comparison-grid">
 
+          <!-- Column 1: No DMARC — simulated, always delivers -->
           <div class="comparison-col">
             <div class="comparison-header col-none">
               <div class="col-policy-label">No DMARC</div>
@@ -268,6 +340,7 @@
             <div class="comparison-body" id="comp-col-nodmarc"></div>
           </div>
 
+          <!-- Column 2: p=none — DMARC exists but monitoring only -->
           <div class="comparison-col">
             <div class="comparison-header col-monitor">
               <div class="col-policy-label">p=none</div>
@@ -276,6 +349,7 @@
             <div class="comparison-body" id="comp-col-none"></div>
           </div>
 
+          <!-- Column 3: p=quarantine — spoofed email goes to spam -->
           <div class="comparison-col">
             <div class="comparison-header col-quarantine">
               <div class="col-policy-label">p=quarantine</div>
@@ -284,6 +358,7 @@
             <div class="comparison-body" id="comp-col-quarantine"></div>
           </div>
 
+          <!-- Column 4: p=reject — spoofed email blocked entirely -->
           <div class="comparison-col">
             <div class="comparison-header col-reject">
               <div class="col-policy-label">p=reject</div>
@@ -294,6 +369,7 @@
 
         </div>
 
+        <!-- Takeaway explanation — populated from comparisonScenarios in dmarc_ui.js -->
         <div class="card" style="margin-top:16px;">
           <div class="card-title">Key Takeaway</div>
           <div class="explain-box" id="comparison-takeaway"></div>
@@ -301,18 +377,127 @@
       </div>
 
     </div><!-- end tab-comparison -->
-    
-    <!-- ===================== REPORTS TAB ===================== -->
+
+
+    <!-- ====================================================
+         TAB 3 — DMARC RECORD AUDITOR
+         Accepts a raw DMARC TXT record string and grades it
+         against best practices. Calls runAudit() in dmarc_ui.js
+         which sends to POST /api/dmarc/audit. The backend
+         runs dmarcAuditor.js and returns a score, grade,
+         issues list, and recommendations.
+         ==================================================== -->
+    <div id="tab-audit" class="tab-content" style="display:none">
+
+      <div class="card">
+        <div class="card-title">DMARC Record Auditor</div>
+        <p style="color:var(--muted); font-size:14px; margin-bottom:24px;">
+          Paste a raw DMARC TXT record to analyse its configuration and receive a security grade
+          with specific issues and recommendations.
+        </p>
+
+        <!-- Quick-load buttons — pre-fill the form with sample records for demo -->
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>Quick Load — Sample Records</label>
+          <div class="scenarios" style="margin-top:8px;">
+            <button class="scenario-btn" onclick="loadSampleRecord('strong')">✅ Strong (Grade A)</button>
+            <button class="scenario-btn" onclick="loadSampleRecord('moderate')">⚠️ Moderate (Grade C)</button>
+            <button class="scenario-btn" onclick="loadSampleRecord('weak')">❌ Weak (Grade D)</button>
+            <button class="scenario-btn" onclick="loadSampleRecord('none')">🚫 No Record (Grade F)</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Domain being audited -->
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>Domain Name</label>
+          <input id="audit-domain" type="text" placeholder="e.g. dbs.com.sg" style="width:100%;">
+          <span class="field-hint">The domain being audited</span>
+        </div>
+
+        <!-- Raw DMARC TXT record string — leave blank to simulate no record -->
+        <div class="form-group" style="margin-bottom:20px;">
+          <label>DMARC TXT Record</label>
+          <textarea id="audit-record" rows="3"
+            placeholder="v=DMARC1; p=reject; rua=mailto:dmarc@example.com; pct=100"
+            style="width:100%; resize:vertical;"></textarea>
+          <span class="field-hint">Paste the full DMARC TXT record string. Leave blank to simulate a missing DMARC record.</span>
+        </div>
+
+        <!-- Triggers runAudit() in dmarc_ui.js → POST /api/dmarc/audit -->
+        <button class="btn-evaluate" onclick="runAudit()">
+          🔍 &nbsp; Audit DMARC Record
+        </button>
+      </div>
+
+      <!-- Audit result card
+           Hidden by default. Shown and populated by renderAuditResult() in dmarc_ui.js.
+           Data comes from dmarcAuditor.js on the backend. -->
+      <div class="card" id="audit-result" style="display:none">
+        <div class="card-title">Audit Result</div>
+
+        <!-- Grade badge (A–F) + score bar + description -->
+        <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+          <!-- Grade letter (A/B/C/D/F) — coloured by grade-X class in dmarc.css -->
+          <div id="audit-grade-badge" style="width:80px; height:80px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:40px; font-weight:700; flex-shrink:0;"></div>
+          <div style="flex:1;">
+            <div style="font-family:var(--mono); font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Security Grade</div>
+            <!-- Grade description from gradeDescriptions in dmarcAuditor.js -->
+            <div id="audit-grade-desc" style="font-size:15px; color:var(--text); line-height:1.5;"></div>
+            <!-- Score bar — width set as percentage of 100 -->
+            <div style="margin-top:8px; background:var(--surface2); border-radius:6px; height:8px; overflow:hidden;">
+              <div id="audit-score-bar" style="height:100%; border-radius:6px; transition:width 0.6s ease;"></div>
+            </div>
+            <div style="font-family:var(--mono); font-size:12px; color:var(--muted); margin-top:4px;">
+              Score: <span id="audit-score-val" style="color:var(--text); font-weight:600;"></span> / 100
+            </div>
+          </div>
+        </div>
+
+        <!-- Parsed DMARC tag breakdown — one chip per tag (p=, pct=, sp=, rua=, aspf=, adkim=) -->
+        <div id="audit-tags" style="margin-bottom:16px;"></div>
+
+        <!-- Issues list — populated from r.issues array returned by dmarcAuditor.js -->
+        <div id="audit-issues-section" style="display:none; margin-bottom:16px;">
+          <div style="font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--fail); margin-bottom:10px;">
+            Issues Found
+          </div>
+          <div id="audit-issues"></div>
+        </div>
+
+        <!-- Recommendations list — populated from r.recommendations array -->
+        <div id="audit-recs-section" style="display:none;">
+          <div style="font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); margin-bottom:10px;">
+            Recommendations
+          </div>
+          <div id="audit-recs"></div>
+        </div>
+
+      </div>
+
+    </div><!-- end tab-audit -->
+
+
+    <!-- ====================================================
+         TAB 4 — REPORTS
+         Displays aggregate logs of all DMARC evaluations that
+         were run with log:true. Data comes from aggregateReporter.js
+         on the backend. loadReportSummary() is called automatically
+         when this tab is opened.
+         ==================================================== -->
     <div id="tab-reports" class="tab-content" style="display:none">
 
       <div class="card">
         <div class="card-title">DMARC Evaluation Reports</div>
         <p style="color:var(--muted); font-size:14px; margin-bottom:20px;">
-          Aggregate log of all evaluated scenarios and raw headers. Each evaluation with
+          Aggregate log of all evaluated scenarios. Each evaluation run with
           <code style="font-family:var(--mono); background:var(--surface2); padding:2px 6px; border-radius:4px;">log: true</code>
           is recorded here automatically.
         </p>
+        <!-- Triggers loadReportSummary() → GET /api/dmarc/reports/summary -->
         <button class="btn-secondary" onclick="loadReportSummary()">Load Reports</button>
+        <!-- Report content injected here by renderReportSummary() in dmarc_ui.js -->
         <div id="report-summary"></div>
       </div>
 
@@ -320,24 +505,33 @@
 
   </div><!-- end container -->
 
+  <!-- dmarc_ui.js — all frontend JS logic (Zircon) -->
   <script src="dmarc_ui.js"></script>
+
   <script>
+    // switchTab — shows the selected tab and hides all others
+    // Called by onclick on each tab button in the nav bar above.
+    // Also removes/adds the 'active' class which controls the
+    // .tab-content.active { display: block !important } CSS rule.
     function switchTab(tabName) {
-  // Remove active class from all tab divs AND hide them
-  document.querySelectorAll('.tab-content').forEach(t => {
-    t.style.display = 'none';
-    t.classList.remove('active');  // ← this line was missing
-  });
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      // Hide all tab content divs and remove active class
+      document.querySelectorAll('.tab-content').forEach(t => {
+        t.style.display = 'none';
+        t.classList.remove('active');
+      });
 
-  // Show selected tab and add active class
-  const activeTab = document.getElementById('tab-' + tabName);
-  activeTab.style.display = 'block';
-  activeTab.classList.add('active');  // ← add active to the correct tab div
-  event.currentTarget.classList.add('active');
+      // Remove active highlight from all tab buttons
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
 
-  if (tabName === 'reports') loadReportSummary();
-}
+      // Show the selected tab and mark it active
+      const activeTab = document.getElementById('tab-' + tabName);
+      activeTab.style.display = 'block';
+      activeTab.classList.add('active');
+      event.currentTarget.classList.add('active');
+
+      // Auto-load reports when switching to the reports tab
+      if (tabName === 'reports') loadReportSummary();
+    }
   </script>
 
 </body>
