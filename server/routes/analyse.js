@@ -5,87 +5,106 @@
  *
  * WHAT THIS FILE DOES (simple version for pitching):
  * ---------------------------------------------------
- * Think of this as the "traffic controller" of the backend.
- * The frontend sends an email header (or domain) here,
- * and this file passes it through the authentication pipeline:
+ * The "traffic controller" of the backend.
+ * The frontend sends an email header here, and this file passes
+ * it through the full authentication pipeline in order:
  *
- *   Step 1 → parser.js   : Read and extract data from the email header
- *   Step 2 → spf.js      : Check if the sending IP is authorised
- *   Step 3 → dkim.js     : Check if the email content was tampered with
- *   Step 4 → dmarc.js    : Apply the domain's policy and give final verdict
+ *   Step 1 → parser.js      : Extract key fields from raw header
+ *   Step 2 → validate.js    : Check parsed data is complete & correct ← NEW (Phase 4)
+ *   Step 3 → spf.js         : Check if sending IP is authorised
+ *   Step 4 → validate.js    : Check SPF result is well-formed      ← NEW (Phase 4)
+ *   Step 5 → dkim.js        : Verify email signature (Ashton)
+ *   Step 6 → dmarc.js       : Apply policy, give final verdict (Zircon)
+ *   Step 7 → validate.js    : Check full response before sending   ← NEW (Phase 4)
  *
  * ENDPOINTS:
  * ----------
- *   POST /api/analyse/header   — Analyse raw email headers (main demo)
- *   POST /api/analyse/domain   — Look up DNS records for a domain
- *   POST /api/analyse/scenario — Run a pre-built demo scenario
+ *   POST /api/analyse/header   — full email authentication pipeline
+ *   POST /api/analyse/domain   — DNS record lookup for a domain
+ *   POST /api/analyse/scenario — run a pre-built demo scenario
  *
  * HOW IT LINKS:
  * -------------
  *   app.js mounts this file at /api/analyse
- *   This file calls: parser.js → spf.js → dkim.js → dmarc.js
- *   Results are returned to the frontend (script.js / dmarc_ui.js)
+ *   validate.js is called at each stage to catch bad data early
  */
 
 const express = require('express');
 const router = express.Router();
 
-// Import all service modules — each handles one protocol
-const { parseEmailHeader } = require('../services/parser');      // Tiffany
-const { checkSPF }         = require('../services/spf');         // Tiffany
-const { verifyDKIM }       = require('../services/dkim');        // Ashton
-const { evaluateDMARC }    = require('../services/dmarc');       // Zircon
-const logger               = require('../utils/logger');
+const { parseEmailHeader }        = require('../services/parser');
+const { checkSPF }                = require('../services/spf');
+const { verifyDKIM }              = require('../services/dkim');
+const { evaluateDMARC }           = require('../services/dmarc');
+const {
+  validateParsedHeader,
+  validateSPFResult,
+  validateAnalyseResponse,
+}                                  = require('../utils/validate');   // Tiffany Phase 4
+const logger                       = require('../utils/logger');
 
 // ──────────────────────────────────────────────────────────────
 // ENDPOINT 1: POST /api/analyse/header
-// PURPOSE   : The main demo — full authentication pipeline
-// INPUT     : { rawHeader: string }  — paste of raw email headers
-// OUTPUT    : { parsed, results: { spf, dkim, dmarc } }
-//
-// This is what the frontend calls when a user submits an email header.
+// Full authentication pipeline with validation at each step.
 // ──────────────────────────────────────────────────────────────
 router.post('/header', async (req, res) => {
   try {
     const { rawHeader } = req.body;
 
-    // Validate input — must be a non-empty string
     if (!rawHeader || typeof rawHeader !== 'string') {
       return res.status(400).json({ error: 'rawHeader (string) is required.' });
     }
 
     // ── Step 1: Parse ──────────────────────────────────────
-    // parser.js reads the raw header text and extracts:
-    //   fromDomain, envelopeDomain, senderIP, dkimSignature, etc.
-    // These values are used by SPF, DKIM, and DMARC below.
     const parsed = parseEmailHeader(rawHeader);
     logger.info(`Parsed header for domain: ${parsed.fromDomain}`);
 
-    // ── Step 2: SPF Check ─────────────────────────────────
-    // spf.js asks: "Is this IP allowed to send for this domain?"
-    // Uses: parsed.senderIP + parsed.envelopeDomain
+    // ── Step 2: Validate parsed output ────────────────────
+    // Catches malformed or incomplete headers before going further.
+    // Returns HTTP 422 (Unprocessable Entity) if data is invalid.
+    const parsedValidation = validateParsedHeader(parsed);
+    if (!parsedValidation.valid) {
+      return res.status(422).json({
+        error: 'Email header validation failed',
+        details: parsedValidation.errors,
+      });
+    }
+
+    // ── Step 3: SPF Check ─────────────────────────────────
     const spfResult = await checkSPF(parsed);
 
-    // ── Step 3: DKIM Check ────────────────────────────────
-    // dkim.js asks: "Was this email signed and is the signature valid?"
-    // Uses: parsed.dkimSignature + parsed.fromDomain
+    // ── Step 4: Validate SPF result ───────────────────────
+    const spfValidation = validateSPFResult(spfResult);
+    if (!spfValidation.valid) {
+      return res.status(422).json({
+        error: 'SPF result validation failed',
+        details: spfValidation.errors,
+      });
+    }
+
+    // ── Step 5: DKIM Check (Ashton) ───────────────────────
     const dkimResult = await verifyDKIM(parsed);
 
-    // ── Step 4: DMARC Evaluation ──────────────────────────
-    // dmarc.js takes both SPF and DKIM results and applies the domain's
-    // policy: deliver / quarantine / reject
+    // ── Step 6: DMARC Evaluation (Zircon) ─────────────────
     const dmarcResult = await evaluateDMARC(parsed, spfResult, dkimResult);
 
-    // Return all results to the frontend
-    return res.json({
+    // ── Step 7: Validate full response ────────────────────
+    const responseObj = {
       success: true,
       parsed,
-      results: {
-        spf:   spfResult,
-        dkim:  dkimResult,
-        dmarc: dmarcResult,
-      },
-    });
+      results: { spf: spfResult, dkim: dkimResult, dmarc: dmarcResult },
+    };
+
+    const responseValidation = validateAnalyseResponse(responseObj);
+    if (!responseValidation.valid) {
+      return res.status(500).json({
+        error: 'Response assembly validation failed',
+        details: responseValidation.errors,
+      });
+    }
+
+    return res.json(responseObj);
+
   } catch (err) {
     logger.error(`/header error: ${err.message}`);
     return res.status(500).json({ error: err.message });
@@ -94,10 +113,7 @@ router.post('/header', async (req, res) => {
 
 // ──────────────────────────────────────────────────────────────
 // ENDPOINT 2: POST /api/analyse/domain
-// PURPOSE   : DNS record lookup — shows what SPF/DKIM/DMARC records
-//             a domain has published (Ashton's DNS checker module)
-// INPUT     : { domain: string, dkimSelector?: string }
-// OUTPUT    : { domain, records: { spf, dkim, dmarc } }
+// DNS record lookup — shows SPF/DKIM/DMARC records for a domain.
 // ──────────────────────────────────────────────────────────────
 router.post('/domain', async (req, res) => {
   try {
@@ -107,10 +123,12 @@ router.post('/domain', async (req, res) => {
       return res.status(400).json({ error: 'domain is required.' });
     }
 
-    // dns.js handles all DNS lookups
-    const { lookupSPFRecord, lookupDMARCRecord, lookupDKIMRecord } = require('../services/dns');
+    const { isValidDomain } = require('../utils/validate');
+    if (!isValidDomain(domain)) {
+      return res.status(400).json({ error: `"${domain}" does not look like a valid domain.` });
+    }
 
-    // Run all three lookups at the same time (parallel, faster)
+    const { lookupSPFRecord, lookupDMARCRecord, lookupDKIMRecord } = require('../services/dns');
     const [spfRecord, dmarcRecord, dkimRecord] = await Promise.all([
       lookupSPFRecord(domain),
       lookupDMARCRecord(domain),
@@ -120,11 +138,7 @@ router.post('/domain', async (req, res) => {
     return res.json({
       success: true,
       domain,
-      records: {
-        spf:  spfRecord,
-        dkim: dkimRecord,
-        dmarc: dmarcRecord,
-      },
+      records: { spf: spfRecord, dkim: dkimRecord, dmarc: dmarcRecord },
     });
   } catch (err) {
     logger.error(`/domain error: ${err.message}`);
@@ -134,11 +148,7 @@ router.post('/domain', async (req, res) => {
 
 // ──────────────────────────────────────────────────────────────
 // ENDPOINT 3: POST /api/analyse/scenario
-// PURPOSE   : Run a named pre-built demo scenario
-//             e.g. "valid_email", "spoofed_spf", "spoofed_dkim"
-//             Used to demonstrate pass/fail cases in the UI
-// INPUT     : { scenario: string }
-// OUTPUT    : { scenario, result }
+// Runs a pre-built demo scenario (Zircon's scenarioService).
 // ──────────────────────────────────────────────────────────────
 router.post('/scenario', async (req, res) => {
   try {
@@ -148,7 +158,6 @@ router.post('/scenario', async (req, res) => {
       return res.status(400).json({ error: 'scenario name is required.' });
     }
 
-    // scenarioService.js (Zircon) holds the pre-built scenario definitions
     const { runScenario } = require('../services/scenarioService');
     const result = await runScenario(scenario);
 
