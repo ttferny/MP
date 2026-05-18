@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Email Authentication Simulator</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════
+       HEADER / NAV
+       Simple top bar with project title and nav links.
+       dmarc.html is Zircon's page — we just link to it.
+  ════════════════════════════════════════════════ -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">✉</span>
+        <span class="logo-text">Email Auth Simulator</span>
+      </div>
+      <nav class="nav-links">
+        <a href="index.html" class="nav-link active">Header Analyser</a>
+        <a href="dmarc.html" class="nav-link">DMARC Explorer</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════
+       HERO SECTION
+       Brief plain-English explanation for the user.
+  ════════════════════════════════════════════════ -->
+  <section class="hero">
+    <h1>Email Authentication Simulator</h1>
+    <p class="hero-sub">
+      Paste raw email headers below to see how SPF, DKIM, and DMARC
+      work together to verify — or reject — an email.
+    </p>
+  </section>
+
+  <main class="main-content">
+
+    <!-- ─────────────────────────────────────────────
+         TAB SWITCHER
+         Two modes:
+           Tab 1 — analyse a raw email header (Tiffany)
+           Tab 2 — look up DNS records for a domain (Tiffany)
+    ────────────────────────────────────────────── -->
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="header">
+        📋 Analyse Email Header
+      </button>
+      <button class="tab-btn" data-tab="domain">
+        🔍 DNS Record Lookup
+      </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         TAB 1 — EMAIL HEADER ANALYSER
+         User pastes raw headers → backend runs
+         parser.js → spf.js → dkim.js → dmarc.js
+         Results shown in the pipeline display below.
+    ════════════════════════════════════════════════ -->
+    <section id="tab-header" class="tab-panel active">
+
+      <div class="card input-card">
+        <h2 class="card-title">Paste Raw Email Header</h2>
+        <p class="card-hint">
+          In your email client, view "Show original" or "View source" and
+          copy everything above the blank line separating headers from the body.
+        </p>
+
+        <!-- Quick-load demo buttons — calls pre-built scenarios -->
+        <div class="demo-buttons">
+          <span class="demo-label">Quick demos:</span>
+          <button class="demo-btn" data-scenario="valid_email">✅ Valid Email</button>
+          <button class="demo-btn" data-scenario="spoofed_spf">❌ Spoofed (SPF)</button>
+          <button class="demo-btn" data-scenario="spoofed_dkim">⚠️ Tampered (DKIM)</button>
+          <button class="demo-btn" data-scenario="full_spoof">🚨 Full Phishing</button>
+          <button class="demo-btn" data-scenario="no_dmarc">🔓 No DMARC</button>
+        </div>
+
+        <textarea
+          id="header-input"
+          class="header-textarea"
+          rows="12"
+          placeholder="From: ceo@company.com&#10;Return-Path: &lt;ceo@company.com&gt;&#10;Received: from mail.company.com ([203.0.113.10])&#10;Subject: Q3 Results&#10;DKIM-Signature: v=1; a=rsa-sha256; d=company.com; s=mail; ..."
+          spellcheck="false"
+        ></textarea>
+
+        <div class="input-actions">
+          <button id="analyse-btn" class="btn-primary">Analyse Header</button>
+          <button id="clear-btn" class="btn-secondary">Clear</button>
+        </div>
+
+        <!-- Error message shown if server returns 400/422 -->
+        <div id="input-error" class="error-banner hidden"></div>
+      </div>
+
+      <!-- ─────────────────────────────────────────────
+           PARSED HEADER SUMMARY
+           Shows what parser.js extracted from the header.
+           Lets the user see exactly what was detected.
+      ────────────────────────────────────────────── -->
+      <div id="parsed-section" class="card hidden">
+        <h2 class="card-title">Parsed Header Fields</h2>
+        <p class="card-hint">
+          These are the key values extracted from your header by the parser.
+          SPF, DKIM, and DMARC all use these to do their checks.
+        </p>
+        <div id="parsed-fields" class="parsed-grid"></div>
+      </div>
+
+      <!-- ─────────────────────────────────────────────
+           AUTHENTICATION PIPELINE DISPLAY
+           Shows each protocol step: SPF → DKIM → DMARC
+           Each step has a pass/fail badge and explanation.
+      ────────────────────────────────────────────── -->
+      <div id="pipeline-section" class="card hidden">
+        <h2 class="card-title">Authentication Pipeline</h2>
+        <p class="card-hint">
+          Each protocol is checked in order. All three must align for
+          the email to be delivered safely.
+        </p>
+
+        <div class="pipeline">
+
+          <!-- Step 1: SPF -->
+          <div class="pipeline-step" id="step-spf">
+            <div class="step-header">
+              <span class="step-number">1</span>
+              <span class="step-name">SPF</span>
+              <span class="step-full">Sender Policy Framework</span>
+              <span class="step-badge" id="spf-badge">—</span>
+            </div>
+            <div class="step-body">
+              <p class="step-what">
+                Checks if the sending server's IP is on the domain's
+                approved list in DNS.
+              </p>
+              <div class="step-details" id="spf-details"></div>
+            </div>
+          </div>
+
+          <div class="pipeline-arrow">↓</div>
+
+          <!-- Step 2: DKIM -->
+          <div class="pipeline-step" id="step-dkim">
+            <div class="step-header">
+              <span class="step-number">2</span>
+              <span class="step-name">DKIM</span>
+              <span class="step-full">DomainKeys Identified Mail</span>
+              <span class="step-badge" id="dkim-badge">—</span>
+            </div>
+            <div class="step-body">
+              <p class="step-what">
+                Verifies the email's cryptographic signature to confirm
+                the content was not altered in transit.
+              </p>
+              <div class="step-details" id="dkim-details"></div>
+            </div>
+          </div>
+
+          <div class="pipeline-arrow">↓</div>
+
+          <!-- Step 3: DMARC -->
+          <div class="pipeline-step" id="step-dmarc">
+            <div class="step-header">
+              <span class="step-number">3</span>
+              <span class="step-name">DMARC</span>
+              <span class="step-full">Domain-based Message Authentication</span>
+              <span class="step-badge" id="dmarc-badge">—</span>
+            </div>
+            <div class="step-body">
+              <p class="step-what">
+                Reads the SPF and DKIM results, checks domain alignment,
+                and applies the domain's policy.
+              </p>
+              <div class="step-details" id="dmarc-details"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Final verdict banner -->
+        <div id="verdict-banner" class="verdict-banner hidden">
+          <span id="verdict-icon"></span>
+          <div>
+            <div id="verdict-label" class="verdict-label"></div>
+            <div id="verdict-reason" class="verdict-reason"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ═══════════════════════════════════════════════
+         TAB 2 — DNS RECORD LOOKUP
+         User types a domain → backend calls dns.js
+         Shows the raw SPF, DKIM, DMARC TXT records.
+    ════════════════════════════════════════════════ -->
+    <section id="tab-domain" class="tab-panel hidden">
+
+      <div class="card input-card">
+        <h2 class="card-title">DNS Record Lookup</h2>
+        <p class="card-hint">
+          Enter a domain to fetch its published SPF, DKIM, and DMARC
+          DNS records. This shows what rules the domain has set.
+        </p>
+
+        <div class="domain-input-row">
+          <input
+            type="text"
+            id="domain-input"
+            class="domain-input"
+            placeholder="e.g. gmail.com"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <input
+            type="text"
+            id="selector-input"
+            class="selector-input"
+            placeholder="DKIM selector (e.g. mail)"
+            autocomplete="off"
+          />
+          <button id="lookup-btn" class="btn-primary">Lookup</button>
+        </div>
+
+        <div id="domain-error" class="error-banner hidden"></div>
+      </div>
+
+      <!-- DNS Records Display -->
+      <div id="dns-section" class="card hidden">
+        <h2 class="card-title">DNS Records for <span id="dns-domain-label"></span></h2>
+
+        <div class="dns-record-block" id="dns-spf-block">
+          <div class="dns-record-header">
+            <span class="dns-record-name">SPF Record</span>
+            <span class="dns-record-sub">TXT @ <span class="dns-host" id="dns-spf-host"></span></span>
+            <span class="dns-found-badge" id="dns-spf-badge">—</span>
+          </div>
+          <pre class="dns-record-value" id="dns-spf-value">—</pre>
+          <p class="dns-record-explain" id="dns-spf-explain"></p>
+        </div>
+
+        <div class="dns-record-block" id="dns-dkim-block">
+          <div class="dns-record-header">
+            <span class="dns-record-name">DKIM Record</span>
+            <span class="dns-record-sub">TXT @ <span class="dns-host" id="dns-dkim-host"></span></span>
+            <span class="dns-found-badge" id="dns-dkim-badge">—</span>
+          </div>
+          <pre class="dns-record-value" id="dns-dkim-value">—</pre>
+        </div>
+
+        <div class="dns-record-block" id="dns-dmarc-block">
+          <div class="dns-record-header">
+            <span class="dns-record-name">DMARC Record</span>
+            <span class="dns-record-sub">TXT @ <span class="dns-host" id="dns-dmarc-host"></span></span>
+            <span class="dns-found-badge" id="dns-dmarc-badge">—</span>
+          </div>
+          <pre class="dns-record-value" id="dns-dmarc-value">—</pre>
+          <p class="dns-record-explain" id="dns-dmarc-explain"></p>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Temasek Polytechnic · Diploma in Cybersecurity and Digital Forensics · AY26/27</p>
+    <p>Email Authentication Simulator — Academic POC</p>
+  </footer>
+
+  <!-- script.js is Tiffany's frontend logic -->
+  <script src="script.js"></script>
+
+</body>
+</html>
