@@ -107,7 +107,8 @@ function parseDKIMSignature(sigHeader = '') {
   for (const pair of pairs) {
     const eq = pair.indexOf('=');
     if (eq === -1) continue;
-    const k = pair.slice(0, eq).trim();
+    // Normalize tag names to lowercase (DKIM tags are case-insensitive)
+    const k = pair.slice(0, eq).trim().toLowerCase();
     const v = pair.slice(eq + 1).trim();
     result[k] = v;
   }

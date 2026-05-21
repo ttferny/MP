@@ -11,6 +11,7 @@
 
 const { lookupDKIMRecord } = require('./dns');
 const logger = require('../utils/logger');
+const { isValidDomain } = require('../utils/validate');
 
 const isNonEmptyString = (value) => typeof value === 'string' && value.trim().length > 0;
 
@@ -43,11 +44,36 @@ const verifyDKIM = async (parsed) => {
   const selector = dkimSignature.s || '';
   const algorithm = dkimSignature.a || '';
 
+  // Validate domain (d=) and selector (s=)
   if (!isNonEmptyString(domain) || !isNonEmptyString(selector)) {
     logger.warn('DKIM: signature missing domain or selector');
     return buildResult({
       status: 'fail',
       reason: 'DKIM signature is incomplete (missing d= or s=)',
+      domain,
+      selector,
+      algorithm,
+    });
+  }
+
+  if (!isValidDomain(domain)) {
+    logger.warn(`DKIM: invalid domain in signature: ${domain}`);
+    return buildResult({
+      status: 'fail',
+      reason: `DKIM signature contains invalid domain: ${domain}`,
+      domain,
+      selector,
+      algorithm,
+    });
+  }
+
+  // Selector should be a short token (letters, digits, hyphen, underscore)
+  const selectorPattern = /^[A-Za-z0-9_\-]+$/;
+  if (!selectorPattern.test(selector)) {
+    logger.warn(`DKIM: invalid selector in signature: ${selector}`);
+    return buildResult({
+      status: 'fail',
+      reason: `DKIM signature contains invalid selector: ${selector}`,
       domain,
       selector,
       algorithm,
