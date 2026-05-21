@@ -36,6 +36,8 @@ const { parseEmailHeader }        = require('../services/parser');
 const { checkSPF }                = require('../services/spf');
 const { verifyDKIM }              = require('../services/dkim');
 const { evaluateDMARC }           = require('../services/dmarc');
+const { lookupDMARCRecord }       = require('../services/dns');
+const { parseDMARCRecord }        = require('../services/dmarcAuditor');
 const {
   validateParsedHeader,
   validateSPFResult,
@@ -86,7 +88,14 @@ router.post('/header', async (req, res) => {
     const dkimResult = await verifyDKIM(parsed);
 
     // ── Step 6: DMARC Evaluation (Zircon) ─────────────────
-    const dmarcResult = await evaluateDMARC(parsed, spfResult, dkimResult);
+    const dmarcRecord = await lookupDMARCRecord(parsed.fromDomain);
+    const dmarcTags = dmarcRecord ? parseDMARCRecord(dmarcRecord) : null;
+    const dmarcParsed = dmarcTags
+      ? { ...dmarcTags, fromDomain: parsed.fromDomain }
+      : { fromDomain: parsed.fromDomain };
+
+    const dmarcResult = await evaluateDMARC(spfResult, dkimResult, dmarcParsed);
+    dmarcResult.dmarcRecord = dmarcRecord || null;
 
     // ── Step 7: Validate full response ────────────────────
     const responseObj = {
