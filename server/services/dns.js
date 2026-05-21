@@ -34,7 +34,7 @@ const lookupTxtRecords = async (name) => {
     const records = await dns.resolveTxt(name);
     return normalizeTxtRecords(records);
   } catch (err) {
-    if (['ENOTFOUND', 'ENODATA', 'ENOTIMP', 'ESERVFAIL', 'ETIMEOUT', 'SERVFAIL'].includes(err.code)) {
+    if (['ENOTFOUND', 'ENODATA', 'ENOTIMP', 'ESERVFAIL', 'ETIMEOUT', 'SERVFAIL', 'ECONNREFUSED', 'EAI_AGAIN'].includes(err.code)) {
       logger.info(`DNS TXT lookup for ${name} returned no data (${err.code})`);
       return [];
     }
@@ -86,7 +86,13 @@ async function lookupDKIMRecord(domain, selector = 'default') {
     throw new Error('lookupDKIMRecord requires a valid selector string');
   }
 
-  const name = `${selector}._domainkey.${domain}`;
+  const normalizedSelector = selector.trim();
+  const selectorPattern = /^[A-Za-z0-9_\-]+$/;
+  if (!selectorPattern.test(normalizedSelector)) {
+    throw new Error('lookupDKIMRecord requires a valid selector string');
+  }
+
+  const name = `${normalizedSelector}._domainkey.${domain}`;
   const records = await lookupTxtRecords(name);
   const dkimRecord = findTxtRecord(records, TXT_RECORD_TYPES.DKIM);
 

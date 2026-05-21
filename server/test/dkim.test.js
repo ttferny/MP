@@ -50,6 +50,42 @@ describe('dkim.js — verifyDKIM()', () => {
     expect(result.reason).toMatch(/missing d= or s=/i);
   });
 
+  test('[NEGATIVE] fails when required signature tags are missing', async () => {
+    const parsed = {
+      dkimSignature: {
+        v: '1',
+        d: 'company.com',
+        s: 'mail',
+        bh: 'abc123',
+        b: 'signature',
+      },
+    };
+
+    const result = await verifyDKIM(parsed);
+
+    expect(result.status).toBe('fail');
+    expect(result.reason).toMatch(/missing required a= or h=/i);
+  });
+
+  test('[NEGATIVE] fails when selector is invalid', async () => {
+    const parsed = {
+      dkimSignature: {
+        v: '1',
+        a: 'rsa-sha256',
+        d: 'company.com',
+        s: 'mail!',
+        h: 'from:subject',
+        bh: 'abc123',
+        b: 'signature',
+      },
+    };
+
+    const result = await verifyDKIM(parsed);
+
+    expect(result.status).toBe('fail');
+    expect(result.reason).toMatch(/invalid selector/i);
+  });
+
   test('[NEGATIVE] fails when DNS key is not found', async () => {
     lookupDKIMRecord.mockResolvedValue(null);
 

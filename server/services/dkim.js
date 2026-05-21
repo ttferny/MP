@@ -40,11 +40,13 @@ const verifyDKIM = async (parsed) => {
     });
   }
 
-  const domain = dkimSignature.d || '';
-  const selector = dkimSignature.s || '';
-  const algorithm = dkimSignature.a || '';
+  const domain = (dkimSignature.d || '').trim();
+  const selector = (dkimSignature.s || '').trim();
+  const algorithm = (dkimSignature.a || '').trim();
+  const signatureVersion = (dkimSignature.v || '').trim();
+  const signingFields = (dkimSignature.h || '').trim();
 
-  // Validate domain (d=) and selector (s=)
+  // Validate required DKIM tag values
   if (!isNonEmptyString(domain) || !isNonEmptyString(selector)) {
     logger.warn('DKIM: signature missing domain or selector');
     return buildResult({
@@ -67,6 +69,17 @@ const verifyDKIM = async (parsed) => {
     });
   }
 
+  if (!isNonEmptyString(algorithm) || !isNonEmptyString(signingFields)) {
+    logger.warn('DKIM: signature missing required a= or h= tag');
+    return buildResult({
+      status: 'fail',
+      reason: 'DKIM signature is missing required a= or h= tag',
+      domain,
+      selector,
+      algorithm,
+    });
+  }
+
   // Selector should be a short token (letters, digits, hyphen, underscore)
   const selectorPattern = /^[A-Za-z0-9_\-]+$/;
   if (!selectorPattern.test(selector)) {
@@ -80,11 +93,11 @@ const verifyDKIM = async (parsed) => {
     });
   }
 
-  if (dkimSignature.v && dkimSignature.v !== '1') {
-    logger.warn(`DKIM: unsupported version ${dkimSignature.v}`);
+  if (signatureVersion && signatureVersion !== '1') {
+    logger.warn(`DKIM: unsupported version ${signatureVersion}`);
     return buildResult({
       status: 'fail',
-      reason: `Unsupported DKIM version: ${dkimSignature.v}`,
+      reason: `Unsupported DKIM version: ${signatureVersion}`,
       domain,
       selector,
       algorithm,

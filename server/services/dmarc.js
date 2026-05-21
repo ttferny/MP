@@ -6,11 +6,29 @@ const evaluateDMARC = (spf, dkim, parsed) => {
     return { status: "error", action: "none", reason: "Missing SPF or DKIM result" };
   }
 
-  if (!parsed || !parsed.policy) {
-    return { status: "error", action: "none", reason: "No DMARC record found" };
-  }
+  const policy = parsed?.policy || null;
+  const fromDomain = parsed?.fromDomain || null;
+  const pct = parsed?.pct ?? 100;
+  const aspf = parsed?.aspf || "r";
+  const adkim = parsed?.adkim || "r";
+  const sp = parsed?.sp || null;
 
-  const { policy, fromDomain, pct = 100, aspf = "r", adkim = "r", sp = null } = parsed;
+  if (!policy) {
+    return {
+      status: "error",
+      action: "none",
+      verdict: "none",
+      policy: null,
+      sp,
+      pct,
+      aspf,
+      adkim,
+      spfAligned: false,
+      dkimAligned: false,
+      reason: "No DMARC record found",
+      fromDomain,
+    };
+  }
 
   const spfAligned  = checkAlignment(spf.status,  spf.domain,  fromDomain, aspf);
   const dkimAligned = checkAlignment(dkim.status, dkim.domain, fromDomain, adkim);
@@ -20,9 +38,17 @@ const evaluateDMARC = (spf, dkim, parsed) => {
     return {
       status: "pass",
       action: "deliver",
+      verdict: "deliver",
       reason: `DMARC passed via ${spfAligned ? "SPF" : "DKIM"} alignment (${spfAligned ? aspf : adkim} mode)`,
-      policy, pct, aspf, adkim, sp, spfAligned, dkimAligned, riskScore,
-      fromDomain  // ← add this
+      policy,
+      pct,
+      aspf,
+      adkim,
+      sp,
+      spfAligned,
+      dkimAligned,
+      riskScore,
+      fromDomain,
     };
   }
 
@@ -38,10 +64,19 @@ const evaluateDMARC = (spf, dkim, parsed) => {
 
   return {
     status: "fail",
-    policy, sp, effectivePolicy, pct, aspf, adkim,
-    spfAligned, dkimAligned, riskScore,
-    fromDomain,  // ← add this
-    ...outcome
+    action: outcome.action,
+    verdict: outcome.action,
+    reason: outcome.reason,
+    policy,
+    sp,
+    effectivePolicy,
+    pct,
+    aspf,
+    adkim,
+    spfAligned,
+    dkimAligned,
+    riskScore,
+    fromDomain,
   };
 };
 
