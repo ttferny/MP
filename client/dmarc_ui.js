@@ -577,7 +577,7 @@ function renderComparisonColumn(colId, r, description) {
 // Lets the user demo the auditor without typing a real DMARC record
 const sampleRecords = {
   strong:   { domain: "example.com",  record: "v=DMARC1; p=reject; rua=mailto:dmarc@example.com; pct=100; aspf=r; adkim=r" },
-  moderate: { domain: "moderate.com", record: "v=DMARC1; p=quarantine; pct=50; aspf=r; adkim=r" },
+  moderate: { domain: "moderate.com", record: "v=DMARC1; p=quarantine; pct=60" },
   weak:     { domain: "weak.com",     record: "v=DMARC1; p=none" },
   none:     { domain: "nodmarc.com",  record: "" }  // blank = no record
 };
