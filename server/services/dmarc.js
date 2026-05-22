@@ -82,21 +82,40 @@ const evaluateDMARC = (spf, dkim, parsed) => {
 
 
 const checkAlignment = (authStatus, authDomain, fromDomain, mode) => {
-  // Must pass authentication first — alignment alone is not enough
   if (authStatus !== "pass") return false;
-
-  // No domain to check against
   if (!authDomain || !fromDomain) return false;
 
   if (mode === "s") {
-    // Strict — domains must match exactly
-    // e.g. mail.legitbank.com does NOT align with legitbank.com
+    // Strict — must match exactly
     return authDomain === fromDomain;
   } else {
-    // Relaxed — organisational domain just needs to match
-    // e.g. mail.legitbank.com DOES align with legitbank.com
-    return authDomain === fromDomain || authDomain.endsWith("." + fromDomain);
+    // Relaxed — check if they share the same organisational domain
+    return getOrgDomain(authDomain) === getOrgDomain(fromDomain);
   }
+};
+
+// Extracts the organisational domain from a full domain name
+// e.g. mail.tp.edu.sg → tp.edu.sg
+// e.g. smtp.google.com → google.com
+// e.g. legitbank.com → legitbank.com
+const getOrgDomain = (domain) => {
+  if (!domain) return "";
+
+  const parts = domain.split(".");
+
+  // Known two-part TLDs like .edu.sg, .com.sg, .gov.sg, .ac.uk
+  const twoPartTLDs = ["edu.sg", "com.sg", "gov.sg", "net.sg", "ac.uk", "co.uk", "org.uk", "com.au", "edu.au"];
+  const last2 = parts.slice(-2).join(".");
+
+  if (twoPartTLDs.includes(last2) && parts.length >= 3) {
+    // e.g. mail.tp.edu.sg → take last 3 parts → tp.edu.sg
+    return parts.slice(-3).join(".");
+  }
+
+  // Standard domain — take last 2 parts
+  // e.g. mail.google.com → google.com
+  // e.g. smtp.legitbank.com → legitbank.com
+  return parts.slice(-2).join(".");
 };
 
 

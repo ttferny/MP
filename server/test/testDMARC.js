@@ -21,6 +21,7 @@
 //   12. Missing SPF input — error handling
 //   13. Missing DMARC record — error handling
 //   14. CEO fraud — lookalike domain
+//   15. School email relaxed alignment
 // =============================================================
 
 const { evaluateDMARC, checkAlignment } = require('../services/dmarc');
@@ -244,6 +245,16 @@ test(
   "fail", "quarantine"
 );
 
+// Test 15: School email relaxed alignment
+test(
+  'School email — mail.tp.edu.sg aligns with tp.edu.sg in relaxed mode',
+  evaluateDMARC(
+    { status: "pass", domain: "mail.tp.edu.sg" },
+    { status: "fail", domain: "" },
+    { policy: "reject", fromDomain: "tp.edu.sg", pct: 100, aspf: "r", adkim: "r" }
+  ),
+  "pass", "deliver"
+);
 
 // ── Section 7: checkAlignment unit tests ─────────────────────
 console.log('--- checkAlignment() Unit Tests ---\n');
