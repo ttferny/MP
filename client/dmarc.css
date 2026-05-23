@@ -684,3 +684,7 @@ textarea:focus {
 @media (max-width: 500px) {
   .comparison-grid { grid-template-columns: 1fr; }
 }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

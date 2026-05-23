@@ -35,6 +35,7 @@ const parseDMARCRecord = (record) => {
     pct:     parseInt(tags['pct']) || 100, // pct= — enforcement percentage
     rua:     tags['rua']  || null,       // rua= — aggregate report URI
     ruf:     tags['ruf']  || null,       // ruf= — forensic report URI
+    fo:      tags['fo']   || null,       // fo= — forensic report options
     aspf:    tags['aspf'] || 'r',        // aspf= — SPF alignment mode (r=relaxed, s=strict)
     adkim:   tags['adkim'] || 'r',       // adkim= — DKIM alignment mode (r=relaxed, s=strict)
     raw:     record
@@ -138,6 +139,12 @@ const auditDMARC = (dmarcRaw, domain) => {
     recommendations.push("Add rua=mailto:dmarc@" + domain + " to receive aggregate reports and monitor your mail flow");
     score -= 10;
   }
+
+  // Forensic reporting (ruf=) — informational only, no score change
+if (dmarc.ruf) {
+  // ruf= is configured — good for incident response but not required
+  // No score change, just worth noting
+}
 
   // ── Alignment mode checks (aspf=, adkim=) ───────────────────
   if (dmarc.aspf === 's') {

@@ -28,8 +28,12 @@ const path = require('path');
 const logger = require('./utils/logger');
 
 // Import route files — each file handles a group of related API endpoints
-const analyseRoutes = require('./routes/analyse');   // Main pipeline: parse+SPF+DKIM+DMARC
+const analyseRoutes = require('./routes/analyse');    // Main pipeline: parse+SPF+DKIM+DMARC
 const dmarcRoutes   = require('./routes/dmarcRoutes'); // Zircon's DMARC-specific routes
+
+// Zircon — SMTP receiver that accepts test emails and evaluates them
+// through the DMARC engine in real time
+const { startSMTPServer } = require('./services/smtpReceiver');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -45,12 +49,30 @@ app.use(express.urlencoded({ extended: true }));
 // Serve the HTML/CSS/JS frontend files from the /client folder
 app.use(express.static(path.join(__dirname, '../client')));
 
+// ── Zircon — Start SMTP Receiver ─────────────
+// Listens on port 2525 for incoming test emails
+// Passes each email through Tiffany's parser → Ashton's DNS → Zircon's DMARC engine
+const smtp = startSMTPServer();
+
 // ── API Routes ────────────────────────────────
 // All API calls are prefixed with /api/ to separate them from page URLs
 app.use('/api/analyse', analyseRoutes);  // POST /api/analyse/header  → full email check
                                           // POST /api/analyse/domain  → DNS record lookup
                                           // POST /api/analyse/scenario → run demo scenario
 app.use('/api/dmarc',   dmarcRoutes);    // DMARC-specific routes (Zircon)
+
+// ── Zircon — SMTP Live Evaluation Endpoints ───
+// GET    /api/dmarc/smtp/latest — returns the last email evaluated by the SMTP receiver
+// DELETE /api/dmarc/smtp/latest — clears the stored result for a fresh demo
+app.get('/api/dmarc/smtp/latest', (req, res) => {
+  const result = smtp.getLastResult();
+  res.json(result || { status: 'waiting', message: 'No emails received yet' });
+});
+
+app.delete('/api/dmarc/smtp/latest', (req, res) => {
+  smtp.clearLastResult();
+  res.json({ message: 'Cleared' });
+});
 
 // ── Health Check ──────────────────────────────
 // Simple endpoint to confirm the server is running
