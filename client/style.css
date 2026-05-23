@@ -98,15 +98,6 @@ a:hover { color: var(--accent-dark); }
 
 .logo-text { letter-spacing: 0.02em; }
 
-.logo-tag {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  background: rgba(26, 122, 127, 0.12);
-  color: var(--accent-dark);
-  padding: 4px 10px;
-  border-radius: 999px;
-}
 
 /* Hero */
 .hero {

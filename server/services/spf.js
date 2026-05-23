@@ -199,7 +199,12 @@ async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0) {
     case 'redirect': {
       if (!mechValue) return { matched: false };
       logger.info(`SPF: redirect → ${mechValue}`);
-      return await evaluateSPFRecord(mechValue, senderIP, dns, depth + 1);
+      const redirectResult = await evaluateSPFRecord(mechValue, senderIP, dns, depth + 1);
+      return {
+        matched: true,
+        result: redirectResult.result,
+        redirectResult,
+      };
     }
 
     default:
@@ -237,8 +242,18 @@ async function evaluateSPFRecord(domain, senderIP, dns, depth = 0) {
 
   // Walk mechanisms in order — first match wins
   for (const mech of mechanisms) {
-    const { matched, result } = await evaluateMechanism(mech, senderIP, domain, dns, depth);
+    const { matched, result, redirectResult } = await evaluateMechanism(mech, senderIP, domain, dns, depth);
     if (matched) {
+      if (mech.mechName === 'redirect' && redirectResult) {
+        logger.info(`SPF result: ${redirectResult.result} (redirect '${mech.raw}')`);
+        return {
+          result: redirectResult.result,
+          reason: redirectResult.reason || `Redirected to ${mech.mechValue}`,
+          record: redirectResult.record || spfRecord,
+          matchedMechanism: mech.raw,
+        };
+      }
+
       logger.info(`SPF result: ${result} (matched '${mech.raw}')`);
       return {
         result,

@@ -161,14 +161,23 @@ function parseEmailHeader(rawHeader) {
     ? headers['received']
     : headers['received'] ? [headers['received']] : [];
 
-  // Extract the originating IP from the last "Received" header
-  // (the server that originally sent the email)
-  // Typical format: "from mail.example.com ([203.0.113.5])"
+  // Extract sender IP by scanning Received headers first, then fall back
+  // to Received-SPF or Authentication-Results if needed.
   const senderIP = (() => {
-    if (!receivedChain.length) return '';
-    const last = receivedChain[receivedChain.length - 1];
-    const ipMatch = last.match(/\[(\d{1,3}(?:\.\d{1,3}){3})\]/);
-    return ipMatch ? ipMatch[1] : '';
+    const extractIPv4 = (text = '') => {
+      const match = text.match(/\b(\d{1,3}(?:\.\d{1,3}){3})\b/);
+      return match ? match[1] : '';
+    };
+
+    for (const line of receivedChain) {
+      const ip = extractIPv4(line);
+      if (ip) return ip;
+    }
+
+    const receivedSpf = headers['received-spf'] || '';
+    const authResults = headers['authentication-results'] || '';
+
+    return extractIPv4(receivedSpf) || extractIPv4(authResults) || '';
   })();
   // This IP is what SPF will check against the domain's authorised server list.
 
