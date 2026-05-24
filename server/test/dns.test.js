@@ -6,7 +6,7 @@ jest.mock('dns', () => ({
   },
 }));
 
-const { lookupDMARCRecord } = require('../services/dns');
+const { lookupDMARCRecord, lookupDKIMRecord } = require('../services/dns');
 
 describe('dns.js — DNS lookup helpers', () => {
   beforeEach(() => {
@@ -19,5 +19,13 @@ describe('dns.js — DNS lookup helpers', () => {
     const record = await lookupDMARCRecord('example.org');
     expect(record).toBeNull();
     expect(dns.promises.resolveTxt).toHaveBeenCalledWith('_dmarc.example.org');
+  });
+
+  test('[POSITIVE] returns DKIM TXT record when record starts with k=rsa and omits v=', async () => {
+    dns.promises.resolveTxt.mockResolvedValue([['k=rsa; p=mockkey']]);
+
+    const record = await lookupDKIMRecord('example.org', 'mail');
+    expect(record).toBe('k=rsa; p=mockkey');
+    expect(dns.promises.resolveTxt).toHaveBeenCalledWith('mail._domainkey.example.org');
   });
 });

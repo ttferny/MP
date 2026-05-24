@@ -24,9 +24,27 @@ const normalizeTxtRecords = (records) => {
     .filter(Boolean);
 };
 
-const findTxtRecord = (records, prefix) => {
+const findTxtRecord = (records, matcher) => {
   const normalized = normalizeTxtRecords(records);
-  return normalized.find(record => record.toLowerCase().startsWith(prefix.toLowerCase())) || null;
+
+  if (typeof matcher === 'string') {
+    const prefix = matcher.toLowerCase();
+    return normalized.find(record => record.toLowerCase().startsWith(prefix)) || null;
+  }
+
+  if (typeof matcher === 'function') {
+    return normalized.find(record => matcher(record)) || null;
+  }
+
+  return null;
+};
+
+const isDkimTxtRecord = (record) => {
+  const normalized = record.toLowerCase();
+  return normalized.startsWith(TXT_RECORD_TYPES.DKIM.toLowerCase())
+    || normalized.startsWith('k=rsa')
+    || normalized.startsWith('k=ed25519')
+    || normalized.startsWith('p=');
 };
 
 const lookupTxtRecords = async (name) => {
@@ -94,7 +112,7 @@ async function lookupDKIMRecord(domain, selector = 'default') {
 
   const name = `${normalizedSelector}._domainkey.${domain}`;
   const records = await lookupTxtRecords(name);
-  const dkimRecord = findTxtRecord(records, TXT_RECORD_TYPES.DKIM);
+  const dkimRecord = findTxtRecord(records, isDkimTxtRecord);
 
   if (!dkimRecord) {
     logger.info(`No DKIM TXT record found for ${selector}._domainkey.${domain}`);
