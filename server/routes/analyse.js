@@ -10,60 +10,55 @@
  * it through the full authentication pipeline in order:
  *
  *   Step 1 → parser.js      : Extract key fields from raw header
- *   Step 2 → validate.js    : Check parsed data is complete & correct ← NEW (Phase 4)
+ *   Step 2 → validate.js    : Check parsed data is complete & correct
  *   Step 3 → spf.js         : Check if sending IP is authorised
- *   Step 4 → validate.js    : Check SPF result is well-formed      ← NEW (Phase 4)
+ *   Step 4 → validate.js    : Check SPF result is well-formed
  *   Step 5 → dkim.js        : Verify email signature (Ashton)
  *   Step 6 → dmarc.js       : Apply policy, give final verdict (Zircon)
- *   Step 7 → validate.js    : Check full response before sending   ← NEW (Phase 4)
+ *   Step 7 → validate.js    : Check full response before sending
+ *   Step 8 → aiChecker.js   : AI classifies email as safe/phishing/spoofing ← NEW
  *
  * ENDPOINTS:
  * ----------
  *   POST /api/analyse/header   — full email authentication pipeline
  *   POST /api/analyse/domain   — DNS record lookup for a domain
  *   POST /api/analyse/scenario — run a pre-built demo scenario
- *
- * HOW IT LINKS:
- * -------------
- *   app.js mounts this file at /api/analyse
- *   validate.js is called at each stage to catch bad data early
  */
 
 const express = require('express');
-const router = express.Router();
+const router  = express.Router();
 
-const { parseEmailHeader }        = require('../services/parser');
-const { checkSPF }                = require('../services/spf');
-const { verifyDKIM }              = require('../services/dkim');
-const { evaluateDMARC }           = require('../services/dmarc');
-const { lookupDMARCRecord }       = require('../services/dns');
-const { parseDMARCRecord }        = require('../services/dmarcAuditor');
+const { parseEmailHeader }  = require('../services/parser');
+const { checkSPF }          = require('../services/spf');
+const { verifyDKIM }        = require('../services/dkim');
+const { evaluateDMARC }     = require('../services/dmarc');
+const { lookupDMARCRecord } = require('../services/dns');
+const { parseDMARCRecord }  = require('../services/dmarcAuditor');
+const { checkEmailWithAI }  = require('../services/aiChecker');     // ← NEW
+const { getScenario, getAllScenarios } = require('../services/scenarioService');
 const {
   validateParsedHeader,
   validateSPFResult,
   validateAnalyseResponse,
-}                                  = require('../utils/validate');   // Tiffany Phase 4
-const logger                       = require('../utils/logger');
+} = require('../utils/validate');
+const logger = require('../utils/logger');
 
 // ──────────────────────────────────────────────────────────────
 // ENDPOINT 1: POST /api/analyse/header
-// Full authentication pipeline with validation at each step.
 // ──────────────────────────────────────────────────────────────
 router.post('/header', async (req, res) => {
   try {
-    const { rawHeader } = req.body;
+    const { rawHeader, content = '' } = req.body;
 
     if (!rawHeader || typeof rawHeader !== 'string') {
       return res.status(400).json({ error: 'rawHeader (string) is required.' });
     }
 
-    // ── Step 1: Parse ──────────────────────────────────────
+    // Step 1 — Parse
     const parsed = parseEmailHeader(rawHeader);
     logger.info(`Parsed header for domain: ${parsed.fromDomain}`);
 
-    // ── Step 2: Validate parsed output ────────────────────
-    // Catches malformed or incomplete headers before going further.
-    // Returns HTTP 422 (Unprocessable Entity) if data is invalid.
+    // Step 2 — Validate parsed output
     const parsedValidation = validateParsedHeader(parsed);
     if (!parsedValidation.valid) {
       return res.status(422).json({
@@ -72,10 +67,10 @@ router.post('/header', async (req, res) => {
       });
     }
 
-    // ── Step 3: SPF Check ─────────────────────────────────
+    // Step 3 — SPF Check
     const spfResult = await checkSPF(parsed);
 
-    // ── Step 4: Validate SPF result ───────────────────────
+    // Step 4 — Validate SPF result
     const spfValidation = validateSPFResult(spfResult);
     if (!spfValidation.valid) {
       return res.status(422).json({
@@ -84,12 +79,12 @@ router.post('/header', async (req, res) => {
       });
     }
 
-    // ── Step 5: DKIM Check (Ashton) ───────────────────────
+    // Step 5 — DKIM Check (Ashton)
     const dkimResult = await verifyDKIM(parsed);
 
-    // ── Step 6: DMARC Evaluation (Zircon) ─────────────────
+    // Step 6 — DMARC Evaluation (Zircon)
     const dmarcRecord = await lookupDMARCRecord(parsed.fromDomain);
-    const dmarcTags = dmarcRecord ? parseDMARCRecord(dmarcRecord) : null;
+    const dmarcTags   = dmarcRecord ? parseDMARCRecord(dmarcRecord) : null;
     const dmarcParsed = dmarcTags
       ? { ...dmarcTags, fromDomain: parsed.fromDomain }
       : { fromDomain: parsed.fromDomain };
@@ -97,7 +92,7 @@ router.post('/header', async (req, res) => {
     const dmarcResult = await evaluateDMARC(spfResult, dkimResult, dmarcParsed);
     dmarcResult.dmarcRecord = dmarcRecord || null;
 
-    // ── Step 7: Validate full response ────────────────────
+    // Step 7 — Validate full response
     const responseObj = {
       success: true,
       parsed,
@@ -112,6 +107,12 @@ router.post('/header', async (req, res) => {
       });
     }
 
+    // Step 8 — AI phishing/spoofing analysis ← NEW
+    // Runs after all protocol checks so the AI has full context.
+    // Falls back gracefully if API key is missing or call fails.
+    const aiResult = await checkEmailWithAI(parsed, spfResult, dkimResult, dmarcResult, content);
+    responseObj.ai = aiResult;
+
     return res.json(responseObj);
 
   } catch (err) {
@@ -122,7 +123,6 @@ router.post('/header', async (req, res) => {
 
 // ──────────────────────────────────────────────────────────────
 // ENDPOINT 2: POST /api/analyse/domain
-// DNS record lookup — shows SPF/DKIM/DMARC records for a domain.
 // ──────────────────────────────────────────────────────────────
 router.post('/domain', async (req, res) => {
   try {
@@ -157,24 +157,130 @@ router.post('/domain', async (req, res) => {
 
 // ──────────────────────────────────────────────────────────────
 // ENDPOINT 3: POST /api/analyse/scenario
-// Runs a pre-built demo scenario (Zircon's scenarioService).
+// Uses Zircon's scenarioService + runs real DMARC alignment logic
 // ──────────────────────────────────────────────────────────────
 router.post('/scenario', async (req, res) => {
   try {
     const { scenario } = req.body;
-
     if (!scenario) {
       return res.status(400).json({ error: 'scenario name is required.' });
     }
 
-    const { runScenario } = require('../services/scenarioService');
-    const result = await runScenario(scenario);
+    const s = getScenario(scenario);
+    if (!s) {
+      const all = getAllScenarios().map(x => x.key).join(', ');
+      return res.status(404).json({ error: `Unknown scenario "${scenario}". Available: ${all}` });
+    }
 
-    return res.json({ success: true, scenario, result });
+    // Build parsed object from scenario data
+    const parsed = {
+      from:           `sender@${s.fromDomain}`,
+      fromEmail:      `sender@${s.fromDomain}`,
+      fromDomain:     s.fromDomain,
+      envelopeFrom:   `sender@${s.spf.domain || s.fromDomain}`,
+      envelopeDomain: s.spf.domain || s.fromDomain,
+      senderIP:       '203.0.113.10',
+      subject:        s.name,
+      dkimSignature:  s.dkim.status === 'pass'
+        ? { v: '1', a: 'rsa-sha256', d: s.dkim.domain || s.fromDomain, s: 'mail', h: 'from:subject', bh: 'abc', b: 'validsig' }
+        : {},
+      receivedChain:  [],
+      raw:            {},
+    };
+
+    // Build SPF result
+    const spfResult = {
+      result:           s.spf.status,
+      reason:           s.spf.status === 'pass'
+        ? `Matched mechanism: ip4 on ${s.spf.domain}`
+        : `Sender IP not authorised for ${s.spf.domain || s.fromDomain} — matched -all`,
+      domain:           s.spf.domain || s.fromDomain,
+      ip:               parsed.senderIP,
+      record:           s.spf.status === 'pass' ? 'v=spf1 ip4:203.0.113.0/24 -all' : 'v=spf1 ip4:10.0.0.0/8 -all',
+      matchedMechanism: s.spf.status === 'pass' ? 'ip4:203.0.113.0/24' : '-all',
+    };
+
+    // Build DKIM result
+    const dkimResult = {
+      result:    s.dkim.status,
+      reason:    s.dkim.status === 'pass'
+        ? `DKIM signature verified for ${s.dkim.domain}`
+        : s.dkim.domain
+          ? `DKIM domain ${s.dkim.domain} does not align with From domain ${s.fromDomain}`
+          : 'No DKIM-Signature header present in email',
+      domain:    s.dkim.domain || s.fromDomain,
+      selector:  s.dkim.status === 'pass' ? 'mail' : null,
+      algorithm: s.dkim.status === 'pass' ? 'rsa-sha256' : null,
+      dnsRecord: s.dkim.status === 'pass' ? 'v=DKIM1; k=rsa; p=mockkey' : null,
+    };
+
+    // Run DMARC alignment
+    const aspfMode  = s.aspf  || 'r';
+    const adkimMode = s.adkim || 'r';
+    const spfAligned  = spfResult.result  === 'pass' && checkAlignment(s.fromDomain, spfResult.domain,  aspfMode);
+    const dkimAligned = dkimResult.result === 'pass' && checkAlignment(s.fromDomain, dkimResult.domain, adkimMode);
+    const dmarcPasses = spfAligned || dkimAligned;
+    const policy      = s.defaultPolicy || 'none';
+    const effectivePolicy = s.sp && s.fromDomain.includes('.') ? s.sp : policy;
+
+    let verdict, verdictReason;
+    if (dmarcPasses) {
+      verdict       = 'deliver';
+      verdictReason = `DMARC passed. ${spfAligned ? 'SPF' : 'DKIM'} alignment verified with From domain '${s.fromDomain}'. Email delivered.`;
+    } else {
+      verdict = effectivePolicy === 'reject'     ? 'reject'
+              : effectivePolicy === 'quarantine' ? 'quarantine'
+              : 'none';
+      const why = [];
+      if (!spfAligned)  why.push(`SPF ${spfResult.result === 'pass' ? 'passed but domain misaligned' : 'failed'}`);
+      if (!dkimAligned) why.push(`DKIM ${dkimResult.result === 'pass' ? 'passed but domain misaligned' : 'failed or absent'}`);
+      verdictReason = `DMARC failed for '${s.fromDomain}'. ${why.join('; ')}. `
+        + (verdict === 'reject'     ? 'Email REJECTED by DMARC policy.'
+          : verdict === 'quarantine' ? 'Email QUARANTINED — moved to spam.'
+          : 'No enforcement (p=none) — email delivered despite failure.');
+    }
+
+    const dmarcResult = {
+      verdict,
+      policy: effectivePolicy,
+      reason: verdictReason,
+      spfAligned,
+      dkimAligned,
+      dmarcRecord: `v=DMARC1; p=${policy}${s.sp ? `; sp=${s.sp}` : ''}${aspfMode !== 'r' ? `; aspf=${aspfMode}` : ''}${adkimMode !== 'r' ? `; adkim=${adkimMode}` : ''}`,
+      tags:        { p: policy, aspf: aspfMode, adkim: adkimMode },
+      explanation: s.explanation,
+      attackDescription: s.attack,
+    };
+
+    // AI analysis on scenario data ← NEW
+    const aiResult = await checkEmailWithAI(parsed, spfResult, dkimResult, dmarcResult);
+
+    return res.json({
+      success: true,
+      scenario,
+      scenarioMeta: { name: s.name, icon: s.icon, desc: s.desc, attack: s.attack },
+      result: {
+        parsed,
+        results: { spf: spfResult, dkim: dkimResult, dmarc: dmarcResult },
+        ai: aiResult,
+      },
+    });
+
   } catch (err) {
     logger.error(`/scenario error: ${err.message}`);
     return res.status(500).json({ error: err.message });
   }
 });
+
+// DMARC alignment helper
+function checkAlignment(fromDomain, checkDomain, mode = 'r') {
+  if (!fromDomain || !checkDomain) return false;
+  const from  = fromDomain.toLowerCase();
+  const check = checkDomain.toLowerCase();
+  if (mode === 's') return from === check;
+  const rootFrom  = from.split('.').slice(-2).join('.');
+  const rootCheck = check.split('.').slice(-2).join('.');
+  return rootFrom === rootCheck;
+}
 
 module.exports = router;

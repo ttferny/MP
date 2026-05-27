@@ -26,6 +26,8 @@
 
   <main class="main-content">
     <div class="layout-grid">
+
+      <!-- ── LEFT COLUMN: Input ── -->
       <section class="stack">
         <div class="card input-card">
           <h2 class="card-title">Paste Raw Email Header</h2>
@@ -47,6 +49,15 @@
             spellcheck="false"
           ></textarea>
 
+          <div class="content-label">Email content for AI analysis</div>
+          <textarea
+            id="content-input"
+            class="header-textarea content-textarea"
+            rows="6"
+            placeholder="Paste the email body here so the AI can assess language and intent..."
+            spellcheck="true"
+          ></textarea>
+
           <div class="input-actions">
             <button id="analyse-btn" class="btn-primary">Run Authentication Check</button>
             <button id="clear-btn" class="btn-secondary">Clear</button>
@@ -56,23 +67,27 @@
         </div>
       </section>
 
+      <!-- ── RIGHT COLUMN: Results ── -->
       <section class="stack">
+
+        <!-- API Response Validation -->
         <div id="validation-card" class="card validation-card hidden">
           <h2 class="card-title">API Response Validation</h2>
           <p class="card-hint">Checks required fields from the backend response.</p>
           <ul id="validation-list" class="validation-list"></ul>
         </div>
 
+        <!-- Parsed Header Fields -->
         <div id="parsed-section" class="card hidden">
           <h2 class="card-title">Parsed Header Fields</h2>
           <p class="card-hint">Key values extracted by the parser.</p>
           <div id="parsed-fields" class="parsed-grid"></div>
-
           <div id="spoof-warning" class="spoof-warning hidden">
-            Spoofing signal detected: the visible From domain and the envelope domain do not match.
+            Spoofing signal detected: the visible From domain and the envelope domain do not match. This can happen when mail is sent via a third-party or subdomain (common for marketing emails).
           </div>
         </div>
 
+        <!-- SPF -->
         <div id="spf-section" class="card hidden">
           <div class="spf-header">
             <h2 class="card-title">SPF Evaluation</h2>
@@ -82,6 +97,7 @@
           <div id="spf-details" class="detail-list"></div>
         </div>
 
+        <!-- DKIM -->
         <div id="dkim-section" class="card hidden">
           <div class="spf-header">
             <h2 class="card-title">DKIM Verification</h2>
@@ -91,6 +107,7 @@
           <div id="dkim-details" class="detail-list"></div>
         </div>
 
+        <!-- DMARC -->
         <div id="dmarc-section" class="card hidden">
           <div class="spf-header">
             <h2 class="card-title">DMARC Policy</h2>
@@ -99,6 +116,20 @@
           <p id="dmarc-summary" class="card-hint">Run the analysis to see DMARC results.</p>
           <div id="dmarc-details" class="detail-list"></div>
         </div>
+
+        <!-- ── AI Phishing Analysis Card ── NEW -->
+        <div id="ai-section" class="card ai-card hidden">
+          <div class="ai-header">
+            <span class="ai-icon">🤖</span>
+            <div>
+              <div class="ai-title">AI Phishing Analysis</div>
+              <div class="ai-subtitle">Powered by Gemini AI — analyses content and header signals</div>
+            </div>
+            <span id="ai-badge" class="ai-badge">—</span>
+          </div>
+          <div id="ai-body" class="ai-body"></div>
+        </div>
+
       </section>
     </div>
   </main>
