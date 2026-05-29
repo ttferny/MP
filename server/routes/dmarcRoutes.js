@@ -243,4 +243,40 @@ router.post('/smtp/send-test', async (req, res) => {
   }
 });
 
+// POST /api/dmarc/smtp/send-test
+// Sends a test email to the local SMTP receiver on port 2525
+// Body: { type } — "legitimate", "spoof", "ceo-fraud", "spf-misalign"
+router.post('/smtp/send-test', async (req, res) => {
+  const nodemailer = require('nodemailer');
+  const type = req.body.type || 'legitimate';
+
+  const transporter = nodemailer.createTransport({
+    host: 'localhost', port: 2525, secure: false,
+    tls: { rejectUnauthorized: false }
+  });
+
+  const emails = {
+    'legitimate':   { from: 'noreply@google.com',    subject: 'Legitimate Email Test',  auth: 'spf=pass smtp.mailfrom=google.com; dkim=pass header.d=google.com', returnPath: 'noreply@google.com' },
+    'spoof':        { from: 'security@dbs.com.sg',   subject: 'Basic Spoof Test',       auth: 'spf=fail smtp.mailfrom=evil.com; dkim=fail',                       returnPath: 'bounce@evil.com' },
+    'ceo-fraud':    { from: 'ceo@company.com',       subject: 'CEO Fraud Test',         auth: 'spf=pass smtp.mailfrom=ceo-company.com; dkim=none',                returnPath: 'ceo@ceo-company.com' },
+    'spf-misalign': { from: 'support@legitbank.com', subject: 'SPF Misalign Test',      auth: 'spf=pass smtp.mailfrom=evil.com; dkim=fail',                       returnPath: 'bounce@evil.com' },
+  };
+
+  const email = emails[type] || emails['legitimate'];
+
+  try {
+    await transporter.sendMail({
+      from: email.from, to: 'test@localhost',
+      subject: email.subject, text: 'Test email for DMARC evaluation',
+      headers: {
+        'Authentication-Results': email.auth,
+        'Return-Path': `<${email.returnPath}>`
+      }
+    });
+    res.json({ message: `Test email sent: ${email.subject}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
