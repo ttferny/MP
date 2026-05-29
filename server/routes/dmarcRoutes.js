@@ -223,7 +223,7 @@ router.post('/smtp/send-test', async (req, res) => {
     'legitimate':   { from: 'noreply@google.com',    subject: 'Legitimate Email Test',      auth: 'spf=pass smtp.mailfrom=google.com; dkim=pass header.d=google.com',      returnPath: 'noreply@google.com' },
     'spoof':        { from: 'security@dbs.com.sg',   subject: 'Basic Spoof Test',           auth: 'spf=fail smtp.mailfrom=evil.com; dkim=fail',                            returnPath: 'bounce@evil.com' },
     'ceo-fraud':    { from: 'ceo@company.com',       subject: 'CEO Fraud Test',             auth: 'spf=pass smtp.mailfrom=ceo-company.com; dkim=none',                     returnPath: 'ceo@ceo-company.com' },
-    'spf-misalign': { from: 'support@legitbank.com', subject: 'SPF Misalign Test',          auth: 'spf=pass smtp.mailfrom=evil.com; dkim=fail',                            returnPath: 'bounce@evil.com' },
+    'spf-misalign': { from: 'support@dbs.com.sg', subject: 'SPF Misalign Test',          auth: 'spf=pass smtp.mailfrom=evil.com; dkim=fail',                            returnPath: 'bounce@evil.com' },
   };
 
   const email = emails[type] || emails['legitimate'];
