@@ -423,24 +423,20 @@ function renderComparisonColumn(colId, r, description) {
 
 // =============================================================
 // SECTION 5 — DMARC AUDIT TAB
-// Manual paste mode — POST /api/dmarc/audit
-// Live DNS mode    — GET  /api/dmarc/audit/:domain
 // =============================================================
 
 const sampleRecords = {
-  strong:   { domain: "example.com",  record: "v=DMARC1; p=reject; rua=mailto:dmarc@example.com; pct=100; aspf=r; adkim=r" },
-  moderate: { domain: "moderate.com", record: "v=DMARC1; p=quarantine; pct=60" },
-  weak:     { domain: "weak.com",     record: "v=DMARC1; p=none" },
-  none:     { domain: "nodmarc.com",  record: "" }
+  strong:   { domain: "example.com",      record: "v=DMARC1; p=reject; rua=mailto:dmarc@example.com; pct=100; aspf=r; adkim=r" },
+  moderate: { domain: "moderate.com",     record: "v=DMARC1; p=quarantine; pct=60" },
+  weak:     { domain: "weak.com",         record: "v=DMARC1; p=none" },
+  none:     { domain: "nodmarc-test.com", record: "" }
 };
 
-// setAuditMode — toggles between Live DNS and Manual paste modes
 function setAuditMode(mode) {
   const liveSection   = document.getElementById('audit-live-section');
   const manualSection = document.getElementById('audit-manual-section');
   const liveBtn       = document.getElementById('mode-btn-live');
   const manualBtn     = document.getElementById('mode-btn-manual');
-
   if (mode === 'live') {
     liveSection.style.display   = 'block';
     manualSection.style.display = 'none';
@@ -459,42 +455,33 @@ function setAuditMode(mode) {
   document.getElementById("audit-result").style.display = "none";
 }
 
-// loadSampleRecord — fills the manual form with a preset record
 function loadSampleRecord(key) {
   const s = sampleRecords[key];
   if (!s) return;
   setAuditMode('manual');
   document.getElementById("audit-domain").value = s.domain;
   document.getElementById("audit-record").value = s.record;
-  document.querySelectorAll('#audit-manual-section .scenario-btn').forEach(b => {
-    b.style.borderColor = ''; b.style.color = '';
-  });
+  document.querySelectorAll('#audit-manual-section .scenario-btn').forEach(b => { b.style.borderColor = ''; b.style.color = ''; });
   event.currentTarget.style.borderColor = 'var(--accent)';
   event.currentTarget.style.color       = 'var(--accent)';
   document.getElementById("audit-result").style.display = "none";
 }
 
-// loadLiveDomain — fills the live domain input with a preset domain
 function loadLiveDomain(domain) {
   document.getElementById("audit-live-domain").value = domain;
-  document.querySelectorAll('#audit-live-section .scenario-btn').forEach(b => {
-    b.style.borderColor = ''; b.style.color = '';
-  });
+  document.querySelectorAll('#audit-live-section .scenario-btn').forEach(b => { b.style.borderColor = ''; b.style.color = ''; });
   event.currentTarget.style.borderColor = 'var(--accent)';
   event.currentTarget.style.color       = 'var(--accent)';
   document.getElementById("audit-result").style.display = "none";
 }
 
-// runAudit — manual paste mode, calls POST /api/dmarc/audit
 async function runAudit() {
   const domain      = document.getElementById("audit-domain").value.trim();
   const dmarcRecord = document.getElementById("audit-record").value.trim() || null;
   if (!domain) { alert("Please enter a domain name."); return; }
-
   try {
     const response = await fetch("/api/dmarc/audit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ domain, dmarcRecord })
     });
     if (!response.ok) throw new Error("Server error: " + response.status);
@@ -506,11 +493,9 @@ async function runAudit() {
   }
 }
 
-// runAuditLive — live DNS mode, calls GET /api/dmarc/audit/:domain
 async function runAuditLive() {
   const domain = document.getElementById("audit-live-domain").value.trim();
   if (!domain) { alert("Please enter a domain name."); return; }
-
   const resultEl = document.getElementById("audit-result");
   resultEl.style.display = "block";
   resultEl.innerHTML = `
@@ -519,13 +504,10 @@ async function runAuditLive() {
       <div style="width:20px; height:20px; border-radius:50%; border:3px solid var(--border); border-top-color:var(--accent); animation:spin 0.8s linear infinite; flex-shrink:0;"></div>
       <div style="font-family:var(--mono); font-size:13px; color:var(--muted);">Fetching DNS record for ${domain}...</div>
     </div>`;
-
   try {
     const response = await fetch(`/api/dmarc/audit/${encodeURIComponent(domain)}`);
     if (!response.ok) throw new Error("Server error: " + response.status);
     const result = await response.json();
-
-    // Restore result card structure then render
     resultEl.innerHTML = `
       <div class="card-title">Audit Result</div>
       <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
@@ -550,35 +532,29 @@ async function runAuditLive() {
         <div style="font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); margin-bottom:10px;">Recommendations</div>
         <div id="audit-recs"></div>
       </div>`;
-
     renderAuditResult(result);
   } catch (err) {
     resultEl.innerHTML = `<div class="error-box">Could not fetch DNS record for ${domain}: ${err.message}</div>`;
   }
 }
 
-// renderAuditResult — shared by both runAudit() and runAuditLive()
 function renderAuditResult(r) {
   const el = document.getElementById("audit-result");
   el.style.display = "block";
   el.style.animation = "none";
   void el.offsetWidth;
   el.style.animation = "fadeUp 0.4s ease both";
-
   const badge = document.getElementById("audit-grade-badge");
   badge.textContent = r.grade;
   badge.className   = `grade-${r.grade}`;
   badge.style.cssText = "width:80px; height:80px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:40px; font-weight:700; flex-shrink:0;";
-
   document.getElementById("audit-grade-desc").textContent = r.gradeDescription || "";
-
   const scoreBar   = document.getElementById("audit-score-bar");
   const scoreColor = r.score >= 90 ? "var(--pass)" : r.score >= 60 ? "var(--warn)" : "var(--fail)";
   scoreBar.style.width      = r.score + "%";
   scoreBar.style.background = scoreColor;
   document.getElementById("audit-score-val").textContent = r.score;
   document.getElementById("audit-score-val").style.color = scoreColor;
-
   const tagsEl = document.getElementById("audit-tags");
   if (r.dmarc) {
     const d = r.dmarc;
@@ -598,32 +574,24 @@ function renderAuditResult(r) {
   } else {
     tagsEl.innerHTML = `<div class="reason-box" style="color:var(--fail);">No DMARC record found for ${r.domain}.</div>`;
   }
-
   const issuesSec = document.getElementById("audit-issues-section");
   const issuesEl  = document.getElementById("audit-issues");
   if (r.issues && r.issues.length > 0) {
     issuesSec.style.display = "block";
     issuesEl.innerHTML = r.issues.map(i => `<div class="audit-issue">⚠ ${i}</div>`).join("");
-  } else {
-    issuesSec.style.display = "none";
-  }
-
+  } else { issuesSec.style.display = "none"; }
   const recsSec = document.getElementById("audit-recs-section");
   const recsEl  = document.getElementById("audit-recs");
   if (r.recommendations && r.recommendations.length > 0) {
     recsSec.style.display = "block";
     recsEl.innerHTML = r.recommendations.map(rec => `<div class="audit-rec">→ ${rec}</div>`).join("");
-  } else {
-    recsSec.style.display = "none";
-  }
-
+  } else { recsSec.style.display = "none"; }
   el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 
 // =============================================================
 // SECTION 6 — LIVE EMAIL MONITOR TAB
-// Polls GET /api/dmarc/smtp/latest every 3 seconds when active
 // =============================================================
 
 let monitorInterval = null;
@@ -636,11 +604,11 @@ function toggleMonitor() {
 
 function startMonitor() {
   monitorActive = true;
-  document.getElementById('monitor-btn-text').textContent     = '⏹ Stop Monitor';
-  document.getElementById('monitor-dot').style.background     = 'var(--pass)';
-  document.getElementById('monitor-dot').style.boxShadow      = '0 0 6px var(--pass)';
-  document.getElementById('monitor-status-text').textContent  = 'Monitoring port 2525...';
-  document.getElementById('monitor-status-text').style.color  = 'var(--pass)';
+  document.getElementById('monitor-btn-text').textContent    = '⏹ Stop Monitor';
+  document.getElementById('monitor-dot').style.background    = 'var(--pass)';
+  document.getElementById('monitor-dot').style.boxShadow     = '0 0 6px var(--pass)';
+  document.getElementById('monitor-status-text').textContent = 'Monitoring port 2525...';
+  document.getElementById('monitor-status-text').style.color = 'var(--pass)';
   pollMonitor();
   monitorInterval = setInterval(pollMonitor, 3000);
 }
@@ -648,11 +616,11 @@ function startMonitor() {
 function stopMonitor() {
   monitorActive = false;
   if (monitorInterval) { clearInterval(monitorInterval); monitorInterval = null; }
-  document.getElementById('monitor-btn-text').textContent     = '▶ Start Monitor';
-  document.getElementById('monitor-dot').style.background     = 'var(--muted)';
-  document.getElementById('monitor-dot').style.boxShadow      = 'none';
-  document.getElementById('monitor-status-text').textContent  = 'Not monitoring';
-  document.getElementById('monitor-status-text').style.color  = 'var(--muted)';
+  document.getElementById('monitor-btn-text').textContent    = '▶ Start Monitor';
+  document.getElementById('monitor-dot').style.background    = 'var(--muted)';
+  document.getElementById('monitor-dot').style.boxShadow     = 'none';
+  document.getElementById('monitor-status-text').textContent = 'Not monitoring';
+  document.getElementById('monitor-status-text').style.color = 'var(--muted)';
 }
 
 async function pollMonitor() {
@@ -673,31 +641,24 @@ async function pollMonitor() {
 }
 
 async function clearMonitor() {
-  try { await fetch('/api/dmarc/smtp/latest', { method: 'DELETE' }); } catch (err) {}
+  try { await fetch('/api/dmarc/smtp/latest', { method: 'DELETE' }); } catch (e) {}
   lastSeenTime = null;
   document.getElementById('monitor-result').style.display = 'none';
 }
 
-// sendTestEmail — shows loading immediately, then sends the email
 async function sendTestEmail(type) {
-  // Show loading spinner immediately
   if (!monitorActive) startMonitor();
-
   const el = document.getElementById('monitor-result');
   el.style.display = 'block';
+  el.className     = 'card';
   el.innerHTML = `
     <div class="card-title">Latest Email Result</div>
     <div style="display:flex; align-items:center; gap:14px; padding:20px 0;">
       <div style="width:20px; height:20px; border-radius:50%; border:3px solid var(--border); border-top-color:var(--accent); animation:spin 0.8s linear infinite; flex-shrink:0;"></div>
       <div style="font-family:var(--mono); font-size:13px; color:var(--muted);">Sending email — waiting for DMARC evaluation...</div>
     </div>`;
-
-  // Clear the previous result on the server first
-  // so the poll does not pick up the old result before the new one arrives
   try { await fetch('/api/dmarc/smtp/latest', { method: 'DELETE' }); } catch (e) {}
   lastSeenTime = null;
-
-  // Now send the new test email
   try {
     const response = await fetch('/api/dmarc/smtp/send-test', {
       method: 'POST',
@@ -712,17 +673,31 @@ async function sendTestEmail(type) {
   }
 }
 
+// renderMonitorResult — large visual banner showing deliver/quarantine/reject
 function renderMonitorResult(r) {
   const el = document.getElementById('monitor-result');
+
+  // Coloured top border on the card based on verdict
+  el.className = 'card monitor-result-' + r.action;
   el.style.display = 'block';
   el.style.animation = 'none';
   void el.offsetWidth;
   el.style.animation = 'fadeUp 0.4s ease both';
 
   const e = r.email || {};
+  const icons  = { deliver: '✅', quarantine: '⚠️', reject: '❌' };
+  const labels = { deliver: 'EMAIL DELIVERED', quarantine: 'SENT TO SPAM', reject: 'EMAIL BLOCKED' };
+
   el.innerHTML = `
     <div class="card-title">Latest Email Result</div>
-    <div id="monitor-email-info" style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:16px; font-family:var(--mono); font-size:13px; line-height:1.8;">
+
+    <div class="monitor-banner ${r.action}">
+      <div class="monitor-banner-icon">${icons[r.action] || 'ℹ️'}</div>
+      <div class="monitor-banner-label">${labels[r.action] || r.action.toUpperCase()}</div>
+      <div class="monitor-banner-reason">${r.reason || ''}</div>
+    </div>
+
+    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:16px; font-family:var(--mono); font-size:13px; line-height:1.8;">
       <span style="color:var(--muted);">From:</span>        ${e.from || 'unknown'}<br>
       <span style="color:var(--muted);">Subject:</span>     ${e.subject || '(no subject)'}<br>
       <span style="color:var(--muted);">From Domain:</span> ${e.fromDomain || 'unknown'}<br>
@@ -730,20 +705,16 @@ function renderMonitorResult(r) {
       <span style="color:var(--muted);">DKIM Signed:</span> ${e.hasDKIM ? 'Yes (' + e.dkimDomain + ')' : 'No'}<br>
       <span style="color:var(--muted);">Received:</span>    ${e.receivedAt ? new Date(e.receivedAt).toLocaleTimeString() : 'unknown'}
     </div>
-    <div class="verdict-badge ${r.action}" id="monitor-verdict-badge">
-      <span class="verdict-icon">${{deliver:'✅',quarantine:'⚠️',reject:'❌'}[r.action]||'ℹ️'}</span>
-      <span>${r.action.toUpperCase()}</span>
-    </div>
+
     <div class="result-details">
-      <div class="detail-chip"><div class="chip-label">Status</div><div class="chip-value ${r.status==='pass'?'pass':'fail'}">${r.status.toUpperCase()}</div></div>
-      <div class="detail-chip"><div class="chip-label">Action</div><div class="chip-value ${r.action==='deliver'?'pass':r.action==='quarantine'?'warn':'fail'}">${r.action.toUpperCase()}</div></div>
-      <div class="detail-chip"><div class="chip-label">Policy</div><div class="chip-value">${(r.policy||'N/A').toUpperCase()}</div></div>
-      <div class="detail-chip"><div class="chip-label">Risk Score</div><div class="chip-value ${r.riskScore<=20?'pass':r.riskScore<=50?'warn':'fail'}">${r.riskScore}</div></div>
+      <div class="detail-chip"><div class="chip-label">Status</div><div class="chip-value ${r.status === 'pass' ? 'pass' : 'fail'}">${r.status.toUpperCase()}</div></div>
+      <div class="detail-chip"><div class="chip-label">Policy Applied</div><div class="chip-value">${(r.policy || 'N/A').toUpperCase()}</div></div>
+      <div class="detail-chip"><div class="chip-label">Risk Score</div><div class="chip-value ${r.riskScore <= 20 ? 'pass' : r.riskScore <= 50 ? 'warn' : 'fail'}">${r.riskScore} / 100</div></div>
     </div>
-    <div class="reason-box">${r.reason||''}</div>
+
     <div class="alignment-row">
-      <div class="align-chip"><div class="align-dot ${r.spfAligned?'pass':'fail'}"></div><span>SPF: ${r.spfAligned?'Aligned ✓':'Not Aligned ✗'}</span></div>
-      <div class="align-chip"><div class="align-dot ${r.dkimAligned?'pass':'fail'}"></div><span>DKIM: ${r.dkimAligned?'Aligned ✓':'Not Aligned ✗'}</span></div>
+      <div class="align-chip"><div class="align-dot ${r.spfAligned ? 'pass' : 'fail'}"></div><span>SPF: ${r.spfAligned ? 'Aligned ✓' : 'Not Aligned ✗'}</span></div>
+      <div class="align-chip"><div class="align-dot ${r.dkimAligned ? 'pass' : 'fail'}"></div><span>DKIM: ${r.dkimAligned ? 'Aligned ✓' : 'Not Aligned ✗'}</span></div>
     </div>`;
 
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });

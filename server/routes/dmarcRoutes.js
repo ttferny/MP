@@ -6,6 +6,7 @@
 const { lookupDMARCRecord } = require('../services/dns'); 
 const express = require('express');
 const router  = express.Router();
+const multer = require('multer');
 
 const { evaluateDMARC }                = require('../services/dmarc');
 const { getAllScenarios, getScenario } = require('../services/scenarioService');
@@ -19,6 +20,20 @@ const {
   clearReports,
   exportReportsAsCSV
 } = require('../services/aggregateReporter');
+const { parseDMARCReport } = require('../services/dmarcXmlParser');
+const { analyzeDMARCReport } = require('../services/dmarcReportAnalyzer');
+
+// Configure multer for file uploads
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/xml' || file.originalname.endsWith('.xml')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only XML files are allowed'));
+    }
+  }
+});
 
 
 // ─────────────────────────────────────────────────────────────
@@ -276,6 +291,63 @@ router.post('/smtp/send-test', async (req, res) => {
     res.json({ message: `Test email sent: ${email.subject}` });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 5 — DMARC XML REPORT ANALYZER (NEW)
+// Uploads and analyzes DMARC XML aggregate reports
+// ─────────────────────────────────────────────────────────────
+
+// POST /api/dmarc/upload
+// Uploads a DMARC XML report and parses it
+// Expects: multipart/form-data with file field containing XML
+router.post('/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file provided' });
+    }
+
+    const xmlContent = req.file.buffer.toString('utf-8');
+    const parsed = await parseDMARCReport(xmlContent);
+
+    res.json({
+      success: true,
+      data: parsed
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// POST /api/dmarc/analyze
+// Analyzes a parsed DMARC report and returns insights
+// Body: { parsed DMARC report from /upload or similar }
+router.post('/analyze', (req, res) => {
+  try {
+    const dmarcReport = req.body;
+
+    if (!dmarcReport || !dmarcReport.records) {
+      return res.status(400).json({
+        error: 'Invalid DMARC report format. Expected parsed report with records array.'
+      });
+    }
+
+    const analysis = analyzeDMARCReport(dmarcReport);
+
+    res.json({
+      success: true,
+      analysis
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
   }
 });
 
