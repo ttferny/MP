@@ -150,9 +150,53 @@ const startSMTPServer = () => {
     }
   });
 
-  server.listen(2525, () => {
-    logger.info('SMTP receiver listening on port 2525');
-    console.log('SMTP receiver listening on port 2525');
+  // Try to bind the SMTP server to a port with graceful fallback.
+  // Uses `process.env.SMTP_PORT` if provided, otherwise starts at 2525
+  const BASE_SMTP_PORT = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 2525;
+  const MAX_ATTEMPTS = 6; // try BASE_SMTP_PORT .. BASE_SMTP_PORT+5
+
+  const listenWithFallback = async (startPort) => {
+    let port = startPort;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++, port++) {
+      try {
+        await new Promise((resolve, reject) => {
+          const onError = (err) => {
+            server.removeListener('listening', onListen);
+            reject(err);
+          };
+
+          const onListen = () => {
+            server.removeListener('error', onError);
+            resolve();
+          };
+
+          server.once('error', onError);
+          server.once('listening', onListen);
+          server.listen(port);
+        });
+
+        logger.info(`SMTP receiver listening on port ${port}`);
+        console.log(`SMTP receiver listening on port ${port}`);
+        return port;
+
+      } catch (err) {
+        if (err && err.code === 'EADDRINUSE') {
+          logger.warn(`Port ${port} in use; trying next port`);
+          // continue loop to try next port
+          continue;
+        }
+        // Unexpected error — log and rethrow
+        logger.error(`Failed to start SMTP server: ${err.message}`);
+        throw err;
+      }
+    }
+    throw new Error(`Unable to bind SMTP server after ${MAX_ATTEMPTS} attempts starting at ${startPort}`);
+  };
+
+  // Start the server asynchronously and log failures without crashing the app
+  listenWithFallback(BASE_SMTP_PORT).catch((err) => {
+    logger.error(`SMTP server failed to start: ${err.message}`);
+    console.error(`SMTP server failed to start: ${err.message}`);
   });
 
   return {
