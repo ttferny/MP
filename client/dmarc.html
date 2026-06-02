@@ -6,6 +6,7 @@
   <title>DMARC Policy Engine</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="dmarc.css">
+  <link rel="stylesheet" href="dmarc_analyzer.css">
 </head>
 <body>
 
@@ -27,6 +28,7 @@
       <button class="tab-btn" onclick="switchTab('audit')">DMARC Audit</button>
       <button class="tab-btn" onclick="switchTab('monitor')">Live Monitor</button>
       <button class="tab-btn" onclick="switchTab('reports')">Reports</button>
+      <button class="tab-btn" onclick="switchTab('analyzer')">📊 Report Analyzer</button>
     </div>
 
     <!-- ===================== SCENARIOS TAB ===================== -->
@@ -497,9 +499,183 @@
 
     </div><!-- end tab-reports -->
 
+    <!-- ===================== DMARC REPORT ANALYZER TAB ===================== -->
+    <div id="tab-analyzer" class="tab-content" style="display:none">
+
+      <div class="analyzer-container">
+        <!-- Header -->
+        <div class="analyzer-header">
+          <h2>📊 DMARC Report Analyzer</h2>
+          <p class="subtitle">Upload your DMARC XML aggregate report to analyze authentication, detect threats, and get actionable insights</p>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="upload-section">
+          <div class="upload-box" id="uploadBox">
+            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <h3>Drag & drop your DMARC XML report here</h3>
+            <p>or <button type="button" class="link-btn" id="fileSelectBtn">click to browse</button></p>
+            <input type="file" id="fileInput" accept=".xml" style="display: none;">
+          </div>
+          <button id="analyzeBtn" class="analyze-btn" disabled>Analyze Report</button>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div id="progressContainer" class="progress-container" style="display: none;">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <p id="progressText">Uploading and analyzing...</p>
+        </div>
+
+        <!-- Error Display -->
+        <div id="errorContainer" class="error-container" style="display: none;">
+          <div class="error-icon">⚠️</div>
+          <p id="errorText"></p>
+          <button type="button" class="close-btn" onclick="document.getElementById('errorContainer').style.display='none';">×</button>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" style="display: none;">
+
+          <!-- Summary Card -->
+          <div class="result-card">
+            <div class="card-header">
+              <h3>📋 Report Summary</h3>
+            </div>
+            <div class="summary-grid">
+              <div class="stat-box">
+                <div class="stat-label">Organization</div>
+                <div class="stat-value" id="orgName">-</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">Domain</div>
+                <div class="stat-value" id="domain">-</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">Total Emails</div>
+                <div class="stat-value" id="totalEmails">-</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">Report Period</div>
+                <div class="stat-value" id="reportPeriod">-</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">DMARC Policy</div>
+                <div class="stat-value policy-badge" id="dmarcPolicy">-</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">Enforcement</div>
+                <div class="stat-value" id="enforcement">-</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Authentication Stats -->
+          <div class="result-card">
+            <div class="card-header">
+              <h3>✅ Authentication Statistics</h3>
+            </div>
+            <div class="stats-container">
+              <div class="stat-chart">
+                <h4>SPF Results</h4>
+                <div class="progress-bar-large">
+                  <div class="progress-fill-spf" id="spfPassBar"></div>
+                </div>
+                <div class="stat-detail">
+                  <span class="pass"><strong id="spfPass">0</strong> passed</span>
+                  <span class="fail"><strong id="spfFail">0</strong> failed</span>
+                  <span class="rate">Pass Rate: <strong id="spfRate">0%</strong></span>
+                </div>
+              </div>
+
+              <div class="stat-chart">
+                <h4>DKIM Results</h4>
+                <div class="progress-bar-large">
+                  <div class="progress-fill-dkim" id="dkimPassBar"></div>
+                </div>
+                <div class="stat-detail">
+                  <span class="pass"><strong id="dkimPass">0</strong> passed</span>
+                  <span class="fail"><strong id="dkimFail">0</strong> failed</span>
+                  <span class="rate">Pass Rate: <strong id="dkimRate">0%</strong></span>
+                </div>
+              </div>
+
+              <div class="stat-chart">
+                <h4>Alignment</h4>
+                <div class="progress-bar-large">
+                  <div class="progress-fill-aligned" id="alignmentBar"></div>
+                </div>
+                <div class="stat-detail">
+                  <span class="pass"><strong id="alignedEmails">0</strong> aligned</span>
+                  <span class="fail"><strong id="failedEmails">0</strong> failed</span>
+                  <span class="rate">Alignment Rate: <strong id="alignmentRate">0%</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mail Servers -->
+          <div class="result-card">
+            <div class="card-header">
+              <h3>🖥️ Mail Servers Sending on Your Behalf</h3>
+              <span class="count-badge" id="serverCount">0</span>
+            </div>
+            <div class="servers-list" id="serversList"></div>
+          </div>
+
+          <!-- Suspicious Activity -->
+          <div class="result-card" id="suspiciousCard" style="border-left: 4px solid #ff6b6b;">
+            <div class="card-header">
+              <h3>🚨 Suspicious Activity</h3>
+              <span class="count-badge alert" id="suspiciousCount">0</span>
+            </div>
+            <div id="suspiciousContainer"></div>
+          </div>
+
+          <!-- Spoofing Detection -->
+          <div class="result-card" id="spoofingCard" style="border-left: 4px solid #ff6b6b;">
+            <div class="card-header">
+              <h3>⚠️ Spoofing Detection</h3>
+            </div>
+            <div id="spoofingContainer"></div>
+          </div>
+
+          <!-- Risk Assessment -->
+          <div class="result-card risk-card" id="riskCard">
+            <div class="card-header">
+              <h3>📈 Risk Assessment</h3>
+            </div>
+            <div class="risk-container">
+              <div class="risk-score">
+                <div class="risk-meter" id="riskMeter"></div>
+                <div class="risk-label" id="riskLabel">-</div>
+              </div>
+              <div class="risk-factors" id="riskFactors"></div>
+            </div>
+          </div>
+
+          <!-- Recommendations -->
+          <div class="result-card recommendations-card">
+            <div class="card-header">
+              <h3>💡 Recommendations</h3>
+            </div>
+            <div class="recommendations-list" id="recommendationsList"></div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- end tab-analyzer -->
+
   </div><!-- end container -->
 
   <script src="dmarc_ui.js"></script>
+  <script src="dmarc_analyzer.js"></script>
   <script>
     function switchTab(tabName) {
   // Remove active class from all tab divs AND hide them
