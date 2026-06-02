@@ -130,7 +130,14 @@ async function checkEmailWithAI(parsed, spfResult, dkimResult, dmarcResult, cont
       return fallbackResult('API error — AI analysis unavailable');
     }
 
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonErr) {
+      logger.error(`AI checker: Invalid JSON response — ${jsonErr.message}`);
+      logger.error(`AI checker: Expected JSON but received something else (possibly HTML error page)`);
+      return fallbackResult('API returned invalid JSON — AI analysis unavailable');
+    }
 
     const raw = data.candidates
       ?.flatMap(c => c.content?.parts || [])
