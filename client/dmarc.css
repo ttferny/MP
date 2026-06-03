@@ -665,9 +665,102 @@ textarea:focus {
   .comparison-grid { grid-template-columns: 1fr; }
 }
 
-/* ===================== LIVE MONITOR RESULT CARD ===================== */
+/* ===================== SPIN ANIMATION ===================== */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
-/* Coloured top banner on the monitor result card based on verdict */
+/* ===================== AUDIT TAB ===================== */
+.audit-tag-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.audit-tag {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.audit-tag-key {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.audit-tag-value {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.audit-tag-value.good  { color: var(--pass); }
+.audit-tag-value.warn  { color: var(--warn); }
+.audit-tag-value.bad   { color: var(--fail); }
+.audit-tag-value.muted { color: var(--muted); }
+
+.audit-issue {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-left: 3px solid var(--fail);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.audit-rec {
+  background: rgba(0,212,255,0.05);
+  border: 1px solid rgba(0,212,255,0.15);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+/* Grade badges A-F for the audit result */
+.grade-A { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: var(--pass); }
+.grade-B { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); color: #6ee7b7; }
+.grade-C { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); color: var(--warn); }
+.grade-D { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); color: #fcd34d; }
+.grade-F { background: rgba(239,68,68,0.12);  border: 1px solid rgba(239,68,68,0.3);  color: var(--fail); }
+
+/* Scenario buttons used in audit and comparison tabs */
+.scenarios { display: flex; flex-wrap: wrap; gap: 8px; }
+.scenario-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+.scenario-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(0,212,255,0.05);
+}
+
+/* ===================== LIVE MONITOR RESULT CARD ===================== */
 .monitor-result-deliver {
   border-top: 4px solid var(--pass);
   box-shadow: 0 0 24px rgba(16,185,129,0.08);
@@ -681,7 +774,6 @@ textarea:focus {
   box-shadow: 0 0 24px rgba(239,68,68,0.08);
 }
 
-/* Large visual verdict banner inside the monitor result card */
 .monitor-banner {
   display: flex;
   align-items: center;
@@ -692,38 +784,13 @@ textarea:focus {
   margin-bottom: 20px;
   flex-direction: column;
 }
-.monitor-banner.deliver {
-  background: rgba(16,185,129,0.1);
-  border: 1px solid rgba(16,185,129,0.3);
-}
-.monitor-banner.quarantine {
-  background: rgba(245,158,11,0.1);
-  border: 1px solid rgba(245,158,11,0.3);
-}
-.monitor-banner.reject {
-  background: rgba(239,68,68,0.1);
-  border: 1px solid rgba(239,68,68,0.3);
-}
+.monitor-banner.deliver    { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); }
+.monitor-banner.quarantine { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); }
+.monitor-banner.reject     { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.3); }
 
-.monitor-banner-icon {
-  font-size: 48px;
-  line-height: 1;
-}
-
-.monitor-banner-label {
-  font-family: var(--mono);
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
+.monitor-banner-icon   { font-size: 48px; line-height: 1; }
+.monitor-banner-label  { font-family: var(--mono); font-size: 22px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
 .monitor-banner.deliver    .monitor-banner-label { color: var(--pass); }
 .monitor-banner.quarantine .monitor-banner-label { color: var(--warn); }
 .monitor-banner.reject     .monitor-banner-label { color: var(--fail); }
-
-.monitor-banner-reason {
-  font-family: var(--mono);
-  font-size: 13px;
-  color: var(--muted);
-  text-align: center;
-}
+.monitor-banner-reason { font-family: var(--mono); font-size: 13px; color: var(--muted); text-align: center; }
