@@ -6,7 +6,7 @@
  * WHAT THIS DOES:
  * ---------------
  * Sends the email's subject, sender, and header signals to
- * Claude (Anthropic API) which analyses the content and returns:
+ * Gemini (Google AI API) which analyses the content and returns:
  *   - A threat classification (safe / suspicious / phishing / spoofing)
  *   - A confidence score (0–100)
  *   - A list of red flags detected
@@ -22,12 +22,10 @@
 const logger = require('../utils/logger');
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
-const MODEL           = 'gemini-2.5-flash';
+const MODEL          = 'gemini-2.5-flash';
 
 // ─────────────────────────────────────────────
-// Build the prompt sent to Claude.
-// We give it the parsed header data + protocol
-// results so it can make an informed judgement.
+// Build the prompt sent to Gemini.
 // ─────────────────────────────────────────────
 function buildPrompt(parsed, spfResult, dkimResult, dmarcResult, content = '') {
   const domainMismatch = parsed.fromDomain !== parsed.envelopeDomain;
@@ -61,7 +59,7 @@ DKIM aligned: ${dmarcResult?.dkimAligned ? 'yes' : 'no'}
 
 === YOUR TASK ===
 Based on all the above, respond ONLY with a valid JSON object in this exact format.
-Do not include markdown. Do not include trailing commas. Do not include newlines inside string values (use \n if needed).
+Do not include markdown. Do not include trailing commas. Do not include newlines inside string values (use \\n if needed).
 Output JSON on a single line.
 
 {
@@ -90,9 +88,6 @@ Respond with ONLY the JSON object. No explanation outside the JSON. No markdown 
 
 // ─────────────────────────────────────────────
 // MAIN EXPORT: checkEmailWithAI
-//
-// Calls the Anthropic API and returns the AI analysis.
-// Falls back gracefully if the API is unavailable.
 // ─────────────────────────────────────────────
 async function checkEmailWithAI(parsed, spfResult, dkimResult, dmarcResult, content = '') {
   logger.info(`AI checker: analysing email from ${parsed.fromDomain}`);
@@ -109,16 +104,14 @@ async function checkEmailWithAI(parsed, spfResult, dkimResult, dmarcResult, cont
   try {
     const response = await fetch(`${GEMINI_API_URL}/${MODEL}:generateContent?key=${apiKey}`, {
       method: 'POST',
-      headers: {
-        'Content-Type':      'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [
           { role: 'user', parts: [{ text: prompt }] }
         ],
         generationConfig: {
           temperature: 0.2,
-          maxOutputTokens: 1000,
+          maxOutputTokens: 2048,
           responseMimeType: 'application/json',
         },
       }),
@@ -126,8 +119,23 @@ async function checkEmailWithAI(parsed, spfResult, dkimResult, dmarcResult, cont
 
     if (!response.ok) {
       const err = await response.text();
+
+      // Handle known temporary errors gracefully
+      if (response.status === 503) {
+        logger.warn('AI checker: Gemini API overloaded (503) — try again in a moment');
+        return fallbackResult('AI service is temporarily busy. Please try again in a few seconds.');
+      }
+      if (response.status === 429) {
+        logger.warn('AI checker: Gemini API rate limited (429)');
+        return fallbackResult('Rate limit reached — please wait 60 seconds before analysing another email.');
+      }
+      if (response.status === 401 || response.status === 403) {
+        logger.error(`AI checker: Authentication error ${response.status}`);
+        return fallbackResult('Invalid or missing GEMINI_API_KEY. Check your .env file.');
+      }
+
       logger.error(`AI checker: API error ${response.status} — ${err}`);
-      return fallbackResult('API error — AI analysis unavailable');
+      return fallbackResult(`API error ${response.status} — AI analysis unavailable`);
     }
 
     let data;
@@ -135,66 +143,41 @@ async function checkEmailWithAI(parsed, spfResult, dkimResult, dmarcResult, cont
       data = await response.json();
     } catch (jsonErr) {
       logger.error(`AI checker: Invalid JSON response — ${jsonErr.message}`);
-      logger.error(`AI checker: Expected JSON but received something else (possibly HTML error page)`);
       return fallbackResult('API returned invalid JSON — AI analysis unavailable');
     }
 
+    // Extract text from Gemini response structure
     const raw = data.candidates
       ?.flatMap(c => c.content?.parts || [])
       .map(p => p.text || '')
       .join('') || '';
 
-    // Parse the JSON response
-    const cleaned = raw.replace(/```json|```/g, '').trim();
+    // Debug log — shows exactly what Gemini returned
+    logger.info(`AI checker: raw response = ${raw}`);
+
+    // Parse the JSON response — clean up before parsing
+    const cleaned = raw
+      .replace(/```json|```/g, '')      // remove markdown fences
+      .replace(/[\r\n]+/g, ' ')         // flatten newlines
+      .replace(/[\u2018\u2019]/g, "'")  // curly single quotes → straight
+      .replace(/[\u201C\u201D]/g, '"')  // curly double quotes → straight
+      .trim();
     const jsonBlockMatch = cleaned.match(/\{[\s\S]*\}/);
     const jsonText = jsonBlockMatch ? jsonBlockMatch[0] : cleaned;
 
-    const sanitizeJsonText = (input) => {
-      let out = '';
-      let inString = false;
-      let escape = false;
-
-      for (const ch of input) {
-        if (escape) {
-          out += ch;
-          escape = false;
-          continue;
-        }
-
-        if (ch === '\\') {
-          out += ch;
-          escape = true;
-          continue;
-        }
-
-        if (ch === '"') {
-          inString = !inString;
-          out += ch;
-          continue;
-        }
-
-        if (inString && (ch === '\n' || ch === '\r' || ch === '\t')) {
-          out += ch === '\t' ? '\\t' : '\\n';
-          continue;
-        }
-
-        out += ch;
-      }
-
-      return out;
-    };
-
     let result;
     try {
-      result = JSON.parse(sanitizeJsonText(jsonText));
+      result = JSON.parse(jsonText);
     } catch (parseErr) {
-      const repaired = sanitizeJsonText(jsonText)
+      logger.warn(`AI checker: JSON parse failed, trying repair — ${parseErr.message}`);
+      // Try repairing unquoted keys as last resort
+      const repaired = jsonText
         .replace(/([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:/g, '$1"$2":')
         .replace(/'([^']*)'/g, '"$1"');
       try {
         result = JSON.parse(repaired);
-      } catch (repairErr) {
-        result = extractLooseResult(cleaned);
+      } catch {
+        result = extractLooseResult(raw);
       }
     }
 
@@ -208,7 +191,6 @@ async function checkEmailWithAI(parsed, spfResult, dkimResult, dmarcResult, cont
 }
 
 // Returns a safe fallback when the API call fails
-// so the rest of the pipeline still works fine
 function fallbackResult(reason) {
   return {
     success:          false,
@@ -221,6 +203,7 @@ function fallbackResult(reason) {
   };
 }
 
+// Last-resort extraction when JSON parsing completely fails
 function extractLooseResult(text) {
   const pick = (re, fallback = '') => {
     const match = text.match(re);
@@ -228,13 +211,13 @@ function extractLooseResult(text) {
   };
 
   const classification = pick(/classification\s*[:=]\s*"?([a-zA-Z]+)"?/i, 'unknown').toLowerCase();
-  const confidenceRaw = pick(/confidence\s*[:=]\s*(\d{1,3})/i, '0');
-  const confidence = Math.max(0, Math.min(100, parseInt(confidenceRaw, 10) || 0));
+  const confidenceRaw  = pick(/confidence\s*[:=]\s*(\d{1,3})/i, '0');
+  const confidence     = Math.max(0, Math.min(100, parseInt(confidenceRaw, 10) || 0));
   const recommendation = pick(/recommendation\s*[:=]\s*"?([a-zA-Z]+)"?/i, 'review').toLowerCase();
 
   const explanation = pick(
     /explanation\s*[:=]\s*"([\s\S]*?)"(?=\s*,\s*\w+\s*:|\s*\})/i,
-    pick(/explanation\s*[:=]\s*([\s\S]*?)(?=\n\s*\w+\s*:|\n\s*\}|$)/i, 'AI analysis returned an invalid JSON response.')
+    pick(/explanation\s*[:=]\s*([\s\S]*?)(?=\n\s*\w+\s*:|\n\s*\}|$)/i, 'AI analysis returned an invalid response.')
   );
   const technicalSummary = pick(
     /technicalSummary\s*[:=]\s*"([\s\S]*?)"(?=\s*,\s*\w+\s*:|\s*\})/i,
@@ -243,29 +226,18 @@ function extractLooseResult(text) {
 
   const redFlagsBlock = pick(/redFlags\s*[:=]\s*\[([\s\S]*?)\]/i, '');
   const redFlags = redFlagsBlock
-    ? redFlagsBlock
-        .split(',')
-        .map(f => f.replace(/^[\s\"']+|[\s\"']+$/g, ''))
-        .filter(Boolean)
+    ? redFlagsBlock.split(',').map(f => f.replace(/^[\s\"']+|[\s\"']+$/g, '')).filter(Boolean)
     : [];
 
   if (!redFlags.length) {
-    const bulletFlags = text
-      .split(/\r?\n/)
+    text.split(/\r?\n/)
       .filter(line => /^\s*[-*•]\s+/.test(line))
       .map(line => line.replace(/^\s*[-*•]\s+/, '').trim())
-      .filter(Boolean);
-    if (bulletFlags.length) redFlags.push(...bulletFlags);
+      .filter(Boolean)
+      .forEach(f => redFlags.push(f));
   }
 
-  return {
-    classification,
-    confidence,
-    redFlags,
-    explanation,
-    technicalSummary,
-    recommendation,
-  };
+  return { classification, confidence, redFlags, explanation, technicalSummary, recommendation };
 }
 
 module.exports = { checkEmailWithAI };

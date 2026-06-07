@@ -93,6 +93,34 @@ a:hover { color: var(--accent-dark); }
 .logo { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.05rem; }
 .logo-text { letter-spacing: 0.02em; }
 
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-link {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  color: var(--muted);
+  transition: all var(--transition);
+}
+
+.nav-link:hover {
+  color: var(--accent-dark);
+  border-color: rgba(26, 122, 127, 0.3);
+  background: rgba(26, 122, 127, 0.08);
+}
+
+.nav-link.active {
+  color: var(--accent-dark);
+  border-color: rgba(26, 122, 127, 0.4);
+  background: rgba(26, 122, 127, 0.12);
+}
+
 /* ── Hero ─────────────────────────────────────────────────── */
 .hero {
   text-align: left;
@@ -175,6 +203,54 @@ a:hover { color: var(--accent-dark); }
 }
 
 .header-textarea::placeholder { color: var(--muted-light); }
+
+.upload-panel {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 247, 239, 0.6);
+}
+
+.upload-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.upload-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 4px 0 10px;
+}
+
+.upload-drop {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.upload-drop:hover {
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+.upload-drop input {
+  display: none;
+}
+
+.upload-status {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
 
 .input-actions { display: flex; gap: 10px; margin-top: 14px; }
 
@@ -509,6 +585,13 @@ a:hover { color: var(--accent-dark); }
 
 /* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 900px) {
+  .site-nav {
+    gap: 6px;
+  }
+  .nav-link {
+    font-size: 0.78rem;
+    padding: 6px 10px;
+  }
   .layout-grid { grid-template-columns: 1fr; }
   .hero { padding-top: 40px; }
 }

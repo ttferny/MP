@@ -119,7 +119,7 @@ function qualifierToResult(q) {
 //   include    — recursively check another domain's SPF record
 //   all        — catch-all (always matches, applied last)
 // ─────────────────────────────────────────────
-async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0) {
+async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0, trace) {
   // Guard against infinite loops from circular includes
   if (depth > 10) {
     logger.warn('SPF: max include depth reached');
@@ -136,19 +136,31 @@ async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0) {
         ? ipMatchesCIDR(senderIP, mechValue)
         : senderIP === mechValue;
       if (matched) logger.info(`SPF: ip4 match — ${mechValue}`);
-      return { matched, result: qualifierToResult(qualifier) };
+      return {
+        matched,
+        result: qualifierToResult(qualifier),
+        detail: matched ? `Sender IP in ${mechValue}` : `Sender IP not in ${mechValue}`,
+      };
     }
 
     // ip6 — simplified: exact string match (full IPv6 support is out of scope for POC)
     case 'ip6': {
       const matched = senderIP === mechValue;
-      return { matched, result: qualifierToResult(qualifier) };
+      return {
+        matched,
+        result: qualifierToResult(qualifier),
+        detail: matched ? `Sender IP matches ${mechValue}` : 'Sender IP does not match IPv6 value',
+      };
     }
 
     // all — always matches; used as the last catch-all mechanism
     case 'all': {
       logger.info(`SPF: 'all' mechanism matched with qualifier '${qualifier}'`);
-      return { matched: true, result: qualifierToResult(qualifier) };
+      return {
+        matched: true,
+        result: qualifierToResult(qualifier),
+        detail: 'Matches any sender',
+      };
     }
 
     // a — check if senderIP matches the A record of the domain (or mechValue if specified)
@@ -160,9 +172,13 @@ async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0) {
           mechValue.includes('/') ? ipMatchesCIDR(senderIP, `${ip}${mechValue.slice(mechValue.indexOf('/'))}`) : senderIP === ip
         );
         if (matched) logger.info(`SPF: 'a' record match for ${targetDomain}`);
-        return { matched, result: qualifierToResult(qualifier) };
+        return {
+          matched,
+          result: qualifierToResult(qualifier),
+          detail: matched ? `Sender IP matches A record for ${targetDomain}` : `Sender IP not in A records for ${targetDomain}`,
+        };
       } catch {
-        return { matched: false };
+        return { matched: false, detail: `A lookup failed for ${targetDomain}` };
       }
     }
 
@@ -175,31 +191,41 @@ async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0) {
           const aRecords = await dns.resolveA(mx.exchange).catch(() => []);
           if (aRecords.includes(senderIP)) {
             logger.info(`SPF: 'mx' match — ${mx.exchange}`);
-            return { matched: true, result: qualifierToResult(qualifier) };
+            return {
+              matched: true,
+              result: qualifierToResult(qualifier),
+              detail: `Sender IP matches MX host ${mx.exchange}`,
+            };
           }
         }
-        return { matched: false };
+        return { matched: false, detail: `Sender IP not in MX records for ${targetDomain}` };
       } catch {
-        return { matched: false };
+        return { matched: false, detail: `MX lookup failed for ${targetDomain}` };
       }
     }
 
     // include — recursively evaluate another domain's SPF record
     // e.g. include:_spf.google.com means "also trust Google's approved servers"
     case 'include': {
-      if (!mechValue) return { matched: false };
+      if (!mechValue) return { matched: false, detail: 'Include missing domain' };
       logger.info(`SPF: following include → ${mechValue}`);
-      const includeResult = await evaluateSPFRecord(mechValue, senderIP, dns, depth + 1);
+      const includeResult = await evaluateSPFRecord(mechValue, senderIP, dns, depth + 1, trace);
       // 'include' only matches if the included domain returns PASS
       const matched = includeResult.result === SPF_RESULTS.PASS;
-      return { matched, result: qualifierToResult(qualifier) };
+      return {
+        matched,
+        result: qualifierToResult(qualifier),
+        detail: matched
+          ? `Include ${mechValue} returned pass`
+          : `Include ${mechValue} returned ${includeResult.result}`,
+      };
     }
 
     // redirect — treat another domain's SPF as this domain's policy
     case 'redirect': {
-      if (!mechValue) return { matched: false };
+      if (!mechValue) return { matched: false, detail: 'Redirect missing domain' };
       logger.info(`SPF: redirect → ${mechValue}`);
-      const redirectResult = await evaluateSPFRecord(mechValue, senderIP, dns, depth + 1);
+      const redirectResult = await evaluateSPFRecord(mechValue, senderIP, dns, depth + 1, trace);
       return {
         matched: true,
         result: redirectResult.result,
@@ -209,7 +235,7 @@ async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0) {
 
     default:
       logger.warn(`SPF: unknown mechanism '${mechName}' — skipping`);
-      return { matched: false };
+      return { matched: false, detail: `Unsupported mechanism '${mechName}'` };
   }
 }
 
@@ -217,19 +243,35 @@ async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0) {
 // CORE: Evaluate the full SPF record for a domain
 // Walks through each mechanism in order, returns on first match.
 // ─────────────────────────────────────────────
-async function evaluateSPFRecord(domain, senderIP, dns, depth = 0) {
+async function evaluateSPFRecord(domain, senderIP, dns, depth = 0, trace = null) {
   let spfRecord;
 
   try {
     spfRecord = await lookupSPFRecord(domain);
   } catch (err) {
     logger.warn(`SPF: DNS lookup failed for ${domain} — ${err.message}`);
-    return { result: SPF_RESULTS.TEMPERROR, reason: `DNS lookup failed: ${err.message}`, record: null };
+    if (trace) {
+      trace.push({
+        domain,
+        mechanism: 'dns',
+        detail: `DNS lookup failed: ${err.message}`,
+        outcome: SPF_RESULTS.TEMPERROR,
+      });
+    }
+    return { result: SPF_RESULTS.TEMPERROR, reason: `DNS lookup failed: ${err.message}`, record: null, trace };
   }
 
   if (!spfRecord) {
     logger.info(`SPF: No SPF record found for ${domain}`);
-    return { result: SPF_RESULTS.NONE, reason: `No SPF record found for ${domain}`, record: null };
+    if (trace) {
+      trace.push({
+        domain,
+        mechanism: 'record',
+        detail: 'No SPF record found',
+        outcome: SPF_RESULTS.NONE,
+      });
+    }
+    return { result: SPF_RESULTS.NONE, reason: `No SPF record found for ${domain}`, record: null, trace };
   }
 
   let mechanisms;
@@ -237,12 +279,28 @@ async function evaluateSPFRecord(domain, senderIP, dns, depth = 0) {
     mechanisms = parseSPFRecord(spfRecord);
   } catch (err) {
     logger.error(`SPF: Failed to parse record — ${err.message}`);
-    return { result: SPF_RESULTS.PERMERROR, reason: err.message, record: spfRecord };
+    if (trace) {
+      trace.push({
+        domain,
+        mechanism: 'record',
+        detail: err.message,
+        outcome: SPF_RESULTS.PERMERROR,
+      });
+    }
+    return { result: SPF_RESULTS.PERMERROR, reason: err.message, record: spfRecord, trace };
   }
 
   // Walk mechanisms in order — first match wins
   for (const mech of mechanisms) {
-    const { matched, result, redirectResult } = await evaluateMechanism(mech, senderIP, domain, dns, depth);
+    const { matched, result, redirectResult, detail } = await evaluateMechanism(mech, senderIP, domain, dns, depth, trace);
+    if (trace) {
+      trace.push({
+        domain,
+        mechanism: mech.raw,
+        detail: detail || 'Evaluated',
+        outcome: matched ? result : 'no-match',
+      });
+    }
     if (matched) {
       if (mech.mechName === 'redirect' && redirectResult) {
         logger.info(`SPF result: ${redirectResult.result} (redirect '${mech.raw}')`);
@@ -251,6 +309,7 @@ async function evaluateSPFRecord(domain, senderIP, dns, depth = 0) {
           reason: redirectResult.reason || `Redirected to ${mech.mechValue}`,
           record: redirectResult.record || spfRecord,
           matchedMechanism: mech.raw,
+          trace,
         };
       }
 
@@ -260,6 +319,7 @@ async function evaluateSPFRecord(domain, senderIP, dns, depth = 0) {
         reason: `Matched mechanism: ${mech.raw}`,
         record: spfRecord,
         matchedMechanism: mech.raw,
+        trace,
       };
     }
   }
@@ -270,6 +330,7 @@ async function evaluateSPFRecord(domain, senderIP, dns, depth = 0) {
     reason: 'No mechanism matched — implicit neutral',
     record: spfRecord,
     matchedMechanism: null,
+    trace,
   };
 }
 
@@ -298,9 +359,10 @@ async function checkSPF(parsed) {
   }
 
   // Use Node's built-in dns/promises module
-  const dns = require('dns').promises;
+  const dnsPromises = require('dns').promises;
+  const resolver = buildDnsResolver(dnsPromises);
 
-  const spfResult = await evaluateSPFRecord(envelopeDomain, senderIP, dns);
+  const spfResult = await evaluateSPFRecord(envelopeDomain, senderIP, resolver);
 
   return {
     ...spfResult,
@@ -309,4 +371,38 @@ async function checkSPF(parsed) {
   };
 }
 
-module.exports = { checkSPF, parseSPFRecord, evaluateSPFRecord, SPF_RESULTS };
+async function evaluateSPFInteractive(domain, senderIP) {
+  const dnsPromises = require('dns').promises;
+  const resolver = buildDnsResolver(dnsPromises);
+  const trace = [];
+  const spfResult = await evaluateSPFRecord(domain, senderIP, resolver, 0, trace);
+  return {
+    ...spfResult,
+    domain,
+    ip: senderIP,
+    trace,
+  };
+}
+
+function buildDnsResolver(dnsPromises) {
+  const dns = require('dns');
+  const { promisify } = require('util');
+  const resolve4Fallback = typeof dns.resolve4 === 'function'
+    ? promisify(dns.resolve4)
+    : null;
+  const resolveMxFallback = typeof dns.resolveMx === 'function'
+    ? promisify(dns.resolveMx)
+    : null;
+
+  return {
+    resolveA: dnsPromises.resolveA
+      || dnsPromises.resolve4
+      || resolve4Fallback
+      || (async () => { throw new Error('DNS A lookup not supported'); }),
+    resolveMx: dnsPromises.resolveMx
+      || resolveMxFallback
+      || (async () => { throw new Error('DNS MX lookup not supported'); }),
+  };
+}
+
+module.exports = { checkSPF, parseSPFRecord, evaluateSPFRecord, evaluateSPFInteractive, SPF_RESULTS };

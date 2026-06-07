@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPF POC - Email Authentication Studio</title>
+  <link rel="stylesheet" href="spf.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">Email Authentication Studio</div>
+      <nav class="site-nav">
+        <a class="nav-link" href="index.html">Studio</a>
+        <a class="nav-link active" href="spf.html">SPF POC</a>
+        <a class="nav-link" href="dmarc.html">DMARC Lab</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-content">
+      <div class="eyebrow">Sender Policy Framework</div>
+      <h1>See how SPF authorizes a sender in real time.</h1>
+      <p>
+        This SPF-only proof of concept shows how a mail server checks a sender IP against the
+        domain's SPF record. Change the IP and watch the decision path.
+      </p>
+    </div>
+    <div class="hero-panel">
+      <div class="panel-label">Quick Scenarios</div>
+      <div class="scenario-grid" id="scenario-grid"></div>
+      <div class="scenario-note" id="scenario-note">Select a scenario to preload data.</div>
+    </div>
+  </section>
+
+  <main class="main-grid">
+    <section class="stack">
+      <div class="card">
+        <div class="card-title">Policy Inputs</div>
+        <div class="form-grid">
+          <label>
+            Domain
+            <input id="domain-input" type="text" placeholder="example.com" />
+          </label>
+          <label>
+            Sender IP
+            <input id="ip-input" type="text" placeholder="203.0.113.55" />
+          </label>
+          <label class="full">
+            SPF Record
+            <textarea id="record-input" rows="3" placeholder="Live SPF record will appear here" readonly></textarea>
+          </label>
+        </div>
+        <div class="actions">
+          <button id="evaluate-btn" class="btn-primary">Evaluate SPF</button>
+          <button id="reset-btn" class="btn-secondary">Clear</button>
+        </div>
+        <div class="helper-text">Live DNS lookup is used for the SPF record and resolver checks.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Live DNS Snapshot</div>
+        <div class="form-grid">
+          <label>
+            Resolved A Records
+            <input id="a-input" type="text" placeholder="Live DNS results" readonly />
+          </label>
+          <label>
+            Resolved MX Records
+            <input id="mx-input" type="text" placeholder="Live DNS results" readonly />
+          </label>
+          <label class="full">
+            Include Records (resolved)
+            <textarea id="include-input" rows="3" placeholder="Include lookups appear here" readonly></textarea>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="stack">
+      <div class="card result-card">
+        <div class="card-title">SPF Result</div>
+        <div class="result-row">
+          <div id="result-badge" class="result-badge neutral">NEUTRAL</div>
+          <div id="result-summary" class="result-summary">Run an evaluation to see the decision.</div>
+        </div>
+        <div class="trace" id="trace-list"></div>
+      </div>
+
+      <div class="card commercial-card">
+        <div class="card-title">Commercial Summary</div>
+        <div class="commercial-grid">
+          <div>
+            <div class="commercial-label">Status</div>
+            <div id="commercial-status" class="commercial-value">Inconclusive</div>
+          </div>
+          <div>
+            <div class="commercial-label">Risk Score</div>
+            <div id="commercial-risk" class="commercial-value">--</div>
+          </div>
+          <div class="commercial-full">
+            <div class="commercial-label">Recommendation</div>
+            <div id="commercial-recommendation" class="commercial-value">Run an evaluation to see guidance.</div>
+          </div>
+          <div class="commercial-full">
+            <div class="commercial-label">Business Impact</div>
+            <div id="commercial-impact" class="commercial-value">Authentication details will appear here.</div>
+          </div>
+        </div>
+        <div class="commercial-highlights" id="commercial-highlights"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">How SPF Works</div>
+        <ol class="steps">
+          <li>Mail server extracts the envelope domain from Return-Path.</li>
+          <li>It fetches the SPF record from DNS (TXT record).</li>
+          <li>Each mechanism is tested in order until one matches.</li>
+          <li>The matching qualifier decides the result (pass, fail, softfail, neutral).</li>
+          <li>If nothing matches, the result is neutral.</li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div>Email Authentication Studio - SPF-only POC</div>
+    <div>Temasek Polytechnic · Diploma in Cybersecurity and Digital Forensics · AY26/27</div>
+  </footer>
+
+  <script src="spf.js"></script>
+</body>
+</html>

@@ -10,6 +10,8 @@ const contentInput  = document.getElementById('content-input');
 const analyseBtn    = document.getElementById('analyse-btn');
 const clearBtn      = document.getElementById('clear-btn');
 const inputError    = document.getElementById('input-error');
+const emailFileInput = document.getElementById('email-file-input');
+const uploadStatus = document.getElementById('upload-status');
 
 const parsedSection = document.getElementById('parsed-section');
 const parsedFields  = document.getElementById('parsed-fields');
@@ -140,12 +142,57 @@ analyseBtn.addEventListener('click', analyseHeader);
 clearBtn.addEventListener('click', () => {
   headerInput.value = '';
   if (contentInput) contentInput.value = '';
+  if (emailFileInput) emailFileInput.value = '';
+  if (uploadStatus) uploadStatus.textContent = 'No file selected.';
   hideError(inputError);
   clearResults();
 });
 headerInput.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.ctrlKey) analyseHeader();
 });
+
+if (emailFileInput) {
+  emailFileInput.addEventListener('change', handleEmailFileUpload);
+}
+
+function handleEmailFileUpload(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) {
+    if (uploadStatus) uploadStatus.textContent = 'No file selected.';
+    return;
+  }
+
+  const maxSizeBytes = 1024 * 1024;
+  if (file.size > maxSizeBytes) {
+    showError(inputError, 'File is too large. Please upload a file under 1MB.');
+    event.target.value = '';
+    if (uploadStatus) uploadStatus.textContent = 'No file selected.';
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const text = String(reader.result || '');
+    const parts = text.split(/\r?\n\r?\n/);
+    if (parts.length > 1) {
+      headerInput.value = parts.shift().trim();
+      if (contentInput) contentInput.value = parts.join('\n\n').trim();
+    } else {
+      headerInput.value = text.trim();
+      if (contentInput) contentInput.value = '';
+    }
+    if (uploadStatus) uploadStatus.textContent = `Loaded: ${file.name}`;
+    hideError(inputError);
+  };
+
+  reader.onerror = () => {
+    showError(inputError, 'Could not read the file. Please try another file.');
+    event.target.value = '';
+    if (uploadStatus) uploadStatus.textContent = 'No file selected.';
+  };
+
+  reader.readAsText(file);
+}
 
 async function analyseHeader() {
   const rawHeader = headerInput.value.trim();
@@ -381,7 +428,16 @@ function renderAI(ai) {
   if (!ai.success) {
     aiBadge.textContent = 'UNAVAILABLE';
     aiBadge.className   = 'ai-badge';
-    aiBody.innerHTML    = `<p class="ai-unavailable">⚠ AI analysis unavailable — ${escHtml(ai.technicalSummary || 'Check server logs.')}</p>`;
+  aiBody.innerHTML = `
+    <p class="ai-unavailable">
+      ⚠ ${escHtml(ai.technicalSummary || 'AI analysis unavailable.')}
+    </p>
+   <p class="ai-unavailable" style="margin-top:8px; font-size:0.8rem; opacity:0.8;">
+     The authentication results above (SPF, DKIM, DMARC) are still valid and complete.
+     ${ai.technicalSummary?.includes('busy') || ai.technicalSummary?.includes('rate limit')
+       ? 'Try running the analysis again in a few seconds.' : ''}
+    </p>
+  `;
     aiSection.classList.remove('hidden');
     return;
   }

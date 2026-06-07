@@ -7,8 +7,14 @@
  * route and SPF/DKIM/DMARC helpers.
  */
 
-const dns = require('dns').promises;
+const dnsPromises = require('dns').promises;
+const dnsCallback = require('dns');
+const { promisify } = require('util');
 const logger = require('../utils/logger');
+
+const resolveA = dnsPromises.resolveA
+  || dnsPromises.resolve4
+  || (typeof dnsCallback.resolve4 === 'function' ? promisify(dnsCallback.resolve4) : null);
 
 const TXT_RECORD_TYPES = {
   SPF: 'v=spf1',
@@ -49,7 +55,7 @@ const isDkimTxtRecord = (record) => {
 
 const lookupTxtRecords = async (name) => {
   try {
-    const records = await dns.resolveTxt(name);
+    const records = await dnsPromises.resolveTxt(name);
     return normalizeTxtRecords(records);
   } catch (err) {
     if (['ENOTFOUND', 'ENODATA', 'ENOTIMP', 'ESERVFAIL', 'ETIMEOUT', 'SERVFAIL', 'ECONNREFUSED', 'EAI_AGAIN'].includes(err.code)) {
@@ -128,7 +134,10 @@ async function lookupARecords(domain) {
     throw new Error('lookupARecords requires a valid domain string');
   }
   try {
-    return await dns.resolveA(domain);
+    if (!resolveA) {
+      throw new Error('DNS A lookup not supported');
+    }
+    return await resolveA(domain);
   } catch (err) {
     if (['ENOTFOUND', 'ENODATA', 'ENOTIMP', 'ESERVFAIL', 'ETIMEOUT', 'SERVFAIL'].includes(err.code)) {
       return [];
@@ -142,7 +151,7 @@ async function lookupMXRecords(domain) {
     throw new Error('lookupMXRecords requires a valid domain string');
   }
   try {
-    return await dns.resolveMx(domain);
+    return await dnsPromises.resolveMx(domain);
   } catch (err) {
     if (['ENOTFOUND', 'ENODATA', 'ENOTIMP', 'ESERVFAIL', 'ETIMEOUT', 'SERVFAIL'].includes(err.code)) {
       return [];

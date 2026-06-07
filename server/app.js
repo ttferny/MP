@@ -31,6 +31,7 @@ const logger = require('./utils/logger');
 // Import route files — each file handles a group of related API endpoints
 const analyseRoutes = require('./routes/analyse');   // Main pipeline: parse+SPF+DKIM+DMARC
 const dmarcRoutes   = require('./routes/dmarcRoutes'); // Zircon's DMARC-specific routes
+const spfRoutes     = require('./routes/spfRoutes');   // SPF POC routes
 const { startSMTPServer } = require('./services/smtpReceiver');
 
 const app = express();
@@ -55,6 +56,7 @@ app.use('/api/analyse', analyseRoutes);  // POST /api/analyse/header  → full e
                                           // POST /api/analyse/domain  → DNS record lookup
                                           // POST /api/analyse/scenario → run demo scenario
 app.use('/api/dmarc',   dmarcRoutes);    // DMARC-specific routes (Zircon)
+app.use('/api/spf',     spfRoutes);      // SPF POC routes
 
 app.get('/api/dmarc/smtp/latest', (req, res) => {
   const result = smtp.getLastResult();
