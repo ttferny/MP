@@ -25,8 +25,21 @@ const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models'
 const MODEL          = 'gemini-2.5-flash';
 
 // ─────────────────────────────────────────────
-// Build the prompt sent to Gemini.
+// Sanitise a value before inserting into the prompt.
+// Removes control characters, null bytes, and trims
+// to a safe length so the payload is always valid JSON.
 // ─────────────────────────────────────────────
+function sanitise(val, maxLen = 300) {
+  if (!val) return '(none)';
+  return String(val)
+    .replace(/\0/g, '')                    // null bytes
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // control chars except \t \n
+    .replace(/\\/g, '\\\\')               // escape backslashes
+    .replace(/"/g, '\\"')                 // escape double quotes
+    .slice(0, maxLen)
+    .trim() || '(none)';
+}
+
 function buildPrompt(parsed, spfResult, dkimResult, dmarcResult, content = '') {
   const domainMismatch = parsed.fromDomain !== parsed.envelopeDomain;
 
@@ -35,55 +48,44 @@ function buildPrompt(parsed, spfResult, dkimResult, dmarcResult, content = '') {
 Analyse the following email header data and authentication results, then classify the email.
 
 === EMAIL HEADER DATA ===
-From (visible):     ${parsed.from || '—'}
-From Email:         ${parsed.fromEmail || '—'}
-From Domain:        ${parsed.fromDomain || '—'}
-Envelope Domain:    ${parsed.envelopeDomain || '—'}
-Sender IP:          ${parsed.senderIP || '—'}
-Subject:            ${parsed.subject || '(no subject)'}
-Date:               ${parsed.date || '—'}
-Reply-To:           ${parsed.replyTo || '(none)'}
-Domain mismatch:    ${domainMismatch ? 'YES — From domain differs from envelope domain' : 'No'}
-DKIM Selector:      ${parsed.dkimSignature?.s || '(none)'}
-DKIM Signing Domain:${parsed.dkimSignature?.d || '(none)'}
+From (visible):      ${sanitise(parsed.from)}
+From Email:          ${sanitise(parsed.fromEmail)}
+From Domain:         ${sanitise(parsed.fromDomain)}
+Envelope Domain:     ${sanitise(parsed.envelopeDomain)}
+Sender IP:           ${sanitise(parsed.senderIP)}
+Subject:             ${sanitise(parsed.subject)}
+Date:                ${sanitise(parsed.date)}
+Reply-To:            ${sanitise(parsed.replyTo)}
+Domain mismatch:     ${domainMismatch ? 'YES — From domain differs from envelope domain' : 'No'}
+DKIM Selector:       ${sanitise(parsed.dkimSignature?.s)}
+DKIM Signing Domain: ${sanitise(parsed.dkimSignature?.d)}
 
 === EMAIL CONTENT ===
-${content || '(no body provided)'}
+${sanitise(content, 1000)}
 
 === AUTHENTICATION RESULTS ===
-SPF:   ${spfResult?.result  || 'unknown'} — ${spfResult?.reason  || ''}
-DKIM:  ${dkimResult?.result || 'unknown'} — ${dkimResult?.reason || ''}
-DMARC: ${dmarcResult?.verdict || 'unknown'} (policy: ${dmarcResult?.policy || '—'}) — ${dmarcResult?.reason || ''}
+SPF:   ${sanitise(spfResult?.result)} — ${sanitise(spfResult?.reason)}
+DKIM:  ${sanitise(dkimResult?.result)} — ${sanitise(dkimResult?.reason)}
+DMARC: ${sanitise(dmarcResult?.verdict)} (policy: ${sanitise(dmarcResult?.policy)}) — ${sanitise(dmarcResult?.reason)}
 SPF aligned:  ${dmarcResult?.spfAligned  ? 'yes' : 'no'}
 DKIM aligned: ${dmarcResult?.dkimAligned ? 'yes' : 'no'}
 
 === YOUR TASK ===
-Based on all the above, respond ONLY with a valid JSON object in this exact format.
-Do not include markdown. Do not include trailing commas. Do not include newlines inside string values (use \\n if needed).
-Output JSON on a single line.
+Respond ONLY with a valid JSON object. No markdown. No code fences. No trailing commas. Single line.
+Keep ALL string values under 100 characters. Keep redFlags array to max 5 items, each under 60 characters.
 
-{
-  "classification": "safe" | "suspicious" | "phishing" | "spoofing",
-  "confidence": <integer 0-100>,
-  "redFlags": ["flag 1", "flag 2", ...],
-  "explanation": "<2-3 sentence plain English summary for a non-technical user>",
-  "technicalSummary": "<1-2 sentence technical summary for a security analyst>",
-  "recommendation": "deliver" | "review" | "delete" | "report"
-}
+Analyse BOTH the authentication results AND the email content/subject for these signals:
+- Urgency or fear tactics ("your account will be closed", "act now")
+- Impersonation of known brands
+- Suspicious links or requests for credentials
+- Generic greetings vs personalised
+- Mismatch between subject and content
+- Unusual sender patterns or display name tricks
 
-Classification guide:
-- "safe"       — all checks pass, no suspicious signals
-- "suspicious" — some checks fail or minor red flags present, needs review
-- "phishing"   — strong indicators of a phishing attempt (fake sender, urgent subject, domain mismatch)
-- "spoofing"   — domain/sender is clearly forged (SPF/DKIM/DMARC all fail with misalignment)
+{"classification":"safe"|"suspicious"|"phishing"|"spoofing","confidence":<0-100>,"redFlags":["flag1","flag2"],"explanation":"plain English for non-technical user, focus on what the email says and why it is or is not safe","technicalSummary":"technical details covering both protocol results and content signals","recommendation":"open"|"review"|"delete"|"report"}
 
-Confidence guide:
-- 90–100: very high certainty
-- 70–89:  likely
-- 50–69:  possible, needs more context
-- 0–49:   uncertain
-
-Respond with ONLY the JSON object. No explanation outside the JSON. No markdown code fences.`;
+Classification: safe=all pass no suspicious content, suspicious=minor issues, phishing=fake sender or manipulative content, spoofing=forged domain
+Confidence: 90-100 very certain, 70-89 likely, 50-69 possible, 0-49 uncertain`;
 }
 
 // ─────────────────────────────────────────────
@@ -168,17 +170,9 @@ async function checkEmailWithAI(parsed, spfResult, dkimResult, dmarcResult, cont
     let result;
     try {
       result = JSON.parse(jsonText);
-    } catch (parseErr) {
-      logger.warn(`AI checker: JSON parse failed, trying repair — ${parseErr.message}`);
-      // Try repairing unquoted keys as last resort
-      const repaired = jsonText
-        .replace(/([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:/g, '$1"$2":')
-        .replace(/'([^']*)'/g, '"$1"');
-      try {
-        result = JSON.parse(repaired);
-      } catch {
-        result = extractLooseResult(raw);
-      }
+    } catch {
+      // JSON is truncated — extract what we can from the partial response
+      result = extractLooseResult(raw);
     }
 
     logger.info(`AI checker: classification=${result.classification}, confidence=${result.confidence}`);
@@ -205,37 +199,42 @@ function fallbackResult(reason) {
 
 // Last-resort extraction when JSON parsing completely fails
 function extractLooseResult(text) {
+  // Pull individual fields using regex — works even on truncated JSON
   const pick = (re, fallback = '') => {
-    const match = text.match(re);
-    return match ? match[1].trim() : fallback;
+    const m = text.match(re);
+    return m ? m[1].trim() : fallback;
   };
 
-  const classification = pick(/classification\s*[:=]\s*"?([a-zA-Z]+)"?/i, 'unknown').toLowerCase();
-  const confidenceRaw  = pick(/confidence\s*[:=]\s*(\d{1,3})/i, '0');
-  const confidence     = Math.max(0, Math.min(100, parseInt(confidenceRaw, 10) || 0));
-  const recommendation = pick(/recommendation\s*[:=]\s*"?([a-zA-Z]+)"?/i, 'review').toLowerCase();
+  const classification = pick(/"classification"\s*:\s*"([^"]+)"/i, 'suspicious').toLowerCase();
+  const confidence     = Math.max(0, Math.min(100, parseInt(pick(/"confidence"\s*:\s*(\d+)/i, '50'), 10)));
+  const recommendation = (() => {
+    const r = pick(/"recommendation"\s*:\s*"([^"]+)"/i, '').toLowerCase();
+    if (r) return r;
+    // Fallback based on classification if recommendation was cut off
+    if (classification === 'safe')       return 'open';
+    if (classification === 'phishing')   return 'report';
+    if (classification === 'spoofing')   return 'delete';
+    return 'review';
+  })();
 
+  // Extract explanation — may be truncated, take whatever is there
   const explanation = pick(
-    /explanation\s*[:=]\s*"([\s\S]*?)"(?=\s*,\s*\w+\s*:|\s*\})/i,
-    pick(/explanation\s*[:=]\s*([\s\S]*?)(?=\n\s*\w+\s*:|\n\s*\}|$)/i, 'AI analysis returned an invalid response.')
-  );
-  const technicalSummary = pick(
-    /technicalSummary\s*[:=]\s*"([\s\S]*?)"(?=\s*,\s*\w+\s*:|\s*\})/i,
-    pick(/technicalSummary\s*[:=]\s*([\s\S]*?)(?=\n\s*\w+\s*:|\n\s*\}|$)/i, 'Invalid JSON from model.')
+    /"explanation"\s*:\s*"([^"]{10,})"/i,
+    pick(/"explanation"\s*:\s*"([^"]+)/i, 'Email shows suspicious signals based on authentication results.')
   );
 
-  const redFlagsBlock = pick(/redFlags\s*[:=]\s*\[([\s\S]*?)\]/i, '');
+  const technicalSummary = pick(
+    /"technicalSummary"\s*:\s*"([^"]{10,})"/i,
+    pick(/"technicalSummary"\s*:\s*"([^"]+)/i, 'See SPF, DKIM and DMARC results for details.')
+  );
+
+  // Extract redFlags array items
+  const redFlagsBlock = pick(/"redFlags"\s*:\s*\[([\s\S]*?)(?:\]|$)/i, '');
   const redFlags = redFlagsBlock
-    ? redFlagsBlock.split(',').map(f => f.replace(/^[\s\"']+|[\s\"']+$/g, '')).filter(Boolean)
+    ? [...redFlagsBlock.matchAll(/"([^"]+)"/g)].map(m => m[1]).filter(Boolean)
     : [];
 
-  if (!redFlags.length) {
-    text.split(/\r?\n/)
-      .filter(line => /^\s*[-*•]\s+/.test(line))
-      .map(line => line.replace(/^\s*[-*•]\s+/, '').trim())
-      .filter(Boolean)
-      .forEach(f => redFlags.push(f));
-  }
+  logger.info(`AI checker: extracted from partial response — classification=${classification}, confidence=${confidence}`);
 
   return { classification, confidence, redFlags, explanation, technicalSummary, recommendation };
 }
