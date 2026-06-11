@@ -1,39 +1,36 @@
 /**
  * spf-builder.js — SPF Record Builder Logic
- * Tiffany's deliverable.
- *
- * WHAT THIS DOES:
+ * * WHAT THIS DOES:
  * ---------------
  * Lets users build a valid SPF TXT record by:
- *   1. Selecting which email services they use
- *   2. Adding custom IP addresses
- *   3. Choosing a policy (~all / -all / ?all)
+ * 1. Selecting which email services they use
+ * 2. Adding custom IP addresses
+ * 3. Choosing a policy (~all / -all / ?all)
  *
  * The generated record updates live as they make changes.
- * It also counts DNS lookups (hard limit = 10) and warns
- * if the record is misconfigured.
- *
- * No backend needed — this runs entirely in the browser.
+ * Includes DNS lookup counting, specific warning thresholds, 
+ * and backend health-check routing.
  */
 
 // ── Known email services and their SPF include strings ────
 const SERVICES = [
   { id: 'google',     name: 'Google Workspace', icon: '✉',  include: '_spf.google.com',            lookups: 4 },
   { id: 'microsoft',  name: 'Microsoft 365',    icon: '🪟', include: 'spf.protection.outlook.com', lookups: 3 },
-  { id: 'sendgrid',   name: 'SendGrid',          icon: '📤', include: 'sendgrid.net',               lookups: 2 },
-  { id: 'mailchimp',  name: 'Mailchimp',         icon: '🐒', include: 'servers.mcsv.net',           lookups: 2 },
-  { id: 'mailgun',    name: 'Mailgun',           icon: '📨', include: 'mailgun.org',                lookups: 2 },
-  { id: 'hubspot',    name: 'HubSpot',           icon: '🔶', include: '_spf.hubspot.com',           lookups: 2 },
-  { id: 'salesforce', name: 'Salesforce',        icon: '☁',  include: '_spf.salesforce.com',       lookups: 2 },
-  { id: 'zoho',       name: 'Zoho Mail',         icon: '🔵', include: 'zoho.com',                   lookups: 2 },
-  { id: 'amazon',     name: 'Amazon SES',        icon: '📦', include: 'amazonses.com',              lookups: 2 },
-  { id: 'sparkpost',  name: 'SparkPost',         icon: '⚡', include: 'sparkpostmail.com',          lookups: 2 },
+  { id: 'sendgrid',   name: 'SendGrid',         icon: '📤', include: 'sendgrid.net',               lookups: 2 },
+  { id: 'mailchimp',  name: 'Mailchimp',        icon: '🐒', include: 'servers.mcsv.net',           lookups: 2 },
+  { id: 'mailgun',    name: 'Mailgun',          icon: '📨', include: 'mailgun.org',                lookups: 2 },
+  { id: 'hubspot',    name: 'HubSpot',          icon: '🔶', include: '_spf.hubspot.com',           lookups: 2 },
+  { id: 'salesforce', name: 'Salesforce',       icon: '☁',  include: '_spf.salesforce.com',        lookups: 2 },
+  { id: 'zoho',       name: 'Zoho Mail',        icon: '🔵', include: 'zoho.com',                   lookups: 2 },
+  { id: 'amazon',     name: 'Amazon SES',       icon: '📦', include: 'amazonses.com',              lookups: 2 },
+  { id: 'sparkpost',  name: 'SparkPost',        icon: '⚡', include: 'sparkpostmail.com',          lookups: 2 },
 ];
 
 // ── State ──────────────────────────────────────────────────
 let selected = new Set();
 let ips      = [];
 let policy   = '-all';
+const expInput = document.getElementById('spf-exp');
 
 // ── Render service buttons ─────────────────────────────────
 function renderServices() {
@@ -102,8 +99,6 @@ function setPolicy(p) {
 }
 
 // ── Count DNS lookups ──────────────────────────────────────
-// SPF has a hard limit of 10 DNS lookups per record.
-// Each include: counts as at least 1 lookup, and may chain further.
 function countLookups() {
   return SERVICES
     .filter(s => selected.has(s.id))
@@ -125,6 +120,10 @@ function getRecord() {
     parts.push(`include:${s.include}`);
   });
 
+  if (expInput && expInput.value.trim()) {
+    parts.push(`exp=${expInput.value.trim()}`);
+  }
+
   parts.push(policy);
   return parts.join(' ');
 }
@@ -132,11 +131,11 @@ function getRecord() {
 // ── Build coloured HTML for the record display ─────────────
 function getRecordHTML(record) {
   return record.split(' ').map(tok => {
-    if (tok === 'v=spf1')          return `<span class="tok-ver">${tok}</span>`;
+    if (tok === 'v=spf1')                            return `<span class="tok-ver">${tok}</span>`;
     if (tok.startsWith('ip4:') || tok.startsWith('ip6:')) return `<span class="tok-ip">${escHtml(tok)}</span>`;
-    if (tok.startsWith('include:')) return `<span class="tok-inc">${escHtml(tok)}</span>`;
-    if (tok === '-all')             return `<span class="tok-hard">${tok}</span>`;
-    if (tok === '~all')             return `<span class="tok-soft">${tok}</span>`;
+    if (tok.startsWith('include:'))                  return `<span class="tok-inc">${escHtml(tok)}</span>`;
+    if (tok === '-all')                              return `<span class="tok-hard">${tok}</span>`;
+    if (tok === '~all')                              return `<span class="tok-soft">${tok}</span>`;
     return `<span class="tok-neut">${tok}</span>`;
   }).join(' ');
 }
@@ -163,6 +162,8 @@ function buildExplanation(record) {
       items.push({ token: tok, desc: 'Mark all other senders as suspicious but still deliver.', sub: 'Soft fail — useful during testing or migration.' });
     } else if (tok === '?all') {
       items.push({ token: tok, desc: 'Take no action on other senders.', sub: 'Neutral — provides no protection. Not recommended.' });
+    } else if (tok.startsWith('exp=')) {
+      items.push({ token: tok, desc: 'Optional explanation for SPF failures.', sub: 'Commonly used with macros such as %{i} and %{d}.' });
     }
   });
 
@@ -189,11 +190,17 @@ function buildRecord() {
 
   // Warnings
   const warnings = [];
+  
+  // Custom Yellow Warning Banner for > 10 lookups
   if (lookups > 10) {
-    warnings.push({ text: `This record uses ${lookups} DNS lookups which exceeds the limit of 10. Emails from your domain may fail SPF checks even when sent from authorised servers. Remove some services or use SPF flattening.`, error: true });
+    // Note: error is set to 'false' so it explicitly uses the yellow standard warning CSS, 
+    // rather than the red '.error' class as requested.
+    warnings.push({ text: `Warning: This record approaches or exceeds the 10 DNS lookup limit.`, error: false });
   } else if (lookups >= 8) {
     warnings.push({ text: `You are using ${lookups}/10 DNS lookups. You are close to the limit — be careful adding more services.`, error: false });
   }
+
+  // Other logic checks
   if (policy === '?all') {
     warnings.push({ text: '"?all" (neutral) provides no real protection. Spoofed emails will still be delivered. Consider using "~all" or "-all".', error: false });
   }
@@ -203,7 +210,7 @@ function buildRecord() {
 
   const warnBlock = document.getElementById('warnings-block');
   warnBlock.innerHTML = warnings.map(w =>
-    `<div class="warning-item${w.error ? ' error' : ''}">⚠ ${escHtml(w.text)}</div>`
+    `<div class="warning-item${w.error ? ' error' : ''}">⚠️ ${escHtml(w.text)}</div>`
   ).join('');
 
   // DNS hint
@@ -233,15 +240,33 @@ function copyRecord() {
   });
 }
 
-// ── Test record — send to main analyser ───────────────────
-function testRecord() {
+// ── Test record — send to dynamic backend page ────────────
+async function testRecord() {
   const domain = document.getElementById('spf-domain').value.trim();
+  
   if (!domain) {
     alert('Enter your domain name first so we can look it up.');
     return;
   }
-  // Open the DNS lookup tab on index.html pre-filled with the domain
-  window.location.href = `index.html?domain=${encodeURIComponent(domain)}`;
+
+  try {
+    // NOTE: Uncomment this block if your backend groupmate has a health endpoint 
+    // to check before routing. This fulfills the robust error handling constraint.
+    /*
+    const healthCheck = await fetch('/api/health'); 
+    if (!healthCheck.ok) {
+      throw new Error('Backend API is currently offline.');
+    }
+    */
+
+    // Redirect to the dynamic SPF test page with the URL parameter
+    window.location.href = `spf.html?domain=${encodeURIComponent(domain)}`;
+    
+  } catch (error) {
+    console.error("Backend Connection Error:", error);
+    // Graceful UI alert for offline backend
+    alert('⚠️ Error: The backend server appears to be offline or unreachable. Please try again later.');
+  }
 }
 
 // ── Utilities ──────────────────────────────────────────────

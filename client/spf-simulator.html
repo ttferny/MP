@@ -27,9 +27,8 @@
   <section class="hero">
     <h1>SPF Softfail vs Hardfail Simulator</h1>
     <p class="hero-sub">
-      See exactly what happens to the same email under <code>~all</code> (softfail)
-      and <code>-all</code> (hardfail) policies. Choose a scenario and watch the
-      authentication pipeline play out step by step.
+      Interactive sandbox for SPF policy enforcement. Pick a scenario, change the target domain
+      or attacker IP, then run the simulation to compare <code>~all</code> and <code>-all</code>.
     </p>
   </section>
 
@@ -42,10 +41,30 @@
       <div class="scenario-tabs" id="scenario-tabs"></div>
     </div>
 
+    <div class="card sim-controls">
+      <h2 class="card-title">Sandbox inputs</h2>
+      <p class="card-hint">The scenario buttons populate the fields below. You can also edit them manually.</p>
+      <div class="control-grid">
+        <label>
+          Target domain
+          <input id="target-domain" type="text" placeholder="company.com" spellcheck="false" />
+        </label>
+        <label>
+          Attacker IP
+          <input id="attacker-ip" type="text" placeholder="185.220.101.5" spellcheck="false" />
+        </label>
+      </div>
+      <div class="output-actions">
+        <button class="btn-primary" id="run-simulation">Run simulation</button>
+        <button class="btn-secondary" id="reset-simulation">Reset</button>
+      </div>
+      <div id="simulation-summary" class="simulation-summary">Select a scenario to populate the sandbox.</div>
+    </div>
+
     <!-- Email being tested -->
     <div class="card" id="email-card">
-      <h2 class="card-title">Email under test</h2>
-      <p class="card-hint">This is the email being sent through both policy checks simultaneously.</p>
+      <h2 class="card-title">Attack packet</h2>
+      <p class="card-hint">A compact summary of the selected scenario and the backend evaluation context.</p>
       <div id="email-preview" class="email-preview"></div>
       <div id="spf-result-bar" class="spf-result-bar"></div>
     </div>
@@ -59,6 +78,7 @@
         </div>
         <div class="policy-desc-text">Unauthorised senders are marked suspicious but still delivered.</div>
         <div class="steps-list" id="steps-soft"></div>
+        <div class="view-shell" id="view-soft"></div>
         <div class="verdict-box" id="verdict-soft"></div>
       </div>
 
@@ -69,6 +89,7 @@
         </div>
         <div class="policy-desc-text">Unauthorised senders are rejected outright.</div>
         <div class="steps-list" id="steps-hard"></div>
+        <div class="view-shell" id="view-hard"></div>
         <div class="verdict-box" id="verdict-hard"></div>
       </div>
     </div>

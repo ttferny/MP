@@ -107,6 +107,25 @@
           </div>
         </div>
 
+        <!-- Advanced macros / exp -->
+        <div class="card">
+          <h2 class="card-title">Advanced: macros &amp; exp=</h2>
+          <p class="card-hint">
+            SPF macros let a record adapt to the sender context. Common examples include <code>%{i}</code>
+            for the sender IP and <code>%{d}</code> for the domain. The optional <code>exp=</code> modifier
+            can point to an explanation string or URL for fail cases.
+          </p>
+          <label class="exp-label" for="spf-exp">Optional explanation (exp=)</label>
+          <textarea
+            id="spf-exp"
+            class="exp-field"
+            rows="3"
+            placeholder="https://example.com/spf-error?ip=%{i}&amp;domain=%{d}"
+            oninput="buildRecord()"
+          ></textarea>
+          <div class="exp-note">This is optional. It is useful for teaching how SPF can surface failure explanations.</div>
+        </div>
+
       </section>
 
       <!-- ── RIGHT: Output ── -->
