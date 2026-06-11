@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPF Policy Simulator — Email Authentication Studio</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="spf-simulator.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-text">Email Authentication Studio</span>
+      </div>
+      <nav class="site-nav">
+        <a class="nav-link" href="index.html">Studio</a>
+        <a class="nav-link" href="spf-builder.html">SPF Builder</a>
+        <a class="nav-link" href="spf.html">SPF POC</a>
+        <a class="nav-link active" href="spf-simulator.html">SPF Simulator</a>
+        <a class="nav-link" href="dmarc.html">DMARC Lab</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>SPF Softfail vs Hardfail Simulator</h1>
+    <p class="hero-sub">
+      See exactly what happens to the same email under <code>~all</code> (softfail)
+      and <code>-all</code> (hardfail) policies. Choose a scenario and watch the
+      authentication pipeline play out step by step.
+    </p>
+  </section>
+
+  <main class="main-content">
+
+    <!-- Scenario selector -->
+    <div class="card scenario-picker">
+      <h2 class="card-title">Choose a scenario</h2>
+      <p class="card-hint">Each scenario shows the same email processed under both policies side by side.</p>
+      <div class="scenario-tabs" id="scenario-tabs"></div>
+    </div>
+
+    <!-- Email being tested -->
+    <div class="card" id="email-card">
+      <h2 class="card-title">Email under test</h2>
+      <p class="card-hint">This is the email being sent through both policy checks simultaneously.</p>
+      <div id="email-preview" class="email-preview"></div>
+      <div id="spf-result-bar" class="spf-result-bar"></div>
+    </div>
+
+    <!-- Side by side pipeline -->
+    <div class="pipeline-grid">
+      <div class="card result-card" id="card-soft">
+        <div class="policy-header softfail-header">
+          <span class="policy-code">~all</span>
+          <span class="policy-name">Soft fail</span>
+        </div>
+        <div class="policy-desc-text">Unauthorised senders are marked suspicious but still delivered.</div>
+        <div class="steps-list" id="steps-soft"></div>
+        <div class="verdict-box" id="verdict-soft"></div>
+      </div>
+
+      <div class="card result-card" id="card-hard">
+        <div class="policy-header hardfail-header">
+          <span class="policy-code">-all</span>
+          <span class="policy-name">Hard fail</span>
+        </div>
+        <div class="policy-desc-text">Unauthorised senders are rejected outright.</div>
+        <div class="steps-list" id="steps-hard"></div>
+        <div class="verdict-box" id="verdict-hard"></div>
+      </div>
+    </div>
+
+    <!-- Key insight -->
+    <div class="card insight-card">
+      <h2 class="card-title">Key insight</h2>
+      <div id="insight-text" class="insight-text"></div>
+    </div>
+
+    <!-- When to use each -->
+    <div class="card">
+      <h2 class="card-title">When should you use each?</h2>
+      <div class="when-grid">
+        <div class="when-item softfail-when">
+          <div class="when-policy">~all — soft fail</div>
+          <ul class="when-list">
+            <li>Setting up SPF for the first time</li>
+            <li>Migrating to a new mail provider</li>
+            <li>Not yet sure all your mail sources are listed</li>
+            <li>Want to monitor without risking broken delivery</li>
+          </ul>
+          <div class="when-note">Treat ~all as temporary. Move to -all once you confirm your record is complete.</div>
+        </div>
+        <div class="when-item hardfail-when">
+          <div class="when-policy">-all — hard fail</div>
+          <ul class="when-list">
+            <li>Your SPF record is tested and confirmed correct</li>
+            <li>You want maximum protection against spoofing</li>
+            <li>Your domain is a target for phishing or BEC attacks</li>
+            <li>You have DMARC set to quarantine or reject</li>
+          </ul>
+          <div class="when-note">-all is the recommended end state for any domain that sends email.</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Temasek Polytechnic · Diploma in Cybersecurity and Digital Forensics · AY26/27</p>
+    <p>Email Authentication Studio — Academic POC</p>
+  </footer>
+
+  <script src="spf-simulator.js"></script>
+</body>
+</html>

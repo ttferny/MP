@@ -1,0 +1,252 @@
+/* ============================================================
+   spf-simulator.css — SPF Softfail vs Hardfail Simulator
+   Inherits base variables from style.css
+============================================================ */
+
+/* ── Scenario tabs ────────────────────────────────────────── */
+.scenario-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.scenario-tab {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: 0.875rem;
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.scenario-tab:hover { border-color: var(--border-strong); color: var(--ink); }
+
+.scenario-tab.active {
+  background: rgba(26,122,127,0.1);
+  border-color: var(--accent);
+  color: var(--accent-dark);
+  font-weight: 600;
+}
+
+/* ── Email preview ────────────────────────────────────────── */
+.email-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.email-row {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 0.875rem;
+}
+
+.email-label {
+  color: var(--muted);
+  min-width: 100px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.email-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.82rem;
+  color: var(--ink);
+  word-break: break-all;
+}
+
+.email-val.flagged { color: var(--warn); }
+
+/* SPF result bar */
+.spf-result-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.85rem;
+}
+
+.spf-result-label { color: var(--muted); font-size: 0.78rem; min-width: 80px; }
+.spf-result-val   { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; color: var(--ink); flex: 1; }
+
+.spf-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.spf-pill.pass     { background: rgba(4,120,87,0.14);   border: 1px solid rgba(4,120,87,0.4);   color: var(--success); }
+.spf-pill.fail     { background: rgba(185,28,28,0.12);  border: 1px solid rgba(185,28,28,0.35); color: var(--danger);  }
+.spf-pill.none     { background: rgba(107,98,90,0.12);  border: 1px solid rgba(107,98,90,0.25); color: var(--muted);   }
+.spf-pill.softfail { background: rgba(217,119,6,0.12);  border: 1px solid rgba(217,119,6,0.35); color: var(--warn);    }
+
+/* ── Side by side pipeline ────────────────────────────────── */
+.pipeline-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.result-card { padding: 0; overflow: hidden; }
+
+.policy-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.softfail-header { background: rgba(217,119,6,0.06); }
+.hardfail-header { background: rgba(26,122,127,0.06); }
+
+.policy-code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.softfail-header .policy-code { color: var(--warn); }
+.hardfail-header .policy-code { color: var(--accent-dark); }
+
+.policy-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.policy-desc-text {
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 8px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.5;
+}
+
+/* Steps */
+.steps-list {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.step-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.step-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.dot-pass { background: rgba(4,120,87,0.15);  color: var(--success); }
+.dot-fail { background: rgba(185,28,28,0.12); color: var(--danger);  }
+.dot-warn { background: rgba(217,119,6,0.15); color: var(--warn);    }
+.dot-info { background: rgba(26,122,127,0.12);color: var(--accent);  }
+
+.step-title { font-size: 0.875rem; color: var(--ink); font-weight: 500; line-height: 1.4; }
+.step-sub   { font-size: 0.78rem;  color: var(--muted); margin-top: 2px; line-height: 1.4; }
+
+/* Verdict */
+.verdict-box {
+  margin: 0 16px 16px;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.verdict-pass    { background: rgba(4,120,87,0.1);   border: 1px solid rgba(4,120,87,0.35);   }
+.verdict-warn    { background: rgba(217,119,6,0.1);  border: 1px solid rgba(217,119,6,0.35);  }
+.verdict-danger  { background: rgba(185,28,28,0.1);  border: 1px solid rgba(185,28,28,0.35);  }
+
+.verdict-icon  { font-size: 1.3rem; flex-shrink: 0; }
+.verdict-label { font-size: 0.9rem; font-weight: 600; }
+
+.verdict-pass .verdict-label   { color: var(--success); }
+.verdict-warn .verdict-label   { color: var(--warn);    }
+.verdict-danger .verdict-label { color: var(--danger);  }
+
+.verdict-detail { font-size: 0.78rem; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+
+/* ── Insight card ─────────────────────────────────────────── */
+.insight-card { border-left: 4px solid var(--accent); }
+
+.insight-text {
+  font-size: 0.9rem;
+  color: var(--ink);
+  line-height: 1.7;
+}
+
+/* ── When to use ──────────────────────────────────────────── */
+.when-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.when-item {
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+
+.softfail-when { background: rgba(217,119,6,0.04); border-color: rgba(217,119,6,0.25); }
+.hardfail-when { background: rgba(26,122,127,0.04); border-color: rgba(26,122,127,0.25); }
+
+.when-policy {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.softfail-when .when-policy { color: var(--warn); }
+.hardfail-when .when-policy { color: var(--accent-dark); }
+
+.when-list {
+  padding-left: 1.2rem;
+  font-size: 0.85rem;
+  color: var(--ink);
+  line-height: 1.8;
+  margin-bottom: 12px;
+}
+
+.when-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  line-height: 1.5;
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .pipeline-grid { grid-template-columns: 1fr; }
+  .when-grid     { grid-template-columns: 1fr; }
+}

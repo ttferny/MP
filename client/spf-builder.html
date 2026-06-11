@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPF Record Builder — Email Authentication Studio</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="spf-builder.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-text">Email Authentication Studio</span>
+      </div>
+      <nav class="site-nav">
+        <a class="nav-link" href="index.html">Studio</a>
+        <a class="nav-link active" href="spf-builder.html">SPF Builder</a>
+        <a class="nav-link" href="spf.html">SPF POC</a>
+        <a class="nav-link" href="spf-simulator.html">SPF Simulator</a>
+        <a class="nav-link" href="dmarc.html">DMARC Lab</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>SPF Record Builder</h1>
+    <p class="hero-sub">
+      Generate a valid SPF TXT record for your domain. Select your mail services,
+      add any custom IPs, choose a policy, and copy the result straight into your DNS.
+    </p>
+  </section>
+
+  <main class="main-content">
+    <div class="builder-grid">
+
+      <!-- ── LEFT: Builder Form ── -->
+      <section class="stack">
+
+        <!-- Domain -->
+        <div class="card">
+          <h2 class="card-title">Your domain</h2>
+          <p class="card-hint">The domain you want to protect (e.g. company.com).</p>
+          <input
+            type="text"
+            id="spf-domain"
+            class="domain-field"
+            placeholder="yourdomain.com"
+            autocomplete="off"
+            spellcheck="false"
+            oninput="buildRecord()"
+          />
+        </div>
+
+        <!-- Services -->
+        <div class="card">
+          <h2 class="card-title">Email services you use</h2>
+          <p class="card-hint">
+            Tick every service that sends email on behalf of your domain.
+            Each adds an <code>include:</code> mechanism to your record.
+          </p>
+          <div class="svc-grid" id="svc-grid"></div>
+        </div>
+
+        <!-- Custom IPs -->
+        <div class="card">
+          <h2 class="card-title">Custom IP addresses</h2>
+          <p class="card-hint">
+            Add any mail servers you run yourself. Supports single IPs
+            (<code>203.0.113.10</code>) and CIDR ranges (<code>203.0.113.0/24</code>).
+          </p>
+          <div id="ip-list"></div>
+          <button class="btn-secondary add-ip-btn" onclick="addIP()">
+            + Add IP address
+          </button>
+        </div>
+
+        <!-- Policy -->
+        <div class="card">
+          <h2 class="card-title">Policy</h2>
+          <p class="card-hint">
+            What receiving servers should do with mail that fails SPF.
+          </p>
+          <div class="policy-row">
+            <button class="policy-btn" id="pol-neutral" onclick="setPolicy('?all')">
+              <span class="policy-icon">?</span>
+              <div>
+                <div class="policy-name">Neutral</div>
+                <div class="policy-desc">No action taken — not recommended</div>
+              </div>
+            </button>
+            <button class="policy-btn warn" id="pol-soft" onclick="setPolicy('~all')">
+              <span class="policy-icon">~</span>
+              <div>
+                <div class="policy-name">Soft fail</div>
+                <div class="policy-desc">Mark as suspicious, still delivered</div>
+              </div>
+            </button>
+            <button class="policy-btn danger active" id="pol-hard" onclick="setPolicy('-all')">
+              <span class="policy-icon">-</span>
+              <div>
+                <div class="policy-name">Hard fail</div>
+                <div class="policy-desc">Reject unauthorised senders — recommended</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ── RIGHT: Output ── -->
+      <section class="stack">
+
+        <!-- Generated record -->
+        <div class="card output-card">
+          <h2 class="card-title">Generated SPF record</h2>
+          <p class="card-hint">Add this as a DNS TXT record on your domain.</p>
+
+          <div id="warnings-block"></div>
+
+          <div class="lookup-bar">
+            <span class="lookup-label">DNS lookups used</span>
+            <div class="lookup-track">
+              <div class="lookup-fill" id="lookup-fill"></div>
+            </div>
+            <span class="lookup-count" id="lookup-count">0 / 10</span>
+          </div>
+
+          <div class="record-box">
+            <div class="record-text" id="spf-output">v=spf1 -all</div>
+          </div>
+
+          <div class="dns-hint" id="dns-hint"></div>
+
+          <div class="output-actions">
+            <button class="btn-primary" onclick="copyRecord()">
+              Copy record
+            </button>
+            <button class="btn-secondary" onclick="testRecord()">
+              Test this record ↗
+            </button>
+            <span class="copy-ok hidden" id="copy-ok">✓ Copied</span>
+          </div>
+        </div>
+
+        <!-- Explanation -->
+        <div class="card" id="explain-card">
+          <h2 class="card-title">What each part means</h2>
+          <div id="explain-list" class="explain-list"></div>
+        </div>
+
+        <!-- DNS instructions -->
+        <div class="card">
+          <h2 class="card-title">How to add this to your DNS</h2>
+          <ol class="dns-steps">
+            <li>Log in to your domain registrar (e.g. GoDaddy, Namecheap, Cloudflare).</li>
+            <li>Go to <strong>DNS settings</strong> for your domain.</li>
+            <li>Add a new <strong>TXT record</strong>.</li>
+            <li>Set the name/host to <code>@</code> (represents your root domain).</li>
+            <li>Paste the generated record above as the value.</li>
+            <li>Save — DNS changes can take up to 48 hours to propagate.</li>
+          </ol>
+          <div class="dns-note">
+            You can only have <strong>one SPF record</strong> per domain.
+            If one already exists, edit it rather than adding a second.
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>Temasek Polytechnic · Diploma in Cybersecurity and Digital Forensics · AY26/27</p>
+    <p>Email Authentication Studio — Academic POC</p>
+  </footer>
+
+  <script src="spf-builder.js"></script>
+</body>
+</html>
