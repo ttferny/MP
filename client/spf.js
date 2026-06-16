@@ -21,9 +21,25 @@ const resetBtn = document.getElementById('reset-btn');
 const resultBadge = document.getElementById('result-badge');
 const resultSummary = document.getElementById('result-summary');
 const traceList = document.getElementById('trace-list');
+const policySummaryText = document.getElementById('policy-summary-text');
+const commercialStatus = document.getElementById('commercial-status');
+const commercialRisk = document.getElementById('commercial-risk');
+const commercialRecommendation = document.getElementById('commercial-recommendation');
+const commercialImpact = document.getElementById('commercial-impact');
+const commercialHighlights = document.getElementById('commercial-highlights');
 
 const scenarioGrid = document.getElementById('scenario-grid');
 const scenarioNote = document.getElementById('scenario-note');
+
+// Small HTML escape helper for safe insertion
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 // ── Inject Speedometer Structural Styles ────────────────────
 // Programmatically adds flashing red keyframe animations without modifying external CSS files
@@ -180,6 +196,7 @@ function getApiTargets() {
 
 async function fetchSpfEvaluation(domain, ip) {
   const payload = JSON.stringify({ domain, ip });
+  console.debug('[SPF POC] Sending payload to /api/spf/check:', { domain, ip });
   let lastError = null;
 
   for (const apiBaseUrl of getApiTargets()) {
@@ -191,6 +208,7 @@ async function fetchSpfEvaluation(domain, ip) {
       });
 
       const data = await response.json();
+      console.debug('[SPF POC] Received response from', apiBaseUrl, data);
       if (!response.ok) {
         const error = new Error(data?.error || 'SPF lookup validation failed.');
         error.responseData = data;
@@ -256,6 +274,7 @@ async function evaluateSpf() {
     
     // Construct waterfall trace & metadata metrics
     renderTrace(data.trace || [], data.result);
+    renderPolicySummary(data);
     renderCommercial(data.commercial || null);
 
   } catch (err) {
@@ -282,29 +301,77 @@ function renderTrace(steps, finalResult) {
     traceList.innerHTML = '<div class="trace-row"><strong>No trace returned</strong><span>The backend did not return a mechanism path for this domain and IP.</span></div>';
     return;
   }
+  // Compact display: show first N steps and the final step, with a toggle to expand full trace
+  const MAX_PREVIEW = 4;
+  const preview = steps.slice(0, MAX_PREVIEW);
+  const lastStep = steps[steps.length - 1];
 
-  steps.forEach((step, index) => {
+  function makeRow(step, index, isFinal) {
     const row = document.createElement('div');
     row.className = 'trace-row';
-    row.style.cssText = 'display: flex; flex-direction: column; position: relative; padding-left: 16px; margin-bottom: 8px; border-left: 3px solid var(--accent);';
+    row.style.cssText = 'display: flex; flex-direction: column; position: relative; padding-left: 16px; margin-bottom: 8px; border-left: 3px solid var(--border);';
 
-    // Build user-friendly verification steps for Waterfall Timeline Pathing
     let stepTitle = `Step ${index + 1}: Checking ${step.mechanism || 'Mechanism'}`;
     let outcomeText = step.detail || 'Evaluating criteria path rule.';
-    
-    if (index === steps.length - 1 && finalResult) {
+
+    if (isFinal) {
       stepTitle = `Step ${index + 1}: Path Match Finalized!`;
       row.style.borderLeftColor = 'var(--success)';
+    } else {
+      row.style.borderLeftColor = 'rgba(16,122,127,0.12)';
     }
 
     row.innerHTML = `
-      <strong style="font-size: 0.85rem; color: var(--ink);">${stepTitle}</strong>
-      <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--muted); margin-top: 2px;">
-        ${step.mechanism ? `<code>${step.mechanism}</code> → ` : ''}${outcomeText} [${step.outcome || 'Processed'}]
-      </span>
+      <div class="trace-row-head">
+        <strong class="trace-title">${escapeHtml(stepTitle)}</strong>
+        <button class="trace-toggle-details" aria-expanded="false">Details</button>
+      </div>
+      <div class="trace-row-body" style="display:none; margin-top:6px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--muted);">
+          ${step.mechanism ? `<code>${escapeHtml(step.mechanism)}</code> → ` : ''}${escapeHtml(outcomeText)} [${escapeHtml(step.outcome || 'Processed')}]
+        </div>
+      </div>
     `;
-    traceList.appendChild(row);
-  });
+
+    // Toggle details per-row
+    const toggle = row.querySelector('.trace-toggle-details');
+    const body = row.querySelector('.trace-row-body');
+    toggle.addEventListener('click', () => {
+      const expanded = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', String(!expanded));
+      body.style.display = expanded ? 'none' : 'block';
+      toggle.textContent = expanded ? 'Details' : 'Hide';
+    });
+
+    return row;
+  }
+
+  // Append preview rows
+  preview.forEach((s, i) => traceList.appendChild(makeRow(s, i, false)));
+
+  // If there are more steps, add a collapsed count and reveal button
+  if (steps.length > MAX_PREVIEW + 1) {
+    const remainingCount = steps.length - (MAX_PREVIEW + 1);
+    const collapsed = document.createElement('div');
+    collapsed.className = 'trace-collapsed';
+    collapsed.style.cssText = 'padding: 8px 12px; margin-bottom:8px; color: var(--muted); background: rgba(243, 239, 232, 0.95); border-radius: 8px;';
+    collapsed.innerHTML = `<button class="btn-secondary" id="show-full-trace">Show ${remainingCount} more steps</button>`;
+    traceList.appendChild(collapsed);
+
+    collapsed.querySelector('#show-full-trace').addEventListener('click', (e) => {
+      // remove the collapsed node and append the middle steps
+      collapsed.remove();
+      const middle = steps.slice(MAX_PREVIEW, steps.length - 1);
+      middle.forEach((s, idx) => traceList.appendChild(makeRow(s, MAX_PREVIEW + idx, false)));
+      // append final step
+      traceList.appendChild(makeRow(lastStep, steps.length - 1, true));
+    });
+  } else {
+    // append middle steps (if any) and final step
+    const middle = steps.slice(MAX_PREVIEW, steps.length - 1);
+    middle.forEach((s, idx) => traceList.appendChild(makeRow(s, MAX_PREVIEW + idx, false)));
+    traceList.appendChild(makeRow(lastStep, steps.length - 1, true));
+  }
 }
 
 // ── Secondary Helper Controllers ─────────────────────────────
@@ -324,7 +391,76 @@ function setResult(result, summary) {
 }
 
 function renderCommercial(summary) {
-  if (!summary) return;
+  if (!commercialStatus || !commercialRisk || !commercialRecommendation || !commercialImpact || !commercialHighlights) return;
+
+  if (!summary) {
+    commercialStatus.textContent = 'Awaiting evaluation';
+    commercialRisk.textContent = '—';
+    commercialRecommendation.textContent = 'Run the auditor to see guidance.';
+    commercialImpact.textContent = '—';
+    commercialHighlights.innerHTML = '';
+    return;
+  }
+
+  commercialStatus.textContent = summary.status || 'Unknown';
+  commercialRisk.textContent = summary.riskScore != null ? `${summary.riskScore}%` : 'N/A';
+  commercialRecommendation.textContent = summary.recommendation || 'Review SPF configuration and retry.';
+  commercialImpact.textContent = summary.businessImpact || 'Authentication result requires review.';
+
+  if (Array.isArray(summary.highlights) && summary.highlights.length) {
+    commercialHighlights.innerHTML = `<ul>${summary.highlights.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+  } else {
+    commercialHighlights.innerHTML = '<p style="color: var(--muted); margin: 0;">No highlight details available.</p>';
+  }
+}
+
+function renderPolicySummary(data) {
+  if (!policySummaryText) return;
+  const record = String(data.record || '');
+  const includeRecords = data.includeRecords || {};
+  const includes = Array.isArray(includeRecords) ? includeRecords : Object.keys(includeRecords || {});
+  const ip4s = (record.match(/ip4:[^\s]+/g) || []).map((t) => t.replace('ip4:', ''));
+  const redirects = (record.match(/redirect=[^\s]+/g) || []).map((t) => t.replace('redirect=', ''));
+  const matched = data.matchedMechanism || null;
+  const lookups = Number(data.lookupCount || data.dnsLookups || 0);
+
+  if (!record) {
+    policySummaryText.innerHTML = `<strong>No SPF record found</strong><div style="color:var(--muted); margin-top:6px;">This domain has no SPF TXT record — publish a policy to prevent unauthorized senders.</div>`;
+    return;
+  }
+
+  // Determine enforcement level
+  let enforcement = 'No explicit enforcement';
+  if (/\-all\b/.test(record)) enforcement = 'Strict enforcement (-all)';
+  else if (/~all\b/.test(record)) enforcement = 'Soft enforcement (~all) — monitoring';
+  else if (/\?all\b/.test(record)) enforcement = 'Neutral (?all) — no claim';
+  else if (/\+all\b/.test(record)) enforcement = 'Permissive (+all) — allows any sender';
+
+  // Build quick highlights
+  const highlights = [];
+  highlights.push(enforcement);
+  if (matched) highlights.push(`Matched mechanism: ${matched}`);
+  if (ip4s.length) highlights.push(`${ip4s.length} direct IP${ip4s.length>1?'s':''}`);
+  if (includes.length) highlights.push(`${includes.length} include/redirect domain${includes.length>1?'s':''}`);
+  if (redirects.length) highlights.push(`Redirects to ${redirects.join(', ')}`);
+  if (lookups > 10) highlights.push(`High DNS lookup count: ${lookups} (may cause PermError)`);
+
+  // Recommendation
+  let recommendation = 'No immediate action required.';
+  if (/\-all\b/.test(record)) recommendation = 'Policy is enforcing; monitor and maintain known senders.';
+  else if (/~all\b/.test(record)) recommendation = 'Consider moving to -all after validating all legitimate senders.';
+  else if (!record) recommendation = 'Publish an SPF record to state authorized senders.';
+  else recommendation = 'Review includes and reduce chained lookups; aim for clear enforcement when ready.';
+
+  // Compose compact HTML output
+  policySummaryText.innerHTML = `
+    <div style="font-weight:700; margin-bottom:6px;">${escapeHtml(enforcement)}</div>
+    <div style="color:var(--muted); margin-bottom:8px;">${escapeHtml(recommendation)}</div>
+    <div style="font-size:0.92rem; margin-top:6px;">
+      ${highlights.map((h) => `<span style="display:inline-block; margin-right:8px; color:var(--muted);">• ${escapeHtml(h)}</span>`).join('')}
+    </div>
+    <div style="margin-top:8px; color:var(--muted); font-size:0.86rem;">Record: <code style="font-family: 'JetBrains Mono', monospace;">${escapeHtml(record)}</code></div>
+  `;
 }
 
 function clearAll() {
@@ -373,9 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (domainParam) {
     domainInput.value = decodeURIComponent(domainParam);
     // Optional fallback vector: Prepopulate standard workspace testing IP if empty
-    if (!ipInput.value) {
-      ipInput.value = '64.233.160.0'; 
-    }
+    // Do not auto-fill an IP — user should supply the sending MTA IP from message headers.
     evaluateSpf();
    }
 });

@@ -23,10 +23,13 @@
   <section class="hero">
     <div class="hero-content">
       <div class="eyebrow">Sender Policy Framework</div>
-      <h1>Live SPF domain auditor.</h1>
+      <h1>Live Domain Auditor</h1>
       <p>
-        This live auditor fetches the domain's SPF record from the backend, evaluates the sender IP,
-        and shows the mechanism trace so students can see how SPF works in practice.
+        Type a real domain and this auditor will fetch its actual SPF record,
+        parse the policy, and show which senders are trusted in real time.
+      </p>
+      <p class="hero-note">
+        This is a live lookup tool for real DNS SPF records, not a simulated environment. It also includes a commercial risk panel with recommendation and business impact.
       </p>
     </div>
     <div class="hero-panel">
@@ -78,6 +81,11 @@
           </label>
         </div>
       </div>
+
+      <div class="card" id="policy-summary-card">
+        <div class="card-title">Live policy summary</div>
+        <p id="policy-summary-text" class="policy-summary-text">The SPF policy summary appears here after evaluation.</p>
+      </div>
     </section>
 
     <section class="stack">
@@ -90,6 +98,29 @@
         <div class="trace" id="trace-list"></div>
       </div>
 
+      <div class="card commercial-card">
+        <div class="card-title">Commercial Summary</div>
+        <div class="commercial-grid">
+          <div class="commercial-item">
+            <span class="commercial-label">Status</span>
+            <span id="commercial-status" class="commercial-value">Awaiting evaluation</span>
+          </div>
+          <div class="commercial-item">
+            <span class="commercial-label">Risk score</span>
+            <span id="commercial-risk" class="commercial-value">—</span>
+          </div>
+          <div class="commercial-item">
+            <span class="commercial-label">Recommendation</span>
+            <span id="commercial-recommendation" class="commercial-value">Run the auditor to see guidance.</span>
+          </div>
+          <div class="commercial-item">
+            <span class="commercial-label">Business impact</span>
+            <span id="commercial-impact" class="commercial-value">—</span>
+          </div>
+        </div>
+        <div class="commercial-highlights" id="commercial-highlights"></div>
+      </div>
+
       <div class="card">
         <div class="card-title">How SPF Works</div>
         <ol class="steps">
@@ -99,6 +130,18 @@
           <li>The matching qualifier decides the result (pass, fail, softfail, neutral).</li>
           <li>If nothing matches, the result is neutral.</li>
         </ol>
+      </div>
+    
+      <div class="card compact-card">
+        <div class="card-title">Interpreting results</div>
+        <div class="card-hint compact-hint">
+          <ul>
+            <li><strong>PASS:</strong> Authorized sender — mail is accepted.</li>
+            <li><strong>SOFTFAIL:</strong> Suspicious sender — delivery allowed with warning.</li>
+            <li><strong>FAIL:</strong> Not authorized — likely rejected by strict receivers.</li>
+            <li><strong>NEUTRAL / NONE:</strong> No clear policy claim — inconclusive.</li>
+          </ul>
+        </div>
       </div>
     </section>
   </main>

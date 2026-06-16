@@ -49,6 +49,10 @@ function ipToInt(ip) {
   return ip.split('.').reduce((acc, oct) => (acc << 8) + parseInt(oct, 10), 0) >>> 0;
 }
 
+function isIPv6(address) {
+  return String(address || '').includes(':');
+}
+
 function ipMatchesCIDR(ip, cidr) {
   const [base, prefix] = cidr.split('/');
   const bits = parseInt(prefix ?? '32', 10);
@@ -119,7 +123,7 @@ function qualifierToResult(q) {
 //   include    — recursively check another domain's SPF record
 //   all        — catch-all (always matches, applied last)
 // ─────────────────────────────────────────────
-async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0, stats = null) {
+async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0, stats = null, lookupRecordFn = lookupSPFRecord) {
   // Guard against infinite loops from circular includes
   if (depth > 10) {
     logger.warn('SPF: max include depth reached');
@@ -168,10 +172,18 @@ async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0, stats =
       const targetDomain = mechValue || domain;
       try {
         if (stats) stats.lookupCount += 1;
-        const aRecords = await dns.resolveA(targetDomain);
-        const matched = aRecords.some(ip =>
-          mechValue.includes('/') ? ipMatchesCIDR(senderIP, `${ip}${mechValue.slice(mechValue.indexOf('/'))}`) : senderIP === ip
-        );
+        // Resolve both A and AAAA so IPv6 senders can be matched
+        const aRecords = await dns.resolveA(targetDomain).catch(() => []);
+        const aaaaRecords = (dns.resolveAAAA ? await dns.resolveAAAA(targetDomain).catch(() => []) : []);
+        const allAddrs = [...(aRecords || []), ...(aaaaRecords || [])];
+        const matched = allAddrs.some((ip) => {
+          // If mechanism uses CIDR (e.g. /24), only attempt IPv4 CIDR matching
+          if (mechValue.includes('/') && !isIPv6(mechValue)) {
+            return ipMatchesCIDR(senderIP, `${ip}${mechValue.slice(mechValue.indexOf('/'))}`);
+          }
+          // For IPv6 or simple exact match, compare string equality
+          return senderIP === ip;
+        });
         if (matched) logger.info(`SPF: 'a' record match for ${targetDomain}`);
         return {
           matched,
@@ -192,7 +204,9 @@ async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0, stats =
         for (const mx of mxRecords) {
           if (stats) stats.lookupCount += 1;
           const aRecords = await dns.resolveA(mx.exchange).catch(() => []);
-          if (aRecords.includes(senderIP)) {
+          const aaaaRecords = (dns.resolveAAAA ? await dns.resolveAAAA(mx.exchange).catch(() => []) : []);
+          const allAddrs = [...(aRecords || []), ...(aaaaRecords || [])];
+          if (allAddrs.includes(senderIP)) {
             logger.info(`SPF: 'mx' match — ${mx.exchange}`);
             return {
               matched: true,
@@ -212,8 +226,7 @@ async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0, stats =
     case 'include': {
       if (!mechValue) return { matched: false, detail: 'Include missing domain' };
       logger.info(`SPF: following include → ${mechValue}`);
-      const includeResult = await evaluateSPFRecord(mechValue, senderIP, dns, depth + 1, stats);
-      // 'include' only matches if the included domain returns PASS
+      const includeResult = await evaluateSPFRecord(mechValue, senderIP, dns, depth + 1, stats, lookupRecordFn);
       const matched = includeResult.result === SPF_RESULTS.PASS;
       return {
         matched,
@@ -228,7 +241,7 @@ async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0, stats =
     case 'redirect': {
       if (!mechValue) return { matched: false, detail: 'Redirect missing domain' };
       logger.info(`SPF: redirect → ${mechValue}`);
-      const redirectResult = await evaluateSPFRecord(mechValue, senderIP, dns, depth + 1, stats);
+      const redirectResult = await evaluateSPFRecord(mechValue, senderIP, dns, depth + 1, stats, lookupRecordFn);
       return {
         matched: true,
         result: redirectResult.result,
@@ -246,13 +259,13 @@ async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0, stats =
 // CORE: Evaluate the full SPF record for a domain
 // Walks through each mechanism in order, returns on first match.
 // ─────────────────────────────────────────────
-async function evaluateSPFRecord(domain, senderIP, dns, depth = 0, stats = null) {
+async function evaluateSPFRecord(domain, senderIP, dns, depth = 0, stats = null, lookupRecordFn = lookupSPFRecord) {
   const localStats = stats || { lookupCount: 0, trace: [] };
   let spfRecord;
 
   try {
     localStats.lookupCount += 1;
-    spfRecord = await lookupSPFRecord(domain);
+    spfRecord = await lookupRecordFn(domain);
   } catch (err) {
     logger.warn(`SPF: DNS lookup failed for ${domain} — ${err.message}`);
     if (localStats.trace) {
@@ -297,7 +310,7 @@ async function evaluateSPFRecord(domain, senderIP, dns, depth = 0, stats = null)
 
   // Walk mechanisms in order — first match wins
   for (const mech of mechanisms) {
-    const { matched, result, redirectResult, detail } = await evaluateMechanism(mech, senderIP, domain, dns, depth, localStats);
+    const { matched, result, redirectResult, detail } = await evaluateMechanism(mech, senderIP, domain, dns, depth, localStats, lookupRecordFn);
     if (localStats.trace) {
       localStats.trace.push({
         domain,
@@ -379,11 +392,11 @@ async function checkSPF(parsed) {
   };
 }
 
-async function evaluateSPFInteractive(domain, senderIP) {
+async function evaluateSPFInteractive(domain, senderIP, lookupRecordFn = lookupSPFRecord, dnsResolver = null) {
   const dnsPromises = require('dns').promises;
-  const resolver = buildDnsResolver(dnsPromises);
+  const resolver = dnsResolver || buildDnsResolver(dnsPromises);
   const stats = { lookupCount: 0, trace: [] };
-  const spfResult = await evaluateSPFRecord(domain, senderIP, resolver, 0, stats);
+  const spfResult = await evaluateSPFRecord(domain, senderIP, resolver, 0, stats, lookupRecordFn);
   return {
     ...spfResult,
     domain,
@@ -411,6 +424,9 @@ function buildDnsResolver(dnsPromises) {
     resolveMx: dnsPromises.resolveMx
       || resolveMxFallback
       || (async () => { throw new Error('DNS MX lookup not supported'); }),
+    resolveAAAA: dnsPromises.resolve6
+      || (typeof dns.resolve6 === 'function' ? promisify(dns.resolve6) : null)
+      || (async () => { throw new Error('DNS AAAA lookup not supported'); }),
   };
 }
 

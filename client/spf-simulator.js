@@ -24,17 +24,17 @@ const scenarios = [
     key: 'legit-newsletter',
     label: 'Legitimate Newsletter',
     tag: 'Authorised Sender',
-    domain: 'company.com',
+    domain: 'news.example.com',
     attackerIP: '167.89.0.1',
     description: 'A legitimate mail source that should pass SPF cleanly.'
   },
   {
-    key: 'no-spf',
+    key: 'misconfigured',
     label: 'No SPF Record',
     tag: 'Misconfigured Domain',
     domain: 'vulnerable.org',
     attackerIP: '104.21.0.99',
-    description: 'A domain with no SPF record published in DNS.'
+    description: 'A domain with no or weak SPF policy published in DNS.'
   }
 ];
 
@@ -87,6 +87,12 @@ function populateInputs(scenario) {
     scenario: scenario.label,
     description: scenario.description,
   });
+  // Indicate the selected scenario in the status bar
+  nodes.spfResultBar.innerHTML = `
+    <span class="spf-result-label">Sandbox status</span>
+    <span class="spf-result-val">Loaded scenario: ${escapeHtml(scenario.label)}</span>
+    <span class="spf-pill none">${escapeHtml(scenario.key)}</span>
+  `;
 }
 
 function renderSnapshot({ domain, attackerIP, scenario, description }) {
@@ -150,15 +156,23 @@ function verdictMeta(result, policy) {
 }
 
 function renderSteps(container, steps) {
-  container.innerHTML = steps.map((step) => `
-    <div class="step-row">
-      <div class="step-dot dot-${step.dot}">${step.dot === 'pass' ? '✓' : step.dot === 'fail' ? '✕' : step.dot === 'warn' ? '!' : 'i'}</div>
-      <div>
-        <div class="step-title">${escapeHtml(step.title)}</div>
-        <div class="step-sub">${escapeHtml(step.sub)}</div>
+  // Add hover tooltips for timeline items (mechanism details when available)
+  container.innerHTML = steps.map((step) => {
+    const mechanism = step.mechanism || step.mechanic || '';
+    const qualifier = step.qualifier || step.q || '';
+    const detail = step.detail || step.sub || '';
+    const tooltip = [mechanism && `Mechanism: ${mechanism}`, qualifier && `Qualifier: ${qualifier}`, detail && `Detail: ${detail}`].filter(Boolean).join(' · ');
+
+    return `
+      <div class="step-row" title="${escapeHtml(tooltip)}" aria-label="${escapeHtml(tooltip)}">
+        <div class="step-dot dot-${step.dot}">${step.dot === 'pass' ? '✓' : step.dot === 'fail' ? '✕' : step.dot === 'warn' ? '!' : 'i'}</div>
+        <div>
+          <div class="step-title">${escapeHtml(step.title)}</div>
+          <div class="step-sub">${escapeHtml(step.sub)}</div>
+        </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function renderClientView(container, data) {
@@ -229,7 +243,7 @@ function renderPanels(response) {
 
   renderClientView(nodes.softView, response.soft.clientView ? {
     banner: response.soft.banner,
-    message: 'This email failed authentication but was delivered to the inbox with a warning banner.',
+    message: (String(response.soft.result || '').toLowerCase() === 'pass') ? 'This email passed SPF and was delivered normally.' : 'This email failed SPF but was delivered to the inbox with a warning banner.',
     from: response.soft.clientView.from,
     status: response.soft.clientView.status,
   } : null);
@@ -246,13 +260,26 @@ async function runSimulation() {
     return;
   }
 
+  // Clear previous run UI to avoid stale traces
+  nodes.softSteps.innerHTML = '';
+  nodes.hardSteps.innerHTML = '';
+  nodes.softView.innerHTML = '';
+  nodes.hardView.innerHTML = '';
+  nodes.softVerdict.innerHTML = '';
+  nodes.hardVerdict.innerHTML = '';
+  nodes.spfResultBar.innerHTML = `
+    <span class="spf-result-label">Evaluation</span>
+    <span class="spf-result-val">Running simulation...</span>
+    <span class="spf-pill running">${escapeHtml(activeScenarioKey || 'manual')}</span>
+  `;
+
   setLoading(true);
 
   try {
     const response = await fetch('/api/spf/simulate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ domain, attackerIP }),
+      body: JSON.stringify({ domain, attackerIP, scenarioKey: activeScenarioKey }),
     });
 
     const data = await response.json();
@@ -262,7 +289,7 @@ async function runSimulation() {
 
     renderSummary(data);
     renderPanels(data);
-    nodes.insight.innerHTML = data.summary;
+      renderExplanations(data);
   } catch (error) {
     const message = error?.message || 'SPF simulation failed.';
     nodes.summary.textContent = message;
@@ -288,6 +315,135 @@ function errorMarkup(message) {
       </div>
     </div>
   `;
+}
+
+function renderExplanations(response) {
+  // Provide a richer, scenario-aware explanation that links SPF to broader email auth
+  const lookups = response.lookupCount || 0;
+  const soft = response.soft || {};
+  const hard = response.hard || {};
+  const record = response.record || '(no SPF record)';
+  const domain = response.domain || response.recordDomain || nodes.targetDomain.value || '';
+  const scenarioKey = response.scenarioKey || response.scenario || nodes.spfResultBar?.querySelector('.spf-pill')?.textContent || '';
+
+  // Concise, commercial-friendly key insight summary
+  const atAGlance = `${escapeHtml((soft.result||'unknown').toUpperCase())} (soft) · ${escapeHtml((hard.result||'unknown').toUpperCase())} (hard) — matched: ${escapeHtml(response.matchedMechanism || soft.matchedMechanism || hard.matchedMechanism || 'none')}`;
+
+  // Compact protocol context hidden behind a 'More' disclosure for learners who want depth
+  const protocolContext = `
+    <details class="explain-more"><summary>More: protocol context & technical notes</summary>
+      <div class="explain-more-body">
+        <h4>Protocol context</h4>
+        <ul>
+          <li><strong>SPF purpose:</strong> publish which IPs can send mail for this domain (envelope MAIL FROM).</li>
+          <li><strong>SPF vs DKIM:</strong> SPF checks sending IP; DKIM signs content/headers — both feed DMARC.</li>
+          <li><strong>SPF → DMARC:</strong> For SPF to help DMARC, SPF-authenticated domain must align with From:.</li>
+          <li><strong>Tip:</strong> use <code>-all</code> only after authorising all legitimate senders and enabling DKIM.</li>
+        </ul>
+      </div>
+    </details>
+  `;
+
+  // Scenario-specific explanation snippets (help students relate the outcome to the scenario)
+  const attackerIP = response.attackerIP || nodes.attackerIP.value || '';
+  const domainLabel = domain || nodes.targetDomain.value || '';
+  const matched = response.matchedMechanism || soft.matchedMechanism || hard.matchedMechanism || '';
+  const softNorm = String(soft.result || '').toLowerCase();
+  const hardNorm = String(hard.result || '').toLowerCase();
+  const scenario = scenarios.find((item) => item.key === scenarioKey);
+  const scenarioLabel = scenario ? scenario.label : '';
+  const usedDefaultScenario = scenario && scenario.domain === domainLabel && scenario.attackerIP === attackerIP;
+
+  let scenarioNote = '';
+  if (scenarioLabel) {
+    const actualResult = softNorm === 'pass' && hardNorm === 'pass'
+      ? 'passes cleanly under both policies'
+      : softNorm === 'softfail' && hardNorm === 'fail'
+        ? 'is suspicious under ~all and rejected under -all'
+        : softNorm === 'pass' && hardNorm === 'fail'
+          ? 'passes under soft policy but is rejected by strict -all'
+          : `returns ${soft.result || hard.result || 'unknown'} status`; 
+
+    if (scenarioKey === 'ceo-fraud') {
+      scenarioNote = `<p><strong>CEO Fraud:</strong> this executive spoof scenario ${actualResult}. The record delegates trust with an <code>include</code>, but the attacker IP is not authorised by the approved range.</p>`;
+    } else if (scenarioKey === 'phishing') {
+      scenarioNote = `<p><strong>Banking Phish:</strong> this fake bank alert scenario ${actualResult}. A strict <code>-all</code> policy rejects unauthorised senders as intended.</p>`;
+    } else if (scenarioKey === 'legit-newsletter') {
+      scenarioNote = `<p><strong>Legitimate newsletter:</strong> this newsletter scenario ${actualResult}. ${softNorm === 'pass' ? 'The attacker IP is authorised or included in the ESP record.' : 'The attacker IP is not authorised by the newsletter SPF policy.'}</p>`;
+    } else if (scenarioKey === 'misconfigured' || record.includes('?all')) {
+      scenarioNote = `<p><strong>Misconfigured:</strong> this weak policy scenario ${actualResult}. The record makes no strong claim, so spoofing protection is limited.</p>`;
+    }
+
+    if (!usedDefaultScenario && scenarioLabel) {
+      scenarioNote += `<p class="explain-note-small">Custom input overrides the default ${escapeHtml(scenarioLabel)} scenario values.</p>`;
+    }
+  }
+
+  if (!scenarioNote && domainLabel) {
+    scenarioNote = `<p><strong>Note:</strong> this simulation evaluated <strong>${escapeHtml(domainLabel)}</strong> from <strong>${escapeHtml(attackerIP)}</strong>. The SPF outcome ${softNorm === 'pass' && hardNorm === 'pass' ? 'passes cleanly' : softNorm === 'softfail' && hardNorm === 'fail' ? 'flags the sender as suspicious' : 'is inconclusive'}.</p>`;
+  }
+
+  // Business impact: concise sentence reflecting actual results
+  let businessRaw = '';
+  if (softNorm === 'pass' && hardNorm === 'pass') {
+    businessRaw = `${domainLabel} — sender ${attackerIP} is authorised; mail is delivered.`;
+  } else if (softNorm === 'softfail' && hardNorm === 'fail') {
+    businessRaw = `${domainLabel} — under ~all the mail is delivered with a warning; under -all it is rejected.`;
+  } else if (softNorm === 'pass' && hardNorm === 'fail') {
+    businessRaw = `${domainLabel} — delivery depends on receiver policy; passes loose policies but rejected with strict (-all).`;
+  } else if (softNorm === 'softfail') {
+    businessRaw = `${domainLabel} — sender ${attackerIP} is suspicious (softfail): delivered with warning.`;
+  } else if (hardNorm === 'fail') {
+    businessRaw = `${domainLabel} — sender ${attackerIP} is unauthorised and will be rejected by strict receivers.`;
+  } else {
+    businessRaw = `${domainLabel} — SPF result: ${soft.result || hard.result || 'unknown'}.`;
+  }
+
+  // Technical cause: prefer explicit mechanism info
+  let techRaw = matched || 'No mechanism matched';
+  if (matched && matched.toLowerCase().includes('ip4')) techRaw = `Matched IP mechanism (${matched})`;
+  else if (matched && matched.toLowerCase().includes('include')) techRaw = `Matched include (${matched})`;
+
+  const business = escapeHtml(businessRaw);
+  const tech = escapeHtml(techRaw);
+  const recommend = escapeHtml((hardNorm === 'fail' ? 'Tighten SPF (-all) and ensure DKIM for legitimate senders.' : 'Review includes and authorised senders; consider -all when fully tested.'));
+  const quick = escapeHtml((matched && matched.toLowerCase().includes('ip4')) ? `Confirm ${attackerIP} is listed in the SPF record or remove unintended IPs.` : 'Inspect include records and add missing ESP entries; re-run simulation.');
+
+  const boxes = `
+    <div class="insight-grid">
+      <div class="insight-box business">
+        <div class="box-title">Business impact</div>
+        <div class="box-body">${business}</div>
+      </div>
+      <div class="insight-box tech">
+        <div class="box-title">Technical cause</div>
+        <div class="box-body">${tech}</div>
+      </div>
+      <div class="insight-box action">
+        <div class="box-title">Recommended action</div>
+        <div class="box-body">${recommend}</div>
+      </div>
+      <div class="insight-box quick">
+        <div class="box-title">Quick win</div>
+        <div class="box-body">${quick}</div>
+      </div>
+    </div>
+    ${protocolContext}
+    <div class="explain-note">${scenarioNote}</div>
+  `;
+
+  const html = `
+    <div class="explain-run compact">
+      <h3>Key insight</h3>
+      <p class="at-a-glance">${escapeHtml(atAGlance)}</p>
+      ${boxes}
+    </div>
+  `;
+
+  nodes.insight.innerHTML = html;
+
+  // Mark todo item complete
+  try { /* noop: UI only */ } catch (e) {}
 }
 
 function resetSimulation() {

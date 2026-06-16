@@ -6,6 +6,70 @@ const { lookupARecords, lookupMXRecords, lookupSPFRecord } = require('../service
 const { isValidDomain, isValidIP } = require('../utils/validate');
 const logger = require('../utils/logger');
 
+const simulatorScenarios = {
+  'ceo-fraud': {
+    domain: 'company.com',
+    recordMap: {
+      'company.com': 'v=spf1 ip4:203.0.113.5 include:_spf.partner.com ~all',
+      '_spf.partner.com': 'v=spf1 ip4:198.51.100.10 -all',
+    },
+    aRecords: {
+      'company.com': ['203.0.113.5'],
+      '_spf.partner.com': ['198.51.100.10'],
+    },
+    mxRecords: {},
+    description: 'A spoofed executive message from an unauthorized source. Softfail warns, hardfail rejects.',
+  },
+  'phishing': {
+    domain: 'dbs.com',
+    recordMap: {
+      'dbs.com': 'v=spf1 ip4:192.0.2.10 -all',
+    },
+    aRecords: {
+      'dbs.com': ['192.0.2.10'],
+    },
+    mxRecords: {},
+    description: 'A fake bank alert from an attacker IP. Hardfail rejects, softfail flags it.',
+  },
+  'legit-newsletter': {
+    domain: 'news.example.com',
+    recordMap: {
+      'news.example.com': 'v=spf1 ip4:167.89.0.1 include:_spf.mailer.net -all',
+      '_spf.mailer.net': 'v=spf1 ip4:167.89.0.1 -all',
+    },
+    aRecords: {
+      'news.example.com': ['167.89.0.1'],
+      '_spf.mailer.net': ['167.89.0.1'],
+    },
+    mxRecords: {},
+    description: 'A legitimate ESP sender with an approved IP for the newsletter stream.',
+  },
+  'misconfigured': {
+    domain: 'vulnerable.org',
+    recordMap: {
+      'vulnerable.org': 'v=spf1 ?all',
+    },
+    aRecords: {},
+    mxRecords: {},
+    description: 'A weak or missing SPF policy. Softfail and hardfail behave differently for unauthorised senders.',
+  },
+};
+
+function getSimulatorScenario(key) {
+  return simulatorScenarios[key] || null;
+}
+
+function findSimulatorScenarioByDomain(domain) {
+  return Object.values(simulatorScenarios).find((scenario) => scenario.domain === domain) || null;
+}
+
+function buildSimulatedDnsResolver(scenario) {
+  return {
+    resolveA: async (targetDomain) => scenario.aRecords[targetDomain] || [],
+    resolveMx: async (targetDomain) => scenario.mxRecords[targetDomain] || [],
+  };
+}
+
 function buildTimelineSteps(baseline, policyLabel, policyOutcome) {
   const steps = [];
 
@@ -138,6 +202,7 @@ function buildCommercialSummary({ domain, ip, result, record, matchedMechanism, 
 async function handleEvaluate(req, res) {
   try {
     const { domain, ip } = req.body;
+    logger.info(`/api/spf/check called with domain=${domain} ip=${ip}`);
 
     if (!domain || !ip) {
       return res.status(400).json({ error: 'domain and ip are required.' });
@@ -222,7 +287,7 @@ router.post('/evaluate', handleEvaluate);
 
 router.post('/simulate', async (req, res) => {
   try {
-    const { domain, attackerIP } = req.body;
+    const { domain, attackerIP, scenarioKey } = req.body;
 
     if (!domain || !attackerIP) {
       return res.status(400).json({ error: 'domain and attackerIP are required.' });
@@ -236,10 +301,31 @@ router.post('/simulate', async (req, res) => {
       return res.status(400).json({ error: `"${attackerIP}" does not look like a valid IPv4 address.` });
     }
 
-    const baseline = await evaluateSPFInteractive(domain, attackerIP);
-    const aRecords = await lookupARecords(domain);
-    const mxRecords = await lookupMXRecords(domain);
-    const spfRecord = baseline.record || (await lookupSPFRecord(domain));
+    let scenario = getSimulatorScenario(scenarioKey);
+    if (!scenario) {
+      scenario = findSimulatorScenarioByDomain(domain);
+      if (scenario) {
+        logger.info(`/api/spf/simulate fallback scenario by domain ${scenario.domain}`);
+      }
+    }
+
+    let lookupRecordFn = lookupSPFRecord;
+    let dnsResolver = null;
+    let effectiveDomain = domain;
+    let effectiveAttackerIP = attackerIP;
+
+    if (scenario) {
+      dnsResolver = buildSimulatedDnsResolver(scenario);
+      lookupRecordFn = async (lookupDomain) => scenario.recordMap[lookupDomain] || null;
+      effectiveDomain = scenario.domain || domain;
+      effectiveAttackerIP = scenario.attackerIP || attackerIP;
+      logger.info(`/api/spf/simulate scenario ${scenarioKey || scenario.domain} -> ${effectiveDomain} ${effectiveAttackerIP}`);
+    }
+
+    const baseline = await evaluateSPFInteractive(effectiveDomain, effectiveAttackerIP, lookupRecordFn, dnsResolver);
+    const aRecords = scenario ? scenario.aRecords[effectiveDomain] || [] : await lookupARecords(effectiveDomain);
+    const mxRecords = scenario ? scenario.mxRecords[effectiveDomain] || [] : await lookupMXRecords(effectiveDomain);
+    const spfRecord = baseline.record || (scenario ? scenario.recordMap[effectiveDomain] : await lookupSPFRecord(effectiveDomain));
 
     const soft = buildSimulationPayload({
       domain,
@@ -259,6 +345,7 @@ router.post('/simulate', async (req, res) => {
       success: true,
       domain,
       attackerIP,
+      scenarioKey: scenarioKey || null,
       record: spfRecord,
       lookupCount: baseline.lookupCount || 0,
       dnsLookups: baseline.lookupCount || 0,
