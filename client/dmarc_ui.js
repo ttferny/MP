@@ -719,3 +719,188 @@ function renderMonitorResult(r) {
 
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+
+// =============================================================
+// SECTION 7 — DMARC RECORD GENERATOR
+// Pure frontend — no backend needed
+// Builds a valid DMARC TXT record from user inputs
+// =============================================================
+
+function generateRecord() {
+  const domain = document.getElementById('gen-domain').value.trim();
+  const policy = document.getElementById('gen-policy').value;
+  const sp     = document.getElementById('gen-sp').value;
+  const pct    = document.getElementById('gen-pct').value;
+  const aspf   = document.getElementById('gen-aspf').value;
+  const adkim  = document.getElementById('gen-adkim').value;
+  const rua    = document.getElementById('gen-rua').value.trim();
+  const ruf    = document.getElementById('gen-ruf').value.trim();
+
+  if (!domain) { alert('Please enter a domain name.'); return; }
+
+  // Build the record tag by tag
+  let record = `v=DMARC1; p=${policy}`;
+  if (sp)               record += `; sp=${sp}`;
+  if (rua)              record += `; rua=mailto:${rua}`;
+  if (ruf)              record += `; ruf=mailto:${ruf}`;
+  if (pct !== '100')    record += `; pct=${pct}`;
+  if (aspf !== 'r')     record += `; aspf=${aspf}`;
+  if (adkim !== 'r')    record += `; adkim=${adkim}`;
+
+  // Show result card
+  const el = document.getElementById('gen-result');
+  el.style.display = 'block';
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = 'fadeUp 0.4s ease both';
+
+  // Show the record string
+  document.getElementById('gen-record-output').textContent = record;
+
+  // DNS name instruction
+  document.getElementById('gen-dns-name').textContent = `_dmarc.${domain}`;
+
+  // Tag breakdown chips
+  const policyColor = policy === 'reject' ? 'good' : policy === 'quarantine' ? 'warn' : 'bad';
+  const pctColor    = pct === '100' ? 'good' : parseInt(pct) >= 50 ? 'warn' : 'bad';
+  const ruaColor    = rua ? 'good' : 'bad';
+
+  document.getElementById('gen-tag-breakdown').innerHTML = `
+    <div class="audit-tag"><div class="audit-tag-key">p= (policy)</div><div class="audit-tag-value ${policyColor}">${policy}</div></div>
+    <div class="audit-tag"><div class="audit-tag-key">sp= (subdomains)</div><div class="audit-tag-value ${sp ? 'good' : 'muted'}">${sp || 'inherit'}</div></div>
+    <div class="audit-tag"><div class="audit-tag-key">pct= (enforcement)</div><div class="audit-tag-value ${pctColor}">${pct}%</div></div>
+    <div class="audit-tag"><div class="audit-tag-key">rua= (reports)</div><div class="audit-tag-value ${ruaColor}">${rua ? 'configured' : 'not set'}</div></div>
+    <div class="audit-tag"><div class="audit-tag-key">aspf= (SPF align)</div><div class="audit-tag-value">${aspf === 'r' ? 'relaxed' : 'strict'}</div></div>
+    <div class="audit-tag"><div class="audit-tag-key">adkim= (DKIM align)</div><div class="audit-tag-value">${adkim === 'r' ? 'relaxed' : 'strict'}</div></div>
+  `;
+
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// copyRecord — copies the generated record to clipboard
+function copyRecord() {
+  const record = document.getElementById('gen-record-output').textContent;
+  navigator.clipboard.writeText(record).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied ✓';
+    btn.style.color = 'var(--pass)';
+    btn.style.borderColor = 'var(--pass)';
+    setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 2000);
+  });
+}
+
+
+// =============================================================
+// SECTION 8 — DNS PROPAGATION CHECKER
+// Calls GET /api/dmarc/propagation/:domain
+// Queries 4 public DNS resolvers and compares results
+// =============================================================
+
+function loadPropDomain(domain) {
+  document.getElementById('prop-domain').value = domain;
+  document.querySelectorAll('#tab-propagation .scenario-btn').forEach(b => {
+    b.style.borderColor = ''; b.style.color = '';
+  });
+  event.currentTarget.style.borderColor = 'var(--accent)';
+  event.currentTarget.style.color       = 'var(--accent)';
+  document.getElementById('prop-result').style.display = 'none';
+}
+
+async function checkPropagation() {
+  const domain = document.getElementById('prop-domain').value.trim();
+  if (!domain) { alert('Please enter a domain name.'); return; }
+
+  // Show loading state
+  const el = document.getElementById('prop-result');
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="card-title">Propagation Results</div>
+    <div style="display:flex; align-items:center; gap:14px; padding:20px 0;">
+      <div style="width:20px; height:20px; border-radius:50%; border:3px solid var(--border); border-top-color:var(--accent); animation:spin 0.8s linear infinite; flex-shrink:0;"></div>
+      <div style="font-family:var(--mono); font-size:13px; color:var(--muted);">Querying DNS resolvers for ${domain}...</div>
+    </div>`;
+
+  try {
+    const response = await fetch(`/api/dmarc/propagation/${encodeURIComponent(domain)}`);
+    if (!response.ok) throw new Error('Server error: ' + response.status);
+    const data = await response.json();
+    renderPropagationResult(data);
+  } catch (err) {
+    el.innerHTML = `<div class="error-box">Could not check propagation: ${err.message}. Make sure node app.js is running.</div>`;
+  }
+}
+
+function renderPropagationResult(data) {
+  const el = document.getElementById('prop-result');
+  el.style.display = 'block';
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = 'fadeUp 0.4s ease both';
+
+  const s = data.summary;
+
+  // Status colours and labels
+  const statusConfig = {
+    FULLY_PROPAGATED:      { color: 'var(--pass)', icon: '✅', label: 'Fully Propagated', desc: `Your DMARC record has propagated to all ${s.total} resolvers and they all agree.` },
+    PARTIALLY_PROPAGATED:  { color: 'var(--warn)', icon: '⚠️', label: 'Partially Propagated', desc: `Found on ${s.found} of ${s.total} resolvers. Propagation is still in progress — check again in a few hours.` },
+    INCONSISTENT:          { color: 'var(--warn)', icon: '⚠️', label: 'Inconsistent', desc: 'Different resolvers are returning different records. DNS caching may cause this — wait a few hours.' },
+    NOT_PROPAGATED:        { color: 'var(--fail)', icon: '❌', label: 'Not Propagated', desc: 'No resolvers found a DMARC record. Either the record has not been published yet or it has not propagated.' },
+  };
+
+  const cfg = statusConfig[s.propagationStatus] || statusConfig.NOT_PROPAGATED;
+
+  el.innerHTML = `
+    <div class="card-title">Propagation Results — ${data.domain}</div>
+
+    <!-- Overall status banner -->
+    <div style="background:rgba(0,0,0,0.2); border:1px solid ${cfg.color}; border-radius:10px; padding:20px; margin-bottom:20px; display:flex; align-items:center; gap:16px;">
+      <div style="font-size:36px;">${cfg.icon}</div>
+      <div>
+        <div style="font-family:var(--mono); font-size:16px; font-weight:700; color:${cfg.color}; margin-bottom:4px;">${cfg.label}</div>
+        <div style="font-size:13px; color:var(--muted);">${cfg.desc}</div>
+      </div>
+      <div style="margin-left:auto; text-align:center; flex-shrink:0;">
+        <div style="font-family:var(--mono); font-size:28px; font-weight:700; color:${cfg.color};">${s.found}/${s.total}</div>
+        <div style="font-family:var(--mono); font-size:10px; color:var(--muted); text-transform:uppercase;">Resolvers Found</div>
+      </div>
+    </div>
+
+    <!-- Per-resolver results -->
+    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+      ${data.results.map(r => {
+        const statusColor = r.status === 'found' ? 'var(--pass)' : r.status === 'timeout' ? 'var(--warn)' : 'var(--fail)';
+        const statusIcon  = r.status === 'found' ? '✅' : r.status === 'timeout' ? '⏱' : '❌';
+        const statusLabel = r.status === 'found' ? 'FOUND' : r.status === 'timeout' ? 'TIMEOUT' : 'NOT FOUND';
+        return `
+          <div style="background:var(--surface2); border:1px solid var(--border); border-left:3px solid ${statusColor}; border-radius:8px; padding:14px 16px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:${r.record ? '8px' : '0'};">
+              <span style="font-size:18px;">${r.flag}</span>
+              <div style="flex:1;">
+                <span style="font-family:var(--mono); font-weight:700; color:var(--text);">${r.resolver}</span>
+                <span style="font-family:var(--mono); font-size:11px; color:var(--muted); margin-left:8px;">${r.ip}</span>
+              </div>
+              <span style="font-family:var(--mono); font-size:11px; font-weight:700; color:${statusColor};">${statusIcon} ${statusLabel}</span>
+            </div>
+            ${r.record ? `<div style="font-family:var(--mono); font-size:11px; color:var(--accent); background:var(--surface); padding:8px 10px; border-radius:6px; word-break:break-all;">${r.record}</div>` : ''}
+            ${r.error  ? `<div style="font-family:var(--mono); font-size:11px; color:var(--warn);">${r.error}</div>` : ''}
+          </div>`;
+      }).join('')}
+    </div>
+
+    <!-- Consistency note -->
+    ${s.uniqueRecords.length > 1 ? `
+      <div style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.3); border-radius:8px; padding:14px 16px;">
+        <div style="font-family:var(--mono); font-size:11px; font-weight:700; color:var(--warn); text-transform:uppercase; margin-bottom:8px;">⚠ Inconsistent Records Detected</div>
+        <div style="font-size:13px; color:var(--text);">Different resolvers returned different records. This usually means DNS propagation is still in progress. Wait a few hours and check again.</div>
+      </div>` : ''}
+
+    <div style="font-family:var(--mono); font-size:11px; color:var(--muted); margin-top:12px; text-align:right;">
+      Checked at ${new Date(data.checkedAt).toLocaleTimeString()}
+    </div>`;
+
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}

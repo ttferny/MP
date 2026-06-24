@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Automated DNS & DKIM Studio</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Space Grotesk', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .auto-studio {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .header-section {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .header-section h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-warm));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-section p {
+      font-size: 1.1rem;
+      color: var(--muted);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .control-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 40px;
+      margin-bottom: 40px;
+      box-shadow: 0 18px 40px rgba(26, 24, 20, 0.12);
+    }
+
+    .input-group {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .domain-input {
+      width: 100%;
+      padding: 14px 18px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 1rem;
+      background: var(--bg-alt);
+      color: var(--ink);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .domain-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(26, 122, 127, 0.15);
+    }
+
+    .btn {
+      padding: 12px 28px;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-dark);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: var(--accent-warm);
+      color: #fff;
+    }
+
+    .btn-secondary:hover {
+      background: var(--accent-warm-dark);
+      transform: translateY(-2px);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .header-textarea {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg-alt);
+      color: var(--ink);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      resize: vertical;
+      height: 150px;
+    }
+
+    .header-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(26, 122, 127, 0.15);
+    }
+
+    .textarea-label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 8px;
+      margin-top: 20px;
+      display: block;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(26, 122, 127, 0.3);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .results-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 900px) {
+      .results-section {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .result-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      box-shadow: 0 18px 40px rgba(26, 24, 20, 0.12);
+    }
+
+    .result-card h3 {
+      font-size: 1.2rem;
+      color: var(--ink);
+      margin: 0 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .result-icon {
+      font-size: 1.5rem;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 10px;
+    }
+
+    .status-badge.found {
+      background: rgba(4, 120, 87, 0.16);
+      color: var(--success);
+      border: 1px solid rgba(4, 120, 87, 0.4);
+    }
+
+    .status-badge.not-found {
+      background: rgba(185, 28, 28, 0.12);
+      color: var(--danger);
+      border: 1px solid rgba(185, 28, 28, 0.35);
+    }
+
+    .status-badge.error {
+      background: rgba(217, 119, 6, 0.12);
+      color: var(--warn);
+      border: 1px solid rgba(217, 119, 6, 0.35);
+    }
+
+    .record-item {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 12px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+    }
+
+    .record-key {
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .record-value {
+      color: var(--ink);
+      word-break: break-all;
+      line-height: 1.5;
+    }
+
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .stat {
+      background: linear-gradient(135deg, rgba(26, 122, 127, 0.1), rgba(231, 111, 81, 0.08));
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .error-box {
+      background: rgba(185, 28, 28, 0.1);
+      border: 1px solid rgba(185, 28, 28, 0.3);
+      border-radius: 10px;
+      padding: 16px;
+      color: var(--danger);
+      margin-bottom: 20px;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="auto-studio">
+    <!-- Header -->
+    <div class="header-section">
+      <h1>🔍 Automated DNS & DKIM Studio</h1>
+      <p>Enter a domain to automatically check DNS records, SPF, DMARC, and DKIM configuration</p>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+      <div class="input-group">
+        <input
+          type="text"
+          id="domainInput"
+          class="domain-input"
+          placeholder="Enter domain (e.g., example.com)"
+          spellcheck="false"
+        />
+        <button id="checkBtn" class="btn btn-primary">Check DNS</button>
+        <button id="clearBtn" class="btn btn-secondary">Clear</button>
+      </div>
+
+      <label class="textarea-label">Email Header (optional - for DKIM validation)</label>
+      <textarea
+        id="headerInput"
+        class="header-textarea"
+        placeholder="Paste raw email header here to validate DKIM signature..."
+        spellcheck="false"
+      ></textarea>
+
+      <div id="loadingState" class="loading hidden">
+        <div class="spinner"></div>
+        <span>Checking DNS records...</span>
+      </div>
+
+      <div id="errorBox" class="error-box hidden"></div>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsContainer" class="hidden">
+      <div class="results-section">
+        <!-- DNS Results -->
+        <div class="result-card">
+          <h3>
+            <span class="result-icon">📋</span>
+            DNS Records
+          </h3>
+          <div id="dnsResults"></div>
+        </div>
+
+        <!-- DKIM Results -->
+        <div class="result-card">
+          <h3>
+            <span class="result-icon">🔐</span>
+            DKIM Configuration
+          </h3>
+          <div id="dkimResults"></div>
+        </div>
+      </div>
+
+      <!-- Header Analysis (if provided) -->
+      <div id="headerResultsContainer" class="hidden">
+        <div class="result-card">
+          <h3>
+            <span class="result-icon">✉️</span>
+            Header Analysis
+          </h3>
+          <div id="headerResults"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const domainInput = document.getElementById('domainInput');
+    const headerInput = document.getElementById('headerInput');
+    const checkBtn = document.getElementById('checkBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const loadingState = document.getElementById('loadingState');
+    const errorBox = document.getElementById('errorBox');
+    const resultsContainer = document.getElementById('resultsContainer');
+
+    /**
+     * Format DNS record for display
+     */
+    function formatRecord(record) {
+      if (!record) return 'N/A';
+      if (typeof record === 'object') {
+        return JSON.stringify(record, null, 2);
+      }
+      return String(record);
+    }
+
+    /**
+     * Build DNS results HTML
+     */
+    function renderDnsResults(data) {
+      let html = '';
+
+      // SPF
+      if (data.records.spf) {
+        const spfStatus = data.records.spf.status;
+        const badgeClass = spfStatus === 'found' ? 'found' : 'not-found';
+        html += `
+          <div class="record-item">
+            <div class="record-key">SPF Record</div>
+            <span class="status-badge ${badgeClass}">${spfStatus}</span>
+            ${data.records.spf.record ? `
+              <div class="record-value" style="margin-top: 8px;">${formatRecord(data.records.spf.record)}</div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      // DMARC
+      if (data.records.dmarc) {
+        const dmarcStatus = data.records.dmarc.status;
+        const badgeClass = dmarcStatus === 'found' ? 'found' : 'not-found';
+        html += `
+          <div class="record-item">
+            <div class="record-key">DMARC Record</div>
+            <span class="status-badge ${badgeClass}">${dmarcStatus}</span>
+            ${data.records.dmarc.record ? `
+              <div class="record-value" style="margin-top: 8px;">${formatRecord(data.records.dmarc.record)}</div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      return html || '<div class="record-item">No DNS records found</div>';
+    }
+
+    /**
+     * Build DKIM results HTML
+     */
+    function renderDkimResults(data) {
+      let html = '';
+
+      if (!data.records.dkim) {
+        return '<div class="record-item">No DKIM records found</div>';
+      }
+
+      if (data.records.dkim.length === 0) {
+        return '<div class="record-item">No DKIM records found for common selectors</div>';
+      }
+
+      if (data.records.dkim[0].status === 'none_found') {
+        return '<div class="record-item">No DKIM records found</div>';
+      }
+
+      data.records.dkim.forEach((dkim) => {
+        html += `
+          <div class="record-item">
+            <div class="record-key">Selector: ${dkim.selector}</div>
+            <span class="status-badge found">found</span>
+            ${dkim.record ? `
+              <div class="record-value" style="margin-top: 8px;">${formatRecord(dkim.record)}</div>
+            ` : ''}
+          </div>
+        `;
+      });
+
+      // Summary
+      html += `
+        <div class="summary-stats">
+          <div class="stat">
+            <div class="stat-label">Total Selectors</div>
+            <div class="stat-value">${data.summary.dkimSelectors.length}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Has SPF</div>
+            <div class="stat-value" style="color: ${data.summary.hasSPF ? 'var(--success)' : 'var(--danger)'}">
+              ${data.summary.hasSPF ? '✓' : '✗'}
+            </div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Has DMARC</div>
+            <div class="stat-value" style="color: ${data.summary.hasDMARC ? 'var(--success)' : 'var(--danger)'}">
+              ${data.summary.hasDMARC ? '✓' : '✗'}
+            </div>
+          </div>
+        </div>
+      `;
+
+      return html;
+    }
+
+    /**
+     * Render header analysis results
+     */
+    function renderHeaderResults(data) {
+      if (!data || data.error) {
+        return `<div class="record-item">Error analyzing header: ${data?.error || 'Unknown error'}</div>`;
+      }
+
+      const dkim = data.dkim || {};
+      const statusClass = dkim.status === 'pass' ? 'found' : dkim.status === 'fail' ? 'not-found' : 'error';
+
+      let html = `
+        <div class="record-item">
+          <div class="record-key">From</div>
+          <div class="record-value">${data.header?.from || 'N/A'}</div>
+        </div>
+        <div class="record-item">
+          <div class="record-key">Domain</div>
+          <div class="record-value">${data.header?.fromDomain || 'N/A'}</div>
+        </div>
+        <div class="record-item">
+          <div class="record-key">DKIM Status</div>
+          <span class="status-badge ${statusClass}">${dkim.status || 'unknown'}</span>
+          ${dkim.reason ? `<div class="record-value" style="margin-top: 8px;">${dkim.reason}</div>` : ''}
+        </div>
+        ${dkim.publicKeyFound ? `
+          <div class="record-item" style="border-left: 3px solid var(--success);">
+            <div class="record-key">✓ Public Key Found</div>
+            <div class="record-value">DKIM public key is available in DNS</div>
+          </div>
+        ` : ''}
+      `;
+
+      return html;
+    }
+
+    /**
+     * Fetch and display results
+     */
+    async function performCheck() {
+      const domain = domainInput.value.trim();
+
+      if (!domain) {
+        showError('Please enter a domain');
+        return;
+      }
+
+      loadingState.classList.remove('hidden');
+      errorBox.classList.add('hidden');
+      resultsContainer.classList.add('hidden');
+
+      try {
+        const payload = { domain };
+        const rawHeader = headerInput.value.trim();
+        if (rawHeader) {
+          payload.rawHeader = rawHeader;
+        }
+
+        const response = await fetch('/api/dns/full-check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Check failed');
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+          displayResults(result.data);
+        } else {
+          throw new Error(result.error || 'Unknown error');
+        }
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        loadingState.classList.add('hidden');
+      }
+    }
+
+    /**
+     * Display results in UI
+     */
+    function displayResults(data) {
+      document.getElementById('dnsResults').innerHTML = renderDnsResults(data.dnsCheck);
+      document.getElementById('dkimResults').innerHTML = renderDkimResults(data.dnsCheck);
+
+      if (data.headerCheck) {
+        document.getElementById('headerResults').innerHTML = renderHeaderResults(data.headerCheck);
+        document.getElementById('headerResultsContainer').classList.remove('hidden');
+      } else {
+        document.getElementById('headerResultsContainer').classList.add('hidden');
+      }
+
+      resultsContainer.classList.remove('hidden');
+    }
+
+    /**
+     * Show error message
+     */
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.classList.remove('hidden');
+    }
+
+    /**
+     * Clear all inputs and results
+     */
+    function clearAll() {
+      domainInput.value = '';
+      headerInput.value = '';
+      resultsContainer.classList.add('hidden');
+      errorBox.classList.add('hidden');
+      domainInput.focus();
+    }
+
+    // Event listeners
+    checkBtn.addEventListener('click', performCheck);
+    clearBtn.addEventListener('click', clearAll);
+    domainInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') performCheck();
+    });
+
+    // Focus on load
+    domainInput.focus();
+  </script>
+
+</body>
+</html>

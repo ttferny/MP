@@ -258,42 +258,6 @@ router.post('/smtp/send-test', async (req, res) => {
   }
 });
 
-// POST /api/dmarc/smtp/send-test
-// Sends a test email to the local SMTP receiver on port 2525
-// Body: { type } — "legitimate", "spoof", "ceo-fraud", "spf-misalign"
-router.post('/smtp/send-test', async (req, res) => {
-  const nodemailer = require('nodemailer');
-  const type = req.body.type || 'legitimate';
-
-  const transporter = nodemailer.createTransport({
-    host: 'localhost', port: 2525, secure: false,
-    tls: { rejectUnauthorized: false }
-  });
-
-  const emails = {
-    'legitimate':   { from: 'noreply@google.com',    subject: 'Legitimate Email Test',  auth: 'spf=pass smtp.mailfrom=google.com; dkim=pass header.d=google.com', returnPath: 'noreply@google.com' },
-    'spoof':        { from: 'security@dbs.com.sg',   subject: 'Basic Spoof Test',       auth: 'spf=fail smtp.mailfrom=evil.com; dkim=fail',                       returnPath: 'bounce@evil.com' },
-    'ceo-fraud':    { from: 'ceo@company.com',       subject: 'CEO Fraud Test',         auth: 'spf=pass smtp.mailfrom=ceo-company.com; dkim=none',                returnPath: 'ceo@ceo-company.com' },
-    'spf-misalign': { from: 'support@legitbank.com', subject: 'SPF Misalign Test',      auth: 'spf=pass smtp.mailfrom=evil.com; dkim=fail',                       returnPath: 'bounce@evil.com' },
-  };
-
-  const email = emails[type] || emails['legitimate'];
-
-  try {
-    await transporter.sendMail({
-      from: email.from, to: 'test@localhost',
-      subject: email.subject, text: 'Test email for DMARC evaluation',
-      headers: {
-        'Authentication-Results': email.auth,
-        'Return-Path': `<${email.returnPath}>`
-      }
-    });
-    res.json({ message: `Test email sent: ${email.subject}` });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 
 // ─────────────────────────────────────────────────────────────
 // SECTION 5 — DMARC XML REPORT ANALYZER (NEW)
@@ -348,6 +312,185 @@ router.post('/analyze', (req, res) => {
       success: false,
       error: error.message
     });
+  }
+});
+
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 6 — DNS PROPAGATION CHECKER
+// Queries multiple public DNS resolvers to check whether a
+// DMARC record has propagated worldwide.
+// Uses Node's built-in dns module with custom resolver addresses.
+// ─────────────────────────────────────────────────────────────
+
+// GET /api/dmarc/propagation/:domain
+// Checks DMARC record propagation across Google, Cloudflare, OpenDNS, and Quad9
+router.get('/propagation/:domain', async (req, res) => {
+  const domain = req.params.domain;
+  const { Resolver } = require('dns').promises;
+
+  // Four major public DNS resolvers
+  const resolvers = [
+    { name: 'Google',     ip: '8.8.8.8',       flag: '🇺🇸' },
+    { name: 'Cloudflare', ip: '1.1.1.1',       flag: '🌐' },
+    { name: 'OpenDNS',    ip: '208.67.222.222', flag: '🇺🇸' },
+    { name: 'Quad9',      ip: '9.9.9.9',        flag: '🇨🇭' },
+  ];
+
+  // Query each resolver in parallel with a 5 second timeout
+  const results = await Promise.all(resolvers.map(async (r) => {
+    const resolver = new Resolver();
+    resolver.setServers([r.ip]);
+
+    try {
+      const records = await Promise.race([
+        resolver.resolveTxt(`_dmarc.${domain}`),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+      ]);
+
+      // Find the DMARC record among all TXT records
+      const dmarcRecord = records.flat().find(rec => rec.startsWith('v=DMARC1')) || null;
+
+      return {
+        resolver:  r.name,
+        ip:        r.ip,
+        flag:      r.flag,
+        status:    dmarcRecord ? 'found' : 'not_found',
+        record:    dmarcRecord,
+        error:     null,
+      };
+    } catch (err) {
+      return {
+        resolver:  r.name,
+        ip:        r.ip,
+        flag:      r.flag,
+        status:    err.message === 'timeout' ? 'timeout' : 'not_found',
+        record:    null,
+        error:     err.message === 'timeout' ? 'Request timed out' : null,
+      };
+    }
+  }));
+
+  // Check consistency — do all resolvers return the same record?
+  const foundRecords  = results.filter(r => r.record).map(r => r.record);
+  const uniqueRecords = [...new Set(foundRecords)];
+  const allAgree      = uniqueRecords.length <= 1;
+  const propagated    = results.filter(r => r.status === 'found').length;
+
+  res.json({
+    domain,
+    checkedAt:    new Date().toISOString(),
+    results,
+    summary: {
+      total:       resolvers.length,
+      found:       propagated,
+      notFound:    results.filter(r => r.status === 'not_found').length,
+      timedOut:    results.filter(r => r.status === 'timeout').length,
+      allAgree,
+      uniqueRecords,
+      propagationStatus:
+        propagated === 0              ? 'NOT_PROPAGATED' :
+        propagated < resolvers.length ? 'PARTIALLY_PROPAGATED' :
+        allAgree                      ? 'FULLY_PROPAGATED' : 'INCONSISTENT',
+    }
+  });
+});
+
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 7 — DOMAIN PROTECTION ANALYSER
+// Fetches real SPF, DKIM, and DMARC records for a domain
+// and simulates what would happen if someone tried to spoof it.
+// Uses Ashton's DNS module for all lookups.
+// ─────────────────────────────────────────────────────────────
+
+// GET /api/dmarc/protect/:domain
+// Returns real DNS records and simulates a spoof attack outcome
+router.get('/protect/:domain', async (req, res) => {
+  const domain = req.params.domain;
+  const { lookupSPFRecord, lookupDKIMRecord, lookupMXRecords } = require('../services/dns');
+  const { parseDMARCRecord } = require('../services/dmarcAuditor');
+
+  try {
+    // Fetch all records in parallel with timeouts
+    const withTimeout = (promise, ms = 4000) => Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+    ]);
+
+    const [spfRaw, dmarcRaw, dkimRaw, mxRecords] = await Promise.all([
+      withTimeout(lookupSPFRecord(domain)).catch(() => null),
+      withTimeout(lookupDMARCRecord(domain)).catch(() => null),
+      withTimeout(lookupDKIMRecord(domain)).catch(() => null),
+      withTimeout(lookupMXRecords(domain)).catch(() => [])
+    ]);
+
+    // Parse DMARC record
+    const dmarc = parseDMARCRecord(dmarcRaw);
+
+    // Evaluate SPF strength
+    const spfStrength =
+      !spfRaw                       ? 'missing' :
+      spfRaw.includes('-all')       ? 'strong' :
+      spfRaw.includes('~all')       ? 'weak' :
+      spfRaw.includes('+all')       ? 'dangerous' : 'configured';
+
+    // Simulate a spoof attack — attacker sends from evil.com, From: domain
+    const spoofSpf  = { status: 'fail', domain: 'evil.com' };
+    const spoofDkim = { status: 'fail', domain: '' };
+    const dmarcParsed = dmarc ? {
+      policy:     dmarc.policy || 'none',
+      fromDomain: domain,
+      pct:        dmarc.pct || 100,
+      aspf:       dmarc.aspf || 'r',
+      adkim:      dmarc.adkim || 'r',
+      sp:         dmarc.sp || null,
+    } : {
+      policy: 'none', fromDomain: domain, pct: 100, aspf: 'r', adkim: 'r', sp: null
+    };
+
+    const spoofResult = evaluateDMARC(spoofSpf, spoofDkim, dmarcParsed);
+
+    // Simulate a legitimate email — same domain, SPF and DKIM pass
+    const legitSpf  = { status: 'pass', domain: domain };
+    const legitDkim = { status: 'pass', domain: domain };
+    const legitResult = evaluateDMARC(legitSpf, legitDkim, dmarcParsed);
+
+    // Build step by step flow for both simulations
+    const buildFlow = (spf, dkim, label) => {
+      const spfAligned  = spf.status === 'pass' && spf.domain === domain;
+      const dkimAligned = dkim.status === 'pass' && dkim.domain === domain;
+      const dmarcPass   = spfAligned || dkimAligned;
+      return {
+        label,
+        spf:  { ...spf,  aligned: spfAligned },
+        dkim: { ...dkim, aligned: dkimAligned },
+        dmarcPass,
+        result: evaluateDMARC(spf, dkim, dmarcParsed)
+      };
+    };
+
+    res.json({
+      domain,
+      records: {
+        spf:  { raw: spfRaw,  strength: spfStrength },
+        dkim: { raw: dkimRaw, found: !!dkimRaw },
+        dmarc: { raw: dmarcRaw, parsed: dmarc },
+        mx:   mxRecords
+      },
+      simulations: {
+        spoof: buildFlow(spoofSpf, spoofDkim, 'Spoof attack'),
+        legit: buildFlow(
+          { status: 'pass', domain },
+          { status: 'pass', domain },
+          'Legitimate email'
+        )
+      },
+      checkedAt: new Date().toISOString()
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

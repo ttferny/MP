@@ -85,6 +85,24 @@ const testCases = [
       'Content-Type: text/plain; charset=us-ascii',
       'Mime-Version: 1.0'
     ].join('\n')
+    ,
+    content: `Fewer breaks, better flow.
+With Mix on Premium, you can blend tracks to create a smooth, continuous listening experience. Plus, ad-free music listening keeps the music moving without interruption.
+
+Individual plan only.
+Offer ends Jun 22, 2026. S$11.98/month after. Terms and conditions apply. Open only to users who haven't already tried Premium.
+
+Clicking the button will log you into your Spotify account, where you can choose to accept this offer. Do not forward this email to anyone not authorized to access your account.
+
+Get Spotify for:
+[iPhone] | [iPad] | [Android] | [Other]
+
+About This Message
+This message was sent to tiffanyctj@gmail.com. If you don't want to receive these emails from Spotify in the future, you can edit your profile or unsubscribe.
+
+[Terms of Use] | [Privacy Policy] | [Contact Us]
+
+Spotify AB, Regeringsgatan 19, 111 53, Stockholm, Sweden` 
   },
   {
     key: 'spf-fail',
@@ -98,6 +116,19 @@ const testCases = [
       'Date: Tue, 21 May 2026 11:02:00 +0800',
       'Message-ID: <spf-fail-002@paypal.com>'
     ].join('\n')
+    ,
+    content: `Dear Employee,
+Please review the updated payroll statement for the current payment cycle. An adjustment has been requested regarding your direct deposit bank instructions.
+
+If you did not authorize this change, you must immediately access the employee portal to review and cancel the request to prevent your salary from being routed to an incorrect account:
+
+http://verification-paypal.example.net/payroll-update/secure-login
+
+Failure to verify your identity and banking details within 24 hours will result in your current deposit being placed on administrative hold.
+
+Sincerely,
+Global Payroll Support Team
+PayPal Inc.` 
   },
   {
     key: 'spf-neutral',
@@ -111,6 +142,20 @@ const testCases = [
       'Date: Tue, 21 May 2026 12:22:00 +0800',
       'Message-ID: <spf-neutral-003@example.org>'
     ].join('\n')
+    ,
+    content: `Dear User,
+Welcome to Example Org! We are glad to have you on board.
+
+This email has been sent to confirm your registration and provide you with some basic resources to get started with our platform. You can access your account dashboard at any time to configure your profile:
+
+http://example.org/welcome-dashboard
+
+If you have any questions or require assistance setting up your workspace, feel free to visit our online help center or reply directly to this message.
+
+Best regards,
+
+The Support Team
+Example Org` 
   }
 ];
 
@@ -124,6 +169,7 @@ function loadTestCases() {
 
     btn.addEventListener('click', () => {
       headerInput.value = tc.header;
+      if (contentInput) contentInput.value = tc.content || '';
       testcaseNote.textContent = tc.note;
       testcaseNote.classList.remove('hidden');
       document.querySelectorAll('.demo-btn').forEach(b => b.classList.remove('active-case'));
@@ -448,10 +494,10 @@ function renderAI(ai) {
 
   // Recommendation label
   const recLabel = {
-    deliver: '📬 Safe to deliver',
+    deliver: '📬 Safe',
     review:  '🔍 Review before opening',
     delete:  '🗑 Delete this email',
-    report:  '🚨 Report as phishing',
+    report:  '🚨 Report as phishing/spoofing',
   }[ai.recommendation] || ai.recommendation;
 
   // Confidence bar colour matches threat level
