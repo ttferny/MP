@@ -43,42 +43,42 @@
 }
 
 .upload-box {
-  border: 2px dashed #4a5568;
+  border: 2px dashed #404040;
   border-radius: 12px;
   padding: 60px 40px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: linear-gradient(135deg, rgba(74, 85, 104, 0.1), rgba(107, 114, 128, 0.1));
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.08), rgba(255, 140, 66, 0.05));
 }
 
 .upload-box:hover {
-  border-color: #6366f1;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(79, 70, 229, 0.1));
+  border-color: #ff6b35;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.15), rgba(255, 140, 66, 0.1));
 }
 
 .upload-box.drag-over {
-  border-color: #6366f1;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(79, 70, 229, 0.2));
+  border-color: #ff6b35;
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.25), rgba(255, 140, 66, 0.2));
   transform: scale(1.02);
 }
 
 .upload-icon {
   width: 60px;
   height: 60px;
-  color: #6366f1;
+  color: #ff6b35;
   margin-bottom: 20px;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 .upload-box h3 {
-  color: #fff;
+  color: #f5f5f5;
   font-size: 1.3rem;
   margin-bottom: 10px;
 }
 
 .upload-box p {
-  color: #9ca3af;
+  color: #888888;
   font-size: 0.95rem;
 }
 
@@ -406,7 +406,7 @@
 }
 
 .server-detail {
-  color: #9ca3af;
+  color: #888888;
 }
 
 .server-detail strong {
