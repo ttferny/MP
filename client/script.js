@@ -18,22 +18,47 @@ const parsedFields  = document.getElementById('parsed-fields');
 const spoofWarning  = document.getElementById('spoof-warning');
 
 const spfSection    = document.getElementById('spf-section');
+const spfPanel      = document.getElementById('spf-panel');
 const spfBadge      = document.getElementById('spf-badge');
 const spfSummary    = document.getElementById('spf-summary');
 const spfDetails    = document.getElementById('spf-details');
 
 const dkimSection   = document.getElementById('dkim-section');
+const dkimPanel     = document.getElementById('dkim-panel');
 const dkimBadge     = document.getElementById('dkim-badge');
 const dkimSummary   = document.getElementById('dkim-summary');
 const dkimDetails   = document.getElementById('dkim-details');
 
 const dmarcSection  = document.getElementById('dmarc-section');
+const dmarcPanel    = document.getElementById('dmarc-panel');
 const dmarcBadge    = document.getElementById('dmarc-badge');
 const dmarcSummary  = document.getElementById('dmarc-summary');
 const dmarcDetails  = document.getElementById('dmarc-details');
 
 const validationCard = document.getElementById('validation-card');
 const validationList = document.getElementById('validation-list');
+
+const accordionTriggers = document.querySelectorAll('.accordion-trigger');
+
+accordionTriggers.forEach(trigger => {
+  const panelId = trigger.dataset.target;
+  const panel = document.getElementById(panelId);
+  const item  = trigger.closest('.accordion-item');
+
+  trigger.addEventListener('click', () => {
+    const open = !panel.classList.contains('hidden');
+    document.querySelectorAll('.accordion-item').forEach(el => {
+      el.classList.remove('open');
+      const inner = el.querySelector('.accordion-panel');
+      if (inner) inner.classList.add('hidden');
+    });
+
+    if (!open) {
+      panel.classList.remove('hidden');
+      item.classList.add('open');
+    }
+  });
+});
 
 const testcaseContainer = document.getElementById('testcase-container');
 const testcaseNote      = document.getElementById('testcase-note');
@@ -611,28 +636,25 @@ function showError(el, msg) { el.textContent = msg; el.classList.remove('hidden'
 function hideError(el)      { el.textContent = '';  el.classList.add('hidden'); }
 
 function clearResults() {
-  validationCard.classList.add('hidden');
-  parsedSection.classList.add('hidden');
-  spfSection.classList.add('hidden');
-  dkimSection.classList.add('hidden');
-  dmarcSection.classList.add('hidden');
-  aiSection.classList.add('hidden');       // ← clear AI card too
   spoofWarning.classList.add('hidden');
   parsedFields.innerHTML    = '';
   spfDetails.innerHTML      = '';
   dkimDetails.innerHTML     = '';
   dmarcDetails.innerHTML    = '';
-  aiBody.innerHTML          = '';
+  aiBody.innerHTML          = '<p class="ai-placeholder">AI phishing analysis will appear after you run the check.</p>';
   spfSummary.textContent    = 'Run the analysis to see SPF results.';
   dkimSummary.textContent   = 'Run the analysis to see DKIM results.';
   dmarcSummary.textContent  = 'Run the analysis to see DMARC results.';
-  spfBadge.textContent      = '-'; spfBadge.className  = 'status-pill';
-  dkimBadge.textContent     = '-'; dkimBadge.className = 'status-pill';
-  dmarcBadge.textContent    = '-'; dmarcBadge.className= 'status-pill';
-  aiBadge.textContent       = '—'; aiBadge.className   = 'ai-badge';
-  validationList.innerHTML  = '';
+  spfBadge.textContent      = 'PENDING'; spfBadge.className  = 'status-pill none';
+  dkimBadge.textContent     = 'PENDING'; dkimBadge.className = 'status-pill none';
+  dmarcBadge.textContent    = 'PENDING'; dmarcBadge.className= 'status-pill none';
+  aiBadge.textContent       = 'PENDING'; aiBadge.className   = 'ai-badge none';
+  validationList.innerHTML  = '<li>Awaiting analysis...</li>';
   testcaseNote.classList.add('hidden');
   document.querySelectorAll('.demo-btn').forEach(b => b.classList.remove('active-case'));
+  document.querySelectorAll('.accordion-panel').forEach(panel => panel.classList.add('hidden'));
+  document.querySelectorAll('.accordion-item').forEach(item => item.classList.remove('open'));
+  renderParsed({});
 }
 
 // ── Init ───────────────────────────────────────────────────

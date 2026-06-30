@@ -81,11 +81,6 @@
           </label>
         </div>
       </div>
-
-      <div class="card" id="policy-summary-card">
-        <div class="card-title">Live policy summary</div>
-        <p id="policy-summary-text" class="policy-summary-text">The SPF policy summary appears here after evaluation.</p>
-      </div>
     </section>
 
     <section class="stack">
@@ -99,7 +94,7 @@
       </div>
 
       <div class="card commercial-card">
-        <div class="card-title">Commercial Summary</div>
+        <div class="card-title">Live Policy Summary</div>
         <div class="commercial-grid">
           <div class="commercial-item">
             <span class="commercial-label">Status</span>
@@ -118,6 +113,14 @@
             <span id="commercial-impact" class="commercial-value">—</span>
           </div>
         </div>
+        
+        <div class="commercial-policy">
+          <div class="commercial-policy-title">
+          </div>
+          <div id="policy-summary-text" class="policy-summary-text">
+          </div>
+        </div>
+
         <div class="commercial-highlights" id="commercial-highlights"></div>
       </div>
 
@@ -131,23 +134,11 @@
           <li>If nothing matches, the result is neutral.</li>
         </ol>
       </div>
-    
-      <div class="card compact-card">
-        <div class="card-title">Interpreting results</div>
-        <div class="card-hint compact-hint">
-          <ul>
-            <li><strong>PASS:</strong> Authorized sender — mail is accepted.</li>
-            <li><strong>SOFTFAIL:</strong> Suspicious sender — delivery allowed with warning.</li>
-            <li><strong>FAIL:</strong> Not authorized — likely rejected by strict receivers.</li>
-            <li><strong>NEUTRAL / NONE:</strong> No clear policy claim — inconclusive.</li>
-          </ul>
-        </div>
-      </div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <div>Email Authentication Studio - SPF Live Auditor</div>
+    <div>Email Authentication Studio — SPF Live Auditor</div>
     <div>Temasek Polytechnic · Diploma in Cybersecurity and Digital Forensics · AY26/27</div>
   </footer>
 

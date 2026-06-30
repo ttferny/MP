@@ -34,8 +34,8 @@
   <main class="main-content">
     <div class="layout-grid">
 
-      <!-- ── LEFT COLUMN: Input ── -->
-      <section class="stack">
+      <!-- ── LEFT PANEL (30%) ── -->
+      <section class="stack left-panel">
         <div class="card input-card">
           <h2 class="card-title">Paste Raw Email Header</h2>
           <p class="card-hint">
@@ -84,18 +84,15 @@
         </div>
       </section>
 
-      <!-- ── RIGHT COLUMN: Results ── -->
-      <section class="stack">
-
-        <!-- API Response Validation -->
-        <div id="validation-card" class="card validation-card hidden">
+      <!-- ── MIDDLE PANEL (30%) ── -->
+      <section class="stack middle-panel">
+        <div id="validation-card" class="card validation-card">
           <h2 class="card-title">API Response Validation</h2>
           <p class="card-hint">Checks required fields from the backend response.</p>
           <ul id="validation-list" class="validation-list"></ul>
         </div>
 
-        <!-- Parsed Header Fields -->
-        <div id="parsed-section" class="card hidden">
+        <div id="parsed-section" class="card">
           <h2 class="card-title">Parsed Header Fields</h2>
           <p class="card-hint">Key values extracted by the parser.</p>
           <div id="parsed-fields" class="parsed-grid"></div>
@@ -103,50 +100,72 @@
             Spoofing signal detected: the visible From domain and the envelope domain do not match. This can happen when mail is sent via a third-party or subdomain (common for marketing emails).
           </div>
         </div>
+      </section>
 
-        <!-- SPF -->
-        <div id="spf-section" class="card hidden">
-          <div class="spf-header">
-            <h2 class="card-title">SPF Evaluation</h2>
-            <span id="spf-badge" class="status-pill">-</span>
-          </div>
-          <p id="spf-summary" class="card-hint">Run the analysis to see SPF results.</p>
-          <div id="spf-details" class="detail-list"></div>
-        </div>
-
-        <!-- DKIM -->
-        <div id="dkim-section" class="card hidden">
-          <div class="spf-header">
-            <h2 class="card-title">DKIM Verification</h2>
-            <span id="dkim-badge" class="status-pill">-</span>
-          </div>
-          <p id="dkim-summary" class="card-hint">Run the analysis to see DKIM results.</p>
-          <div id="dkim-details" class="detail-list"></div>
-        </div>
-
-        <!-- DMARC -->
-        <div id="dmarc-section" class="card hidden">
-          <div class="spf-header">
-            <h2 class="card-title">DMARC Policy</h2>
-            <span id="dmarc-badge" class="status-pill">-</span>
-          </div>
-          <p id="dmarc-summary" class="card-hint">Run the analysis to see DMARC results.</p>
-          <div id="dmarc-details" class="detail-list"></div>
-        </div>
-
-        <!-- ── AI Phishing Analysis Card ── NEW -->
-        <div id="ai-section" class="card ai-card hidden">
+      <!-- ── RIGHT PANEL (40%) ── -->
+      <section class="stack right-panel">
+        <div id="ai-section" class="card ai-card">
           <div class="ai-header">
             <span class="ai-icon">🤖</span>
             <div>
               <div class="ai-title">AI Phishing Analysis</div>
               <div class="ai-subtitle">Powered by Gemini AI — analyses content and header signals</div>
             </div>
-            <span id="ai-badge" class="ai-badge">—</span>
+            <span id="ai-badge" class="ai-badge">PENDING</span>
           </div>
-          <div id="ai-body" class="ai-body"></div>
+          <div id="ai-body" class="ai-body">
+            <p class="ai-placeholder">AI phishing analysis will appear after you run the check.</p>
+          </div>
         </div>
 
+        <div class="card auth-dropdown">
+          <h2 class="card-title">Authentication Results</h2>
+          <p class="card-hint">Expand each row to reveal the full result details.</p>
+
+          <div class="auth-accordion">
+            <div id="spf-section" class="accordion-item">
+              <button type="button" class="accordion-trigger" data-target="spf-panel">
+                <span>SPF Evaluation</span>
+                <span class="accordion-meta">
+                  <span id="spf-badge" class="status-pill">-</span>
+                  <span class="accordion-icon">▾</span>
+                </span>
+              </button>
+              <div id="spf-panel" class="accordion-panel hidden">
+                <p id="spf-summary" class="accordion-summary">Run the analysis to see SPF results.</p>
+                <div id="spf-details" class="detail-list"></div>
+              </div>
+            </div>
+
+            <div id="dkim-section" class="accordion-item">
+              <button type="button" class="accordion-trigger" data-target="dkim-panel">
+                <span>DKIM Verification</span>
+                <span class="accordion-meta">
+                  <span id="dkim-badge" class="status-pill">-</span>
+                  <span class="accordion-icon">▾</span>
+                </span>
+              </button>
+              <div id="dkim-panel" class="accordion-panel hidden">
+                <p id="dkim-summary" class="accordion-summary">Run the analysis to see DKIM results.</p>
+                <div id="dkim-details" class="detail-list"></div>
+              </div>
+            </div>
+
+            <div id="dmarc-section" class="accordion-item">
+              <button type="button" class="accordion-trigger" data-target="dmarc-panel">
+                <span>DMARC Policy</span>
+                <span class="accordion-meta">
+                  <span id="dmarc-badge" class="status-pill">-</span>
+                  <span class="accordion-icon">▾</span>
+                </span>
+              </button>
+              <div id="dmarc-panel" class="accordion-panel hidden">
+                <p id="dmarc-summary" class="accordion-summary">Run the analysis to see DMARC results.</p>
+                <div id="dmarc-details" class="detail-list"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
   </main>

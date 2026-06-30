@@ -1,37 +1,39 @@
 /**
  * spf.js — SPF POC / Live Auditor Logic
- * * WHAT THIS DOES:
+ *
+ * WHAT THIS DOES:
  * ---------------
  * 1. Checks for ?domain= parameters on page load and automatically evaluates.
  * 2. Connects to the dynamic backend endpoint /api/spf/check.
  * 3. Injects a custom 10 DNS Lookup Speedometer with real-time flashing red error indicators.
  * 4. Renders an interactive waterfall evaluation mechanism trace timeline.
+ * 5. Adds tooltip popovers to all labelled data fields explaining what each value means.
  */
 
 // ── DOM Element Selectors ───────────────────────────────────
-const domainInput = document.getElementById('domain-input');
-const ipInput = document.getElementById('ip-input');
-const recordInput = document.getElementById('record-input');
-const aInput = document.getElementById('a-input');
-const mxInput = document.getElementById('mx-input');
-const includeInput = document.getElementById('include-input');
-const evaluateBtn = document.getElementById('evaluate-btn');
-const resetBtn = document.getElementById('reset-btn');
+const domainInput       = document.getElementById('domain-input');
+const ipInput           = document.getElementById('ip-input');
+const recordInput       = document.getElementById('record-input');
+const aInput            = document.getElementById('a-input');
+const mxInput           = document.getElementById('mx-input');
+const includeInput      = document.getElementById('include-input');
+const evaluateBtn       = document.getElementById('evaluate-btn');
+const resetBtn          = document.getElementById('reset-btn');
 
-const resultBadge = document.getElementById('result-badge');
-const resultSummary = document.getElementById('result-summary');
-const traceList = document.getElementById('trace-list');
-const policySummaryText = document.getElementById('policy-summary-text');
-const commercialStatus = document.getElementById('commercial-status');
-const commercialRisk = document.getElementById('commercial-risk');
+const resultBadge            = document.getElementById('result-badge');
+const resultSummary          = document.getElementById('result-summary');
+const traceList              = document.getElementById('trace-list');
+const policySummaryText      = document.getElementById('policy-summary-text');
+const commercialStatus       = document.getElementById('commercial-status');
+const commercialRisk         = document.getElementById('commercial-risk');
 const commercialRecommendation = document.getElementById('commercial-recommendation');
-const commercialImpact = document.getElementById('commercial-impact');
-const commercialHighlights = document.getElementById('commercial-highlights');
+const commercialImpact       = document.getElementById('commercial-impact');
+const commercialHighlights   = document.getElementById('commercial-highlights');
 
 const scenarioGrid = document.getElementById('scenario-grid');
 const scenarioNote = document.getElementById('scenario-note');
 
-// Small HTML escape helper for safe insertion
+// ── Small HTML escape helper ─────────────────────────────────
 function escapeHtml(value) {
   return String(value || '')
     .replace(/&/g, '&amp;')
@@ -41,13 +43,254 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
-// ── Inject Speedometer Structural Styles ────────────────────
-// Programmatically adds flashing red keyframe animations without modifying external CSS files
+// ── Tooltip Definitions ──────────────────────────────────────
+// Plain-language explanation of each field shown on the page.
+// Each entry maps an element ID (or semantic key) → { title, body }.
+const TOOLTIPS = {
+  'domain-input': {
+    title: 'Domain',
+    body: 'The domain being tested — this is the owner of the email policy. SPF checks whether the sending server is authorised to send mail on behalf of this domain.',
+  },
+  'ip-input': {
+    title: 'Sender IP',
+    body: 'The IPv4 address that actually sent the message. SPF compares this IP against the list of approved servers published by the domain.',
+  },
+  'record-input': {
+    title: 'SPF Record',
+    body: 'The raw DNS TXT policy string published by the domain. It lists which servers are allowed to send email on its behalf (e.g. ip4:, include:, -all).',
+  },
+  'a-input': {
+    title: 'Resolved A Records',
+    body: 'The IP addresses that the domain\'s hostname resolves to. Used when an SPF record contains an "a" mechanism — it passes if the sender IP matches one of these.',
+  },
+  'mx-input': {
+    title: 'Resolved MX Records',
+    body: 'The mail exchange servers for the domain. Used when an SPF record contains an "mx" mechanism — it passes if the sender IP matches one of these hosts.',
+  },
+  'include-input': {
+    title: 'Include Records',
+    body: 'Shows the chain of other domains whose SPF records were also checked. Each "include:" in the record pulls in another domain\'s policy. More includes = more DNS lookups (limit: 10).',
+  },
+  'result-badge': {
+    title: 'SPF Result',
+    body: 'The final verdict. PASS = authorised sender. FAIL = not authorised, likely rejected. SOFTFAIL = suspicious, delivered with a warning. NEUTRAL / NONE = no clear policy published.',
+  },
+  'trace-list': {
+    title: 'Evaluation Trace',
+    body: 'Step-by-step walkthrough of how SPF evaluated each mechanism in the record. Mechanisms are checked in order — the first one that matches decides the result.',
+  },
+  'commercial-status': {
+    title: 'Business Status',
+    body: 'A plain-English translation of the technical result — e.g. "Authorised Sender" or "Spoofing Risk". Useful for communicating the outcome to non-technical stakeholders.',
+  },
+  'commercial-risk': {
+    title: 'Risk Score',
+    body: 'A 0–100 score summarising exposure. Higher means greater risk of spoofing or deliverability issues. Based on the SPF result, policy strength, and DNS lookup count.',
+  },
+  'commercial-recommendation': {
+    title: 'Recommendation',
+    body: 'The suggested next action based on the evaluation result — e.g. "Enforce strict -all policy" or "Validate all authorised senders before tightening enforcement".',
+  },
+  'commercial-impact': {
+    title: 'Business Impact',
+    body: 'The likely real-world effect of this result — e.g. whether legitimate emails might be rejected or whether attackers could spoof the domain without consequence.',
+  },
+  'commercial-highlights': {
+    title: 'SPF Policy Analysis',
+    body: 'A plain-language breakdown of what the domain\'s SPF record actually does — which senders are trusted, what enforcement level is set, whether there are any configuration concerns, and the specific SPF and DNS findings that support the recommendation.',
+  },
+  'speedo-count': {
+    title: 'DNS Lookup Count',
+    body: 'SPF evaluation is limited to 10 DNS lookups per RFC 7208. Each "include:", "a", "mx", or "redirect" costs one lookup. Exceeding 10 causes a PermError — even legitimate mail may be rejected.',
+  }
+};
+
+// ── Tooltip DOM Injection ────────────────────────────────────
+// Injects a lightweight CSS-based tooltip onto any labelled element.
+// Finds the <label> ancestor of each input and appends a "?" icon.
+function applyTooltips() {
+  // Inject tooltip styles once
+  if (document.getElementById('spf-tooltip-styles')) return;
+  const tooltipStyle = document.createElement('style');
+  tooltipStyle.id = 'spf-tooltip-styles';
+  tooltipStyle.textContent = `
+    .spf-tooltip-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .spf-tooltip-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: rgba(15, 118, 110, 0.15);
+      color: var(--accent-dark);
+      font-size: 0.68rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: help;
+      margin-left: 5px;
+      flex-shrink: 0;
+      border: 1px solid rgba(15, 118, 110, 0.25);
+      transition: background 0.15s ease;
+      user-select: none;
+    }
+    .spf-tooltip-icon:hover {
+      background: rgba(15, 118, 110, 0.28);
+    }
+    .spf-tooltip-bubble {
+      display: none;
+      position: absolute;
+      left: 0;
+      top: calc(100% + 6px);
+      z-index: 9999;
+      width: 260px;
+      background: var(--ink);
+      color: #f3efe8;
+      /* Prevent inherited uppercase/letter-spacing from parent titles */
+      text-transform: none !important;
+      letter-spacing: normal !important;
+      /* Prevent inherited bold weight from parent titles */
+      font-weight: 400 !important;
+      border-radius: 10px;
+      padding: 10px 13px;
+      font-size: 0.78rem;
+      line-height: 1.5;
+      font-family: 'Sora', sans-serif;
+      pointer-events: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+    }
+    .spf-tooltip-bubble::before {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: 14px;
+      width: 10px;
+      height: 10px;
+      background: var(--ink);
+      transform: rotate(45deg);
+      border-radius: 2px;
+    }
+    .spf-tooltip-bubble .tip-title {
+      font-weight: 700;
+      font-size: 0.8rem;
+      margin-bottom: 4px;
+      color: #fff;
+    }
+    .spf-tooltip-icon:hover + .spf-tooltip-bubble,
+    .spf-tooltip-icon:focus + .spf-tooltip-bubble {
+      display: block;
+    }
+    /* Keep tooltip visible when hovering inside it */
+    .spf-tooltip-wrap:hover .spf-tooltip-bubble {
+      display: block;
+    }
+  `;
+  document.head.appendChild(tooltipStyle);
+
+  // Attach tooltip to each element that has a definition
+  Object.entries(TOOLTIPS).forEach(([id, tip]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    // Find the label ancestor (for inputs/textareas) or the element's parent card title
+    const labelEl = el.closest('label');
+    if (labelEl) {
+      attachTooltipToLabel(labelEl, tip);
+    } else {
+      // For non-label targets (badge, trace, commercial items), attach to the nearest
+      // .commercial-label sibling or the card-title
+      const cardItem = el.closest('.commercial-item');
+      if (cardItem) {
+        const labelSpan = cardItem.querySelector('.commercial-label');
+        if (labelSpan) attachTooltipInline(labelSpan, tip);
+      } else {
+        // result-badge, trace-list, policy-summary-text — attach to the card title above them
+        const card = el.closest('.card');
+        if (card) {
+          const cardTitle = card.querySelector('.card-title');
+          if (cardTitle) attachTooltipInline(cardTitle, tip);
+        }
+      }
+    }
+  });
+}
+
+// Wrap the text content of a <label> so the "?" icon sits beside the label text
+function attachTooltipToLabel(labelEl, tip) {
+  // Don't double-attach
+  if (labelEl.querySelector('.spf-tooltip-icon')) return;
+
+  // Grab the first text node (the label text itself)
+  const firstText = [...labelEl.childNodes].find(n => n.nodeType === Node.TEXT_NODE && n.textContent.trim());
+  if (!firstText) return;
+
+  const wrap = document.createElement('span');
+  wrap.className = 'spf-tooltip-wrap';
+  wrap.style.display = 'inline-flex';
+  wrap.style.alignItems = 'center';
+
+  const textSpan = document.createElement('span');
+  textSpan.textContent = firstText.textContent;
+
+  const icon = buildTooltipIcon(tip);
+  wrap.appendChild(textSpan);
+  wrap.appendChild(icon.icon);
+  wrap.appendChild(icon.bubble);
+
+  firstText.replaceWith(wrap);
+}
+
+// Append "?" icon directly after an inline element (card title, commercial label, etc.)
+function attachTooltipInline(el, tip) {
+  if (el.querySelector('.spf-tooltip-icon')) return;
+
+  const wrap = document.createElement('span');
+  wrap.className = 'spf-tooltip-wrap';
+  wrap.style.display = 'inline-flex';
+  wrap.style.alignItems = 'center';
+  wrap.style.gap = '4px';
+
+  // Move existing text into wrap
+  const clone = el.cloneNode(true);
+  // Replace el content with wrap containing clone's inner content + icon
+  const textSpan = document.createElement('span');
+  textSpan.innerHTML = el.innerHTML;
+
+  const icon = buildTooltipIcon(tip);
+
+  wrap.appendChild(textSpan);
+  wrap.appendChild(icon.icon);
+  wrap.appendChild(icon.bubble);
+
+  el.innerHTML = '';
+  el.appendChild(wrap);
+}
+
+function buildTooltipIcon(tip) {
+  const icon = document.createElement('span');
+  icon.className = 'spf-tooltip-icon';
+  icon.setAttribute('aria-label', `What is ${tip.title}?`);
+  icon.setAttribute('role', 'tooltip');
+  icon.setAttribute('tabindex', '0');
+  icon.textContent = '?';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'spf-tooltip-bubble';
+  bubble.innerHTML = `<div class="tip-title">${escapeHtml(tip.title)}</div>${escapeHtml(tip.body)}`;
+
+  return { icon, bubble };
+}
+
+// ── Speedometer styles (injected once) ──────────────────────
 const style = document.createElement('style');
 style.textContent = `
   @keyframes speedo-pulse {
-    0% { background-color: #b91c1c; box-shadow: 0 0 4px #b91c1c; }
-    50% { background-color: #ef4444; box-shadow: 0 0 12px #ef4444; }
+    0%   { background-color: #b91c1c; box-shadow: 0 0 4px #b91c1c; }
+    50%  { background-color: #ef4444; box-shadow: 0 0 12px #ef4444; }
     100% { background-color: #b91c1c; box-shadow: 0 0 4px #b91c1c; }
   }
   .speedo-flash-red {
@@ -56,12 +299,10 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// ── Dynamic Speedometer Component Generation ────────────────
+// ── Dynamic Speedometer Component ───────────────────────────
 function injectSpeedometerDOM() {
   const resultCard = document.querySelector('.result-card');
   if (!resultCard) return;
-
-  // Prevent duplicate injections if evaluate is clicked multiple times
   if (document.getElementById('spf-speedometer')) return;
 
   const speedoWrapper = document.createElement('div');
@@ -70,7 +311,7 @@ function injectSpeedometerDOM() {
 
   speedoWrapper.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; margin-bottom: 6px;">
-      <span style="color: var(--muted); font-weight: 600;">10 DNS Lookup Speedometer</span>
+      <span id="speedo-label-wrap" style="color: var(--muted); font-weight: 600;">10 DNS Lookup Speedometer</span>
       <span id="speedo-count" style="font-weight: 700; color: var(--ink);">0 / 10</span>
     </div>
     <div style="background: var(--border); height: 10px; border-radius: 999px; overflow: hidden; position: relative; width: 100%;">
@@ -81,24 +322,27 @@ function injectSpeedometerDOM() {
     </div>
   `;
 
-  // Place speedometer right before the execution timeline list
   resultCard.insertBefore(speedoWrapper, traceList);
+
+  // Attach tooltip to the speedometer label after injecting into DOM
+  const labelEl = document.getElementById('speedo-label-wrap');
+  const countEl = document.getElementById('speedo-count');
+  if (labelEl && TOOLTIPS['speedo-count']) {
+    attachTooltipInline(labelEl, TOOLTIPS['speedo-count']);
+  }
 }
 
-// Update Speedometer UI State
 function updateSpeedometer(lookups) {
   injectSpeedometerDOM();
-  
-  const countEl = document.getElementById('speedo-count');
-  const fillEl = document.getElementById('speedo-fill');
-  const alertEl = document.getElementById('speedo-alert');
 
+  const countEl  = document.getElementById('speedo-count');
+  const fillEl   = document.getElementById('speedo-fill');
+  const alertEl  = document.getElementById('speedo-alert');
   if (!countEl || !fillEl || !alertEl) return;
 
   const count = parseInt(lookups) || 0;
   countEl.textContent = `${count} / 10`;
 
-  // Calculate percentage fill capped at 100%
   const percentage = Math.min(100, (count / 10) * 100);
   fillEl.style.width = `${percentage}%`;
 
@@ -115,7 +359,7 @@ function updateSpeedometer(lookups) {
   }
 }
 
-// ── Scenarios Dataset ───────────────────────────────────────
+// ── Scenarios Dataset ────────────────────────────────────────
 const scenarios = [
   {
     key: 'google',
@@ -172,14 +416,8 @@ function applyScenario(scenario) {
 
 function getApiBaseUrl() {
   const configuredBase = document.body?.dataset?.apiBaseUrl;
-  if (configuredBase) {
-    return configuredBase.replace(/\/$/, '');
-  }
-
-  if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
-    return window.location.origin;
-  }
-
+  if (configuredBase) return configuredBase.replace(/\/$/, '');
+  if (window.location.protocol === 'http:' || window.location.protocol === 'https:') return window.location.origin;
   return 'http://localhost:3000';
 }
 
@@ -187,10 +425,8 @@ function getApiTargets() {
   const targets = [];
   const apiBaseUrl = getApiBaseUrl();
   if (apiBaseUrl) targets.push(apiBaseUrl);
-
   const localhost = 'http://localhost:3000';
   if (!targets.includes(localhost)) targets.push(localhost);
-
   return targets;
 }
 
@@ -209,6 +445,7 @@ async function fetchSpfEvaluation(domain, ip) {
 
       const data = await response.json();
       console.debug('[SPF POC] Received response from', apiBaseUrl, data);
+
       if (!response.ok) {
         const error = new Error(data?.error || 'SPF lookup validation failed.');
         error.responseData = data;
@@ -224,16 +461,15 @@ async function fetchSpfEvaluation(domain, ip) {
   throw lastError || new Error('Unable to reach SPF backend.');
 }
 
-// ── Core Evaluation Logic — API Integration ─────────────────
+// ── Core Evaluation Logic ────────────────────────────────────
 async function evaluateSpf() {
   const domain = domainInput?.value.trim();
-  const ip = ipInput?.value.trim();
+  const ip     = ipInput?.value.trim();
 
-  // Reset display containers
-  if (traceList) traceList.innerHTML = '';
-  if (recordInput) recordInput.value = '';
-  if (aInput) aInput.value = '';
-  if (mxInput) mxInput.value = '';
+  if (traceList)    traceList.innerHTML = '';
+  if (recordInput)  recordInput.value = '';
+  if (aInput)       aInput.value = '';
+  if (mxInput)      mxInput.value = '';
   if (includeInput) includeInput.value = '';
   updateSpeedometer(0);
 
@@ -247,10 +483,9 @@ async function evaluateSpf() {
   try {
     const data = await fetchSpfEvaluation(domain, ip);
 
-    // Populate standard visual elements
     if (recordInput) recordInput.value = data.record || '(no SPF record found)';
     if (aInput) aInput.value = (data.dns?.aRecords || []).join(', ') || '(none)';
-    
+
     const mxRecords = data.dns?.mxRecords || [];
     if (mxInput) {
       mxInput.value = mxRecords.length
@@ -265,26 +500,22 @@ async function evaluateSpf() {
         : '(none)';
     }
 
-    // Handle Speedometer logic from server response counts
     const totalLookups = data.lookupCount ?? data.dnsLookups ?? data.lookups ?? 0;
     updateSpeedometer(totalLookups);
 
-    // Update main status tags
     setResult(mapResultClass(data.result || 'neutral'), data.reason || 'SPF evaluation complete.');
-    
-    // Construct waterfall trace & metadata metrics
     renderTrace(data.trace || [], data.result);
     renderPolicySummary(data);
     renderCommercial(data.commercial || null);
 
   } catch (err) {
-    console.error("Critical Connection Error:", err);
-    setResult('fail', `Server Connection Offline: Unreachable API endpoint.`);
+    console.error('Critical Connection Error:', err);
+    setResult('fail', 'Server Connection Offline: Unreachable API endpoint.');
     if (traceList) {
       traceList.innerHTML = `
         <div class="trace-row" style="border-color: var(--danger); background: rgba(185,28,28,0.05);">
           <strong style="color: var(--danger);">⚠️ HTTP Fetch Exception</strong>
-          <span>Failed to connect to backend server. Ensure node/python backend service layer is running on correct port.</span>
+          <span>Failed to connect to backend server. Ensure the backend is running on the correct port.</span>
         </div>`;
     }
   } finally {
@@ -292,7 +523,7 @@ async function evaluateSpf() {
   }
 }
 
-// ── Custom Waterfall Trace List Builder ──────────────────────
+// ── Waterfall Trace Builder ──────────────────────────────────
 function renderTrace(steps, finalResult) {
   if (!traceList) return;
   traceList.innerHTML = '';
@@ -301,25 +532,20 @@ function renderTrace(steps, finalResult) {
     traceList.innerHTML = '<div class="trace-row"><strong>No trace returned</strong><span>The backend did not return a mechanism path for this domain and IP.</span></div>';
     return;
   }
-  // Compact display: show first N steps and the final step, with a toggle to expand full trace
-  const MAX_PREVIEW = 4;
-  const preview = steps.slice(0, MAX_PREVIEW);
-  const lastStep = steps[steps.length - 1];
+
+  const total = steps.length;
 
   function makeRow(step, index, isFinal) {
     const row = document.createElement('div');
     row.className = 'trace-row';
     row.style.cssText = 'display: flex; flex-direction: column; position: relative; padding-left: 16px; margin-bottom: 8px; border-left: 3px solid var(--border);';
 
-    let stepTitle = `Step ${index + 1}: Checking ${step.mechanism || 'Mechanism'}`;
-    let outcomeText = step.detail || 'Evaluating criteria path rule.';
+    const stepTitle  = isFinal
+      ? `Step ${index + 1}: Path Match Finalized!`
+      : `Step ${index + 1}: Checking ${step.mechanism || 'Mechanism'}`;
+    const outcomeText = step.detail || 'Evaluating criteria path rule.';
 
-    if (isFinal) {
-      stepTitle = `Step ${index + 1}: Path Match Finalized!`;
-      row.style.borderLeftColor = 'var(--success)';
-    } else {
-      row.style.borderLeftColor = 'rgba(16,122,127,0.12)';
-    }
+    row.style.borderLeftColor = isFinal ? 'var(--success)' : 'rgba(16,122,127,0.12)';
 
     row.innerHTML = `
       <div class="trace-row-head">
@@ -333,9 +559,8 @@ function renderTrace(steps, finalResult) {
       </div>
     `;
 
-    // Toggle details per-row
     const toggle = row.querySelector('.trace-toggle-details');
-    const body = row.querySelector('.trace-row-body');
+    const body   = row.querySelector('.trace-row-body');
     toggle.addEventListener('click', () => {
       const expanded = toggle.getAttribute('aria-expanded') === 'true';
       toggle.setAttribute('aria-expanded', String(!expanded));
@@ -346,35 +571,73 @@ function renderTrace(steps, finalResult) {
     return row;
   }
 
-  // Append preview rows
-  preview.forEach((s, i) => traceList.appendChild(makeRow(s, i, false)));
+  // If there are 5 or fewer steps, render them all in order
+  if (total <= 5) {
+    steps.forEach((s, i) => traceList.appendChild(makeRow(s, i, i === total - 1)));
+    return;
+  }
 
-  // If there are more steps, add a collapsed count and reveal button
-  if (steps.length > MAX_PREVIEW + 1) {
-    const remainingCount = steps.length - (MAX_PREVIEW + 1);
-    const collapsed = document.createElement('div');
-    collapsed.className = 'trace-collapsed';
-    collapsed.style.cssText = 'padding: 8px 12px; margin-bottom:8px; color: var(--muted); background: rgba(243, 239, 232, 0.95); border-radius: 8px;';
-    collapsed.innerHTML = `<button class="btn-secondary" id="show-full-trace">Show ${remainingCount} more steps</button>`;
-    traceList.appendChild(collapsed);
+  // For longer traces (>5): show first 2 and last 2 with a collapsed button
+  const first = steps.slice(0, 2);
+  const last  = steps.slice(total - 2, total);
 
-    collapsed.querySelector('#show-full-trace').addEventListener('click', (e) => {
-      // remove the collapsed node and append the middle steps
-      collapsed.remove();
-      const middle = steps.slice(MAX_PREVIEW, steps.length - 1);
-      middle.forEach((s, idx) => traceList.appendChild(makeRow(s, MAX_PREVIEW + idx, false)));
-      // append final step
-      traceList.appendChild(makeRow(lastStep, steps.length - 1, true));
+  first.forEach((s, i) => traceList.appendChild(makeRow(s, i, false)));
+
+  const remainingCount = total - 4;
+  const collapsed = document.createElement('div');
+  collapsed.className = 'trace-collapsed';
+  collapsed.style.cssText = 'padding: 8px 12px; margin-bottom:8px; color: var(--muted); background: rgba(243, 239, 232, 0.95); border-radius: 8px;';
+  collapsed.innerHTML = `<button class="btn-secondary" id="show-full-trace" aria-expanded="false">Show ${remainingCount} more steps</button>`;
+  traceList.appendChild(collapsed);
+
+  // Append the last two steps (final step marked accordingly) and keep a reference
+  let firstLastNode = null;
+  last.forEach((s, idx) => {
+    const globalIndex = total - 2 + idx;
+    const isFinal = (globalIndex === total - 1);
+    const node = makeRow(s, globalIndex, isFinal);
+    if (!firstLastNode) firstLastNode = node;
+    traceList.appendChild(node);
+  });
+
+  // Toggle behavior: insert/remove middle steps when button pressed
+  const toggleBtn = collapsed.querySelector('#show-full-trace');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      const expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+      if (expanded) {
+        // Collapse: remove middle nodes
+        const middles = traceList.querySelectorAll('.trace-middle');
+        middles.forEach(n => n.remove());
+        toggleBtn.setAttribute('aria-expanded', 'false');
+        toggleBtn.textContent = `Show ${remainingCount} more steps`;
+      } else {
+        // Expand: insert middle nodes before the first of the last nodes
+        const middle = steps.slice(2, total - 2);
+        const frag = document.createDocumentFragment();
+        middle.forEach((s, idx) => {
+          const n = makeRow(s, 2 + idx, false);
+          n.classList.add('trace-middle');
+          frag.appendChild(n);
+        });
+        if (firstLastNode) traceList.insertBefore(frag, firstLastNode);
+        else traceList.appendChild(frag);
+        toggleBtn.setAttribute('aria-expanded', 'true');
+        toggleBtn.textContent = `Hide ${remainingCount} steps`;
+      }
     });
-  } else {
-    // append middle steps (if any) and final step
-    const middle = steps.slice(MAX_PREVIEW, steps.length - 1);
-    middle.forEach((s, idx) => traceList.appendChild(makeRow(s, MAX_PREVIEW + idx, false)));
-    traceList.appendChild(makeRow(lastStep, steps.length - 1, true));
+
+    // Keyboard: allow Enter/Space to toggle when focused
+    toggleBtn.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault();
+        toggleBtn.click();
+      }
+    });
   }
 }
 
-// ── Secondary Helper Controllers ─────────────────────────────
+// ── Helper Controllers ───────────────────────────────────────
 function mapResultClass(result) {
   const normalized = String(result || '').toLowerCase();
   if (['pass', 'fail', 'softfail', 'neutral'].includes(normalized)) return normalized;
@@ -384,9 +647,8 @@ function mapResultClass(result) {
 
 function setResult(result, summary) {
   if (!resultBadge || !resultSummary) return;
-  const display = String(result || '').toUpperCase();
   resultBadge.className = `result-badge ${result}`;
-  resultBadge.textContent = display || 'NEUTRAL';
+  resultBadge.textContent = String(result || '').toUpperCase() || 'NEUTRAL';
   resultSummary.textContent = summary;
 }
 
@@ -402,10 +664,21 @@ function renderCommercial(summary) {
     return;
   }
 
-  commercialStatus.textContent = summary.status || 'Unknown';
-  commercialRisk.textContent = summary.riskScore != null ? `${summary.riskScore}%` : 'N/A';
-  commercialRecommendation.textContent = summary.recommendation || 'Review SPF configuration and retry.';
-  commercialImpact.textContent = summary.businessImpact || 'Authentication result requires review.';
+  commercialStatus.textContent        = summary.status || 'Unknown';
+  commercialRisk.textContent          = summary.riskScore != null ? `${summary.riskScore}%` : 'N/A';
+
+  const recommendationText =
+    summary.recommendation || 'Review SPF configuration and retry.';
+
+  const policyRecommendation =
+    window.policySummaryRecommendation || '';
+
+  commercialRecommendation.textContent =
+    policyRecommendation
+      ? `${recommendationText} ${policyRecommendation}`
+      : recommendationText;
+
+  commercialImpact.textContent        = summary.businessImpact || 'Authentication result requires review.';
 
   if (Array.isArray(summary.highlights) && summary.highlights.length) {
     commercialHighlights.innerHTML = `<ul>${summary.highlights.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
@@ -416,65 +689,56 @@ function renderCommercial(summary) {
 
 function renderPolicySummary(data) {
   if (!policySummaryText) return;
-  const record = String(data.record || '');
+  const record         = String(data.record || '');
   const includeRecords = data.includeRecords || {};
-  const includes = Array.isArray(includeRecords) ? includeRecords : Object.keys(includeRecords || {});
-  const ip4s = (record.match(/ip4:[^\s]+/g) || []).map((t) => t.replace('ip4:', ''));
-  const redirects = (record.match(/redirect=[^\s]+/g) || []).map((t) => t.replace('redirect=', ''));
-  const matched = data.matchedMechanism || null;
-  const lookups = Number(data.lookupCount || data.dnsLookups || 0);
+  const includes       = Array.isArray(includeRecords) ? includeRecords : Object.keys(includeRecords || {});
+  const ip4s           = (record.match(/ip4:[^\s]+/g) || []).map((t) => t.replace('ip4:', ''));
+  const redirects      = (record.match(/redirect=[^\s]+/g) || []).map((t) => t.replace('redirect=', ''));
+  const matched        = data.matchedMechanism || null;
+  const lookups        = Number(data.lookupCount || data.dnsLookups || 0);
 
   if (!record) {
     policySummaryText.innerHTML = `<strong>No SPF record found</strong><div style="color:var(--muted); margin-top:6px;">This domain has no SPF TXT record — publish a policy to prevent unauthorized senders.</div>`;
     return;
   }
 
-  // Determine enforcement level
   let enforcement = 'No explicit enforcement';
-  if (/\-all\b/.test(record)) enforcement = 'Strict enforcement (-all)';
+  if (/\-all\b/.test(record))  enforcement = 'Strict enforcement (-all)';
   else if (/~all\b/.test(record)) enforcement = 'Soft enforcement (~all) — monitoring';
   else if (/\?all\b/.test(record)) enforcement = 'Neutral (?all) — no claim';
   else if (/\+all\b/.test(record)) enforcement = 'Permissive (+all) — allows any sender';
 
-  // Build quick highlights
   const highlights = [];
   highlights.push(enforcement);
-  if (matched) highlights.push(`Matched mechanism: ${matched}`);
-  if (ip4s.length) highlights.push(`${ip4s.length} direct IP${ip4s.length>1?'s':''}`);
-  if (includes.length) highlights.push(`${includes.length} include/redirect domain${includes.length>1?'s':''}`);
+  if (matched)          highlights.push(`Matched mechanism: ${matched}`);
+  if (ip4s.length)      highlights.push(`${ip4s.length} direct IP${ip4s.length > 1 ? 's' : ''}`);
+  if (includes.length)  highlights.push(`${includes.length} include/redirect domain${includes.length > 1 ? 's' : ''}`);
   if (redirects.length) highlights.push(`Redirects to ${redirects.join(', ')}`);
-  if (lookups > 10) highlights.push(`High DNS lookup count: ${lookups} (may cause PermError)`);
+  if (lookups > 10)     highlights.push(`High DNS lookup count: ${lookups} (may cause PermError)`);
 
-  // Recommendation
   let recommendation = 'No immediate action required.';
-  if (/\-all\b/.test(record)) recommendation = 'Policy is enforcing; monitor and maintain known senders.';
+  if (/\-all\b/.test(record))  recommendation = 'Policy is enforcing; monitor and maintain known senders.';
   else if (/~all\b/.test(record)) recommendation = 'Consider moving to -all after validating all legitimate senders.';
-  else if (!record) recommendation = 'Publish an SPF record to state authorized senders.';
-  else recommendation = 'Review includes and reduce chained lookups; aim for clear enforcement when ready.';
+  else if (!record)             recommendation = 'Publish an SPF record to state authorized senders.';
+  else                          recommendation = 'Review includes and reduce chained lookups; aim for clear enforcement when ready.';
+  window.policySummaryRecommendation = recommendation;
 
-  // Compose compact HTML output
   policySummaryText.innerHTML = `
-    <div style="font-weight:700; margin-bottom:6px;">${escapeHtml(enforcement)}</div>
     <div style="color:var(--muted); margin-bottom:8px;">${escapeHtml(recommendation)}</div>
-    <div style="font-size:0.92rem; margin-top:6px;">
-      ${highlights.map((h) => `<span style="display:inline-block; margin-right:8px; color:var(--muted);">• ${escapeHtml(h)}</span>`).join('')}
-    </div>
-    <div style="margin-top:8px; color:var(--muted); font-size:0.86rem;">Record: <code style="font-family: 'JetBrains Mono', monospace;">${escapeHtml(record)}</code></div>
   `;
 }
 
 function clearAll() {
-  if (domainInput) domainInput.value = '';
-  if (ipInput) ipInput.value = '';
-  if (recordInput) recordInput.value = '';
-  if (aInput) aInput.value = '';
-  if (mxInput) mxInput.value = '';
+  if (domainInput)  domainInput.value = '';
+  if (ipInput)      ipInput.value = '';
+  if (recordInput)  recordInput.value = '';
+  if (aInput)       aInput.value = '';
+  if (mxInput)      mxInput.value = '';
   if (includeInput) includeInput.value = '';
   if (scenarioNote) scenarioNote.textContent = 'Select a scenario to preload data.';
   setResult('neutral', 'Run an evaluation to see the decision.');
   if (traceList) traceList.innerHTML = '';
-  
-  // Clean remove custom speedometer node on structural reset
+
   const speedoNode = document.getElementById('spf-speedometer');
   if (speedoNode) speedoNode.remove();
 
@@ -484,32 +748,30 @@ function clearAll() {
 
 function setLoading(isLoading) {
   if (!evaluateBtn) return;
-  evaluateBtn.disabled = isLoading;
+  evaluateBtn.disabled  = isLoading;
   evaluateBtn.textContent = isLoading ? 'Evaluating...' : 'Evaluate SPF';
 }
 
-// ── Application Initialization Lifecycle Router ──────────────
+// ── Init ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   loadScenarios();
   setResult('neutral', 'Run an evaluation to see the decision.');
   renderCommercial(null);
 
-  if (evaluateBtn) evaluateBtn.addEventListener('click', evaluateSpf);
-  if (resetBtn) resetBtn.addEventListener('click', clearAll);
+  // Apply tooltips to all static elements that are already in the DOM
+  applyTooltips();
 
-  // Requirement 1: Capture inbound route parameter and execute immediately
-  const urlParams = new URLSearchParams(window.location.search);
-  const domainParam = urlParams.get('domain');
+  if (evaluateBtn) evaluateBtn.addEventListener('click', evaluateSpf);
+  if (resetBtn)    resetBtn.addEventListener('click', clearAll);
+
+  const urlParams    = new URLSearchParams(window.location.search);
+  const domainParam  = urlParams.get('domain');
   const apiBaseParam = urlParams.get('apiBase');
 
-  if (apiBaseParam) {
-    document.body.dataset.apiBaseUrl = apiBaseParam;
-  }
-  
+  if (apiBaseParam) document.body.dataset.apiBaseUrl = apiBaseParam;
+
   if (domainParam) {
     domainInput.value = decodeURIComponent(domainParam);
-    // Optional fallback vector: Prepopulate standard workspace testing IP if empty
-    // Do not auto-fill an IP — user should supply the sending MTA IP from message headers.
     evaluateSpf();
-   }
+  }
 });
