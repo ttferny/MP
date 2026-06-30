@@ -30,8 +30,11 @@ const evaluateDMARC = (spf, dkim, parsed) => {
     };
   }
 
-  const spfAligned  = checkAlignment(spf.status,  spf.domain,  fromDomain, aspf);
-  const dkimAligned = checkAlignment(dkim.status, dkim.domain, fromDomain, adkim);
+  const spfCheck  = checkAlignment(spf.status,  spf.domain,  fromDomain, aspf);
+  const dkimCheck = checkAlignment(dkim.status, dkim.domain, fromDomain, adkim);
+
+  const spfAligned  = spfCheck.aligned;
+  const dkimAligned = dkimCheck.aligned;
 
   if (spfAligned || dkimAligned) {
     const riskScore = calculateRiskScore(true, policy, pct, spf.status, dkim.status);
@@ -47,6 +50,10 @@ const evaluateDMARC = (spf, dkim, parsed) => {
       sp,
       spfAligned,
       dkimAligned,
+      alignmentDetails: {
+        spf:  spfCheck.reason,
+        dkim: dkimCheck.reason,
+      },
       riskScore,
       fromDomain,
     };
@@ -75,6 +82,10 @@ const evaluateDMARC = (spf, dkim, parsed) => {
     adkim,
     spfAligned,
     dkimAligned,
+    alignmentDetails: {
+      spf:  spfCheck.reason,
+      dkim: dkimCheck.reason,
+    },
     riskScore,
     fromDomain,
   };
@@ -82,15 +93,31 @@ const evaluateDMARC = (spf, dkim, parsed) => {
 
 
 const checkAlignment = (authStatus, authDomain, fromDomain, mode) => {
-  if (authStatus !== "pass") return false;
-  if (!authDomain || !fromDomain) return false;
+  if (authStatus !== "pass") {
+    return { aligned: false, reason: `Auth status was "${authStatus}", not "pass" — cannot align a failed check` };
+  }
+  if (!authDomain || !fromDomain) {
+    return { aligned: false, reason: "Missing domain — cannot compare alignment" };
+  }
 
   if (mode === "s") {
-    // Strict — must match exactly
-    return authDomain === fromDomain;
+    const aligned = authDomain === fromDomain;
+    return {
+      aligned,
+      reason: aligned
+        ? `Strict mode: ${authDomain} exactly matches From domain ${fromDomain}`
+        : `Strict mode: ${authDomain} does not exactly match From domain ${fromDomain} — strict alignment requires an exact match`
+    };
   } else {
-    // Relaxed — check if they share the same organisational domain
-    return getOrgDomain(authDomain) === getOrgDomain(fromDomain);
+    const authOrg = getOrgDomain(authDomain);
+    const fromOrg = getOrgDomain(fromDomain);
+    const aligned = authOrg === fromOrg;
+    return {
+      aligned,
+      reason: aligned
+        ? `Relaxed mode: ${authDomain} and ${fromDomain} share organisational domain ${fromOrg}`
+        : `Relaxed mode: ${authDomain} (org: ${authOrg}) does not share an organisational domain with ${fromDomain} (org: ${fromOrg})`
+    };
   }
 };
 

@@ -257,18 +257,24 @@ test(
 );
 
 // ── Section 7: checkAlignment unit tests ─────────────────────
+// checkAlignment() now returns { aligned, reason } instead of a plain
+// boolean, so these tests check result.aligned rather than result itself.
+// The .reason field is also printed so the alignment explanation can be
+// visually verified — this is the part that proves the engine understands
+// *why* something aligned, not just whether it did.
 console.log('--- checkAlignment() Unit Tests ---\n');
 
 function testAlignment(name, result, expected) {
-  const ok = result === expected;
+  const ok = result.aligned === expected;
   if (ok) {
     console.log(`  ✅ PASS — ${name}`);
     passed++;
   } else {
     console.log(`  ❌ FAIL — ${name}`);
-    console.log(`       expected: ${expected}, got: ${result}`);
+    console.log(`       expected: ${expected}, got: ${result.aligned}`);
     failed++;
   }
+  console.log(`         reason: ${result.reason}`);
   console.log('');
 }
 

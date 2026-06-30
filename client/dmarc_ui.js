@@ -130,6 +130,12 @@ function renderResult(r) {
   document.getElementById("spf-align-text").textContent  = "SPF: "  + (r.spfAligned  ? "Aligned ✓" : "Not Aligned ✗");
   document.getElementById("dkim-align-text").textContent = "DKIM: " + (r.dkimAligned ? "Aligned ✓" : "Not Aligned ✗");
 
+  // Alignment reason text — shows WHY checkAlignment() decided pass/fail,
+  // not just the verdict. Comes from r.alignmentDetails in dmarc.js.
+  const ad = r.alignmentDetails || {};
+  document.getElementById("spf-align-reason").textContent  = ad.spf  || "";
+  document.getElementById("dkim-align-reason").textContent = ad.dkim || "";
+
   // Explanation — comes from scenarioService.js on the backend
   document.getElementById("explain-box").textContent = r.explanation || "";
 }
