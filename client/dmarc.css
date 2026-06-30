@@ -296,7 +296,7 @@ select:focus, input:focus {
   border: none;
   color: var(--muted);
   font-family: var(--sans);
-  font-size: 14px;
+  font-size: 10px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
