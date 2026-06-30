@@ -36,13 +36,11 @@
     <!-- Tab Navigation -->
     <div class="tab-nav">
       <button class="tab-btn active" onclick="switchTab('scenarios')">Scenarios</button>
-      <button class="tab-btn" onclick="switchTab('comparison')">Before / After</button>
+      <button class="tab-btn" onclick="switchTab('comparison')">Before/After</button>
       <button class="tab-btn" onclick="switchTab('audit')">DMARC Audit</button>
       <button class="tab-btn" onclick="switchTab('monitor')">Live Monitor</button>
       <button class="tab-btn" onclick="switchTab('reports')">Reports</button>
-      <button class="tab-btn" onclick="switchTab('analyzer')">📊 Report Analyzer</button>
-      <button class="tab-btn" onclick="switchTab('generator')">⚙️ Record Generator</button>
-      <button class="tab-btn" onclick="switchTab('propagation')">🌐 DNS Propagation</button>
+      <button class="tab-btn" onclick="switchTab('analyzer')">Report Analyzer</button>
     </div>
 
     <!-- ===================== SCENARIOS TAB ===================== -->
@@ -236,13 +234,19 @@
         <div class="reason-box" id="res-reason"></div>
 
         <div class="alignment-row">
-          <div class="align-chip">
-            <div class="align-dot" id="spf-dot"></div>
-            <span id="spf-align-text">SPF Alignment</span>
+          <div class="align-chip" style="flex-direction:column; align-items:flex-start; gap:6px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="align-dot" id="spf-dot"></div>
+              <span id="spf-align-text">SPF Alignment</span>
+            </div>
+            <div id="spf-align-reason" style="font-family:var(--mono); font-size:11px; color:var(--muted); line-height:1.5; padding-left:16px;"></div>
           </div>
-          <div class="align-chip">
-            <div class="align-dot" id="dkim-dot"></div>
-            <span id="dkim-align-text">DKIM Alignment</span>
+          <div class="align-chip" style="flex-direction:column; align-items:flex-start; gap:6px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="align-dot" id="dkim-dot"></div>
+              <span id="dkim-align-text">DKIM Alignment</span>
+            </div>
+            <div id="dkim-align-reason" style="font-family:var(--mono); font-size:11px; color:var(--muted); line-height:1.5; padding-left:16px;"></div>
           </div>
         </div>
 
@@ -686,165 +690,7 @@
 
     </div><!-- end tab-analyzer -->
 
-    <!-- ===================== DMARC RECORD GENERATOR TAB ===================== -->
-    <div id="tab-generator" class="tab-content" style="display:none">
-      <div class="card">
-        <div class="card-title">DMARC Record Generator</div>
-        <p style="color:var(--muted); font-size:14px; margin-bottom:24px;">
-          Fill in your settings and get a ready-to-publish DMARC TXT record for your domain.
-        </p>
-
-        <div class="policy-row">
-          <div class="form-group">
-            <label>Domain Name</label>
-            <input id="gen-domain" type="text" placeholder="e.g. company.com" style="width:100%;">
-            <span class="field-hint">The domain you want to protect</span>
-          </div>
-          <div class="form-group">
-            <label>DMARC Policy (p=)</label>
-            <select id="gen-policy">
-              <option value="none">none — monitor only (start here)</option>
-              <option value="quarantine">quarantine — send to spam</option>
-              <option value="reject">reject — block completely</option>
-            </select>
-            <span class="field-hint">Start with none, then upgrade once mail flow is confirmed</span>
-          </div>
-          <div class="form-group">
-            <label>Subdomain Policy (sp=) — optional</label>
-            <select id="gen-sp">
-              <option value="">— not set (inherit from p=)</option>
-              <option value="none">none</option>
-              <option value="quarantine">quarantine</option>
-              <option value="reject">reject</option>
-            </select>
-            <span class="field-hint">Separate policy for subdomains</span>
-          </div>
-          <div class="form-group">
-            <label>Enforcement Percentage (pct=)</label>
-            <select id="gen-pct">
-              <option value="10">10% — gradual rollout start</option>
-              <option value="25">25% — early testing</option>
-              <option value="50">50% — halfway</option>
-              <option value="100" selected>100% — full enforcement</option>
-            </select>
-            <span class="field-hint">Start low when first enforcing, work up to 100%</span>
-          </div>
-          <div class="form-group">
-            <label>SPF Alignment (aspf=)</label>
-            <select id="gen-aspf">
-              <option value="r">r — relaxed (recommended)</option>
-              <option value="s">s — strict</option>
-            </select>
-            <span class="field-hint">Relaxed allows subdomains to align</span>
-          </div>
-          <div class="form-group">
-            <label>DKIM Alignment (adkim=)</label>
-            <select id="gen-adkim">
-              <option value="r">r — relaxed (recommended)</option>
-              <option value="s">s — strict</option>
-            </select>
-            <span class="field-hint">Strict requires exact domain match</span>
-          </div>
-          <div class="form-group">
-            <label>Aggregate Report Email (rua=)</label>
-            <input id="gen-rua" type="text" placeholder="e.g. dmarc@company.com" style="width:100%;">
-            <span class="field-hint">Where daily DMARC reports are sent</span>
-          </div>
-          <div class="form-group">
-            <label>Forensic Report Email (ruf=) — optional</label>
-            <input id="gen-ruf" type="text" placeholder="e.g. dmarc-forensic@company.com" style="width:100%;">
-            <span class="field-hint">Where individual failure reports are sent</span>
-          </div>
-        </div>
-
-        <button class="btn-evaluate" onclick="generateRecord()">
-          ⚙️ &nbsp; Generate DMARC Record
-        </button>
-      </div>
-
-      <!-- Generated record output -->
-      <div class="card" id="gen-result" style="display:none">
-        <div class="card-title">Generated DMARC Record</div>
-
-        <!-- The record string -->
-        <div style="position:relative; margin-bottom:16px;">
-          <div id="gen-record-output" style="
-            background:var(--surface2); border:1px solid var(--border);
-            border-left:3px solid var(--accent); border-radius:8px;
-            padding:16px 50px 16px 16px; font-family:var(--mono); font-size:13px;
-            color:var(--accent); line-height:1.6; word-break:break-all;"></div>
-          <button onclick="copyRecord()" style="
-            position:absolute; top:12px; right:12px;
-            background:var(--surface2); border:1px solid var(--border);
-            color:var(--muted); font-family:var(--mono); font-size:11px;
-            padding:4px 10px; border-radius:6px; cursor:pointer; transition:all 0.2s;"
-            id="copy-btn">Copy</button>
-        </div>
-
-        <!-- DNS instructions -->
-        <div style="background:rgba(0,212,255,0.05); border:1px solid rgba(0,212,255,0.15); border-radius:8px; padding:16px; margin-bottom:16px;">
-          <div style="font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); margin-bottom:10px;">How to publish this record</div>
-          <div style="font-size:13px; color:var(--text); line-height:1.8;">
-            1. Log in to your DNS provider (Cloudflare, GoDaddy, Route53, etc.)<br>
-            2. Add a new TXT record<br>
-            3. Set the <strong style="color:var(--accent);">Name</strong> to: <span id="gen-dns-name" style="font-family:var(--mono); color:var(--warn);"></span><br>
-            4. Set the <strong style="color:var(--accent);">Value</strong> to the generated record above<br>
-            5. Set TTL to 3600 (1 hour)<br>
-            6. Save and wait up to 48 hours for propagation
-          </div>
-        </div>
-
-        <!-- Tag breakdown -->
-        <div id="gen-tag-breakdown" class="audit-tag-grid"></div>
-      </div>
-    </div><!-- end tab-generator -->
-
-    <!-- ===================== DNS PROPAGATION CHECKER TAB ===================== -->
-    <div id="tab-propagation" class="tab-content" style="display:none">
-      <div class="card">
-        <div class="card-title">DNS Propagation Checker</div>
-        <p style="color:var(--muted); font-size:14px; margin-bottom:24px;">
-          Check whether your DMARC record has propagated across multiple DNS resolvers worldwide.
-          After publishing a new record, it can take up to 48 hours to appear everywhere.
-        </p>
-
-        <div class="form-group" style="margin-bottom:16px;">
-          <label>Domain Name</label>
-          <input id="prop-domain" type="text" placeholder="e.g. dbs.com.sg or google.com" style="width:100%;">
-          <span class="field-hint">Enter the domain to check propagation for</span>
-        </div>
-
-        <div class="form-group" style="margin-bottom:20px;">
-          <label>Quick Load</label>
-          <div class="scenarios" style="margin-top:8px;">
-            <button class="scenario-btn" onclick="loadPropDomain('google.com')">🔍 google.com</button>
-            <button class="scenario-btn" onclick="loadPropDomain('dbs.com.sg')">🏦 dbs.com.sg</button>
-            <button class="scenario-btn" onclick="loadPropDomain('tp.edu.sg')">🏫 tp.edu.sg</button>
-            <button class="scenario-btn" onclick="loadPropDomain('nodmarc-test.com')">❓ nodmarc-test.com</button>
-          </div>
-        </div>
-
-        <button class="btn-evaluate" onclick="checkPropagation()">
-          🌐 &nbsp; Check Propagation
-        </button>
-      </div>
-
-      <!-- Propagation results -->
-      <div class="card" id="prop-result" style="display:none">
-        <div class="card-title">Propagation Results</div>
-
-        <!-- Overall status -->
-        <div id="prop-overall" style="margin-bottom:20px;"></div>
-
-        <!-- Per-resolver results -->
-        <div id="prop-resolvers" style="display:flex; flex-direction:column; gap:12px;"></div>
-
-        <!-- Consistency check -->
-        <div id="prop-consistency" style="margin-top:16px;"></div>
-      </div>
-    </div><!-- end tab-propagation -->
-
-  </div><!-- end container -->
+    
 
   <script src="dmarc_ui.js"></script>
   <script src="dmarc_analyzer.js"></script>

@@ -291,12 +291,12 @@ select:focus, input:focus {
 }
 
 .tab-btn {
-  padding: 12px 18px;
+  padding: 12px 20px;
   background: transparent;
   border: none;
   color: var(--muted);
   font-family: var(--sans);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
