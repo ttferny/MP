@@ -3,7 +3,7 @@
 const evaluateDMARC = (spf, dkim, parsed) => {
 
   if (!spf || !dkim) {
-    return { status: "error", action: "none", reason: "Missing SPF or DKIM result" };
+    return { status: "error", action: "none", reason: "Missing SPF or DKIM result — cannot run DMARC check" };
   }
 
   const policy = parsed?.policy || null;
@@ -42,7 +42,7 @@ const evaluateDMARC = (spf, dkim, parsed) => {
       status: "pass",
       action: "deliver",
       verdict: "deliver",
-      reason: `DMARC passed via ${spfAligned ? "SPF" : "DKIM"} alignment (${spfAligned ? aspf : adkim} mode)`,
+      reason: `DMARC passed — the sender's ${spfAligned ? "SPF" : "DKIM"} domain matched the visible From address (${spfAligned ? aspf === 'r' ? 'relaxed' : 'strict' : adkim === 'r' ? 'relaxed' : 'strict'} alignment)`,
       policy,
       pct,
       aspf,
@@ -61,9 +61,9 @@ const evaluateDMARC = (spf, dkim, parsed) => {
 
   const effectivePolicy = determineEffectivePolicy(spf.domain, dkim.domain, fromDomain, policy, sp);
   const actions = {
-    "none":       { action: "deliver",    reason: "Policy is none — monitoring only" },
-    "quarantine": { action: "quarantine", reason: "Email flagged as suspicious" },
-    "reject":     { action: "reject",     reason: "Email rejected by DMARC policy" }
+    "none":       { action: "deliver",    reason: "DMARC failed but the policy is set to monitor only (p=none) — the email is delivered without any action" },
+    "quarantine": { action: "quarantine", reason: "DMARC failed — the email has been moved to the spam or junk folder" },
+    "reject":     { action: "reject",     reason: "DMARC failed — the email was blocked and never reached the inbox" }
   };
 
   const outcome = actions[effectivePolicy] ?? { action: "quarantine", reason: "Unknown policy, defaulting to quarantine" };
@@ -94,10 +94,10 @@ const evaluateDMARC = (spf, dkim, parsed) => {
 
 const checkAlignment = (authStatus, authDomain, fromDomain, mode) => {
   if (authStatus !== "pass") {
-    return { aligned: false, reason: `Auth status was "${authStatus}", not "pass" — cannot align a failed check` };
+    return { aligned: false, reason: `${authStatus === "fail" ? "SPF/DKIM" : "Authentication"} check failed — a failed check cannot be used for alignment` };
   }
   if (!authDomain || !fromDomain) {
-    return { aligned: false, reason: "Missing domain — cannot compare alignment" };
+    return { aligned: false, reason: "One or both domains are missing — alignment check cannot be completed" };
   }
 
   if (mode === "s") {
@@ -105,8 +105,8 @@ const checkAlignment = (authStatus, authDomain, fromDomain, mode) => {
     return {
       aligned,
       reason: aligned
-        ? `Strict mode: ${authDomain} exactly matches From domain ${fromDomain}`
-        : `Strict mode: ${authDomain} does not exactly match From domain ${fromDomain} — strict alignment requires an exact match`
+        ? `Strict alignment passed — the sending domain (${authDomain}) exactly matches the visible From address domain (${fromDomain})`
+        : `Strict alignment failed — the sending domain (${authDomain}) must exactly match the From address domain (${fromDomain}), but it does not`
     };
   } else {
     const authOrg = getOrgDomain(authDomain);
@@ -115,8 +115,8 @@ const checkAlignment = (authStatus, authDomain, fromDomain, mode) => {
     return {
       aligned,
       reason: aligned
-        ? `Relaxed mode: ${authDomain} and ${fromDomain} share organisational domain ${fromOrg}`
-        : `Relaxed mode: ${authDomain} (org: ${authOrg}) does not share an organisational domain with ${fromDomain} (org: ${fromOrg})`
+        ? `Relaxed alignment passed — ${authDomain} and ${fromDomain} both belong to the same organisation (${fromOrg})`
+        : `Relaxed alignment failed — ${authDomain} belongs to (${authOrg}) which is a different organisation from the From address domain ${fromDomain} (${fromOrg})`
     };
   }
 };
