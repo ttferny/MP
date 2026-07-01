@@ -719,8 +719,20 @@ function renderMonitorResult(r) {
     </div>
 
     <div class="alignment-row">
-      <div class="align-chip"><div class="align-dot ${r.spfAligned ? 'pass' : 'fail'}"></div><span>SPF: ${r.spfAligned ? 'Aligned ✓' : 'Not Aligned ✗'}</span></div>
-      <div class="align-chip"><div class="align-dot ${r.dkimAligned ? 'pass' : 'fail'}"></div><span>DKIM: ${r.dkimAligned ? 'Aligned ✓' : 'Not Aligned ✗'}</span></div>
+      <div class="align-chip" style="flex-direction:column; align-items:flex-start; gap:6px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="align-dot ${r.spfAligned ? 'pass' : 'fail'}"></div>
+          <span>SPF: ${r.spfAligned ? 'Aligned ✓' : 'Not Aligned ✗'}</span>
+        </div>
+        <div style="font-family:var(--mono); font-size:11px; color:var(--muted); line-height:1.5; padding-left:16px;">${r.alignmentDetails?.spf || ''}</div>
+      </div>
+      <div class="align-chip" style="flex-direction:column; align-items:flex-start; gap:6px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="align-dot ${r.dkimAligned ? 'pass' : 'fail'}"></div>
+          <span>DKIM: ${r.dkimAligned ? 'Aligned ✓' : 'Not Aligned ✗'}</span>
+        </div>
+        <div style="font-family:var(--mono); font-size:11px; color:var(--muted); line-height:1.5; padding-left:16px;">${r.alignmentDetails?.dkim || ''}</div>
+      </div>
     </div>`;
 
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
