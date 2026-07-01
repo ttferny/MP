@@ -17,6 +17,8 @@ const recordInput       = document.getElementById('record-input');
 const aInput            = document.getElementById('a-input');
 const mxInput           = document.getElementById('mx-input');
 const includeInput      = document.getElementById('include-input');
+const emailFileInput    = document.getElementById('email-file-input');
+const uploadStatus      = document.getElementById('upload-status');
 const evaluateBtn       = document.getElementById('evaluate-btn');
 const resetBtn          = document.getElementById('reset-btn');
 
@@ -29,9 +31,26 @@ const commercialRisk         = document.getElementById('commercial-risk');
 const commercialRecommendation = document.getElementById('commercial-recommendation');
 const commercialImpact       = document.getElementById('commercial-impact');
 const commercialHighlights   = document.getElementById('commercial-highlights');
+const dnsStatusBadge         = document.getElementById('dns-status-badge');
+const spfStatusBadge         = document.getElementById('spf-status-badge');
 
 const scenarioGrid = document.getElementById('scenario-grid');
 const scenarioNote = document.getElementById('scenario-note');
+
+const accordionTriggers = document.querySelectorAll('.accordion-trigger');
+
+accordionTriggers.forEach((trigger) => {
+  const panelId = trigger.dataset.target;
+  const panel = document.getElementById(panelId);
+  const item = trigger.closest('.accordion-item');
+
+  if (!panel || !item) return;
+
+  trigger.addEventListener('click', () => {
+    panel.classList.toggle('hidden');
+    item.classList.toggle('open');
+  });
+});
 
 // ── Small HTML escape helper ─────────────────────────────────
 function escapeHtml(value) {
@@ -471,6 +490,7 @@ async function evaluateSpf() {
   if (aInput)       aInput.value = '';
   if (mxInput)      mxInput.value = '';
   if (includeInput) includeInput.value = '';
+  if (dnsStatusBadge) dnsStatusBadge.textContent = 'LIVE';
   updateSpeedometer(0);
 
   if (!domain || !ip) {
@@ -498,6 +518,12 @@ async function evaluateSpf() {
       includeInput.value = includeEntries.length
         ? includeEntries.map(([key, value]) => `${key} = ${value}`).join('\n')
         : '(none)';
+    }
+
+    if (dnsStatusBadge) {
+      dnsStatusBadge.textContent = 'LIVE';
+      dnsStatusBadge.classList.remove('pass', 'fail', 'warn');
+      dnsStatusBadge.classList.add('pass');
     }
 
     const totalLookups = data.lookupCount ?? data.dnsLookups ?? data.lookups ?? 0;
@@ -650,6 +676,102 @@ function setResult(result, summary) {
   resultBadge.className = `result-badge ${result}`;
   resultBadge.textContent = String(result || '').toUpperCase() || 'NEUTRAL';
   resultSummary.textContent = summary;
+  if (spfStatusBadge) {
+    spfStatusBadge.classList.remove('pass', 'fail', 'warn', 'neutral');
+    spfStatusBadge.classList.add(result || 'neutral');
+    spfStatusBadge.textContent = String(result || 'NEUTRAL').toUpperCase() || 'NEUTRAL';
+  }
+}
+
+function handleEmailFileUpload(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) {
+    if (uploadStatus) uploadStatus.textContent = 'No file selected.';
+    return;
+  }
+
+  const maxSizeBytes = 1024 * 1024;
+  if (file.size > maxSizeBytes) {
+    if (uploadStatus) uploadStatus.textContent = 'File is too large. Please upload a file under 1MB.';
+    event.target.value = '';
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const text = String(reader.result || '');
+    const parsed = extractEmailFields(text);
+
+    if (parsed.domain && domainInput) {
+      domainInput.value = parsed.domain;
+    }
+
+    if (parsed.ip && ipInput) {
+      ipInput.value = parsed.ip;
+    }
+
+    if (uploadStatus) {
+      const parts = [];
+      if (parsed.domain) parts.push(`domain: ${parsed.domain}`);
+      if (parsed.ip) parts.push(`ip: ${parsed.ip}`);
+      uploadStatus.textContent = parts.length
+        ? `Loaded ${file.name} (${parts.join(', ')})`
+        : `Loaded ${file.name}, but no sender IP or domain could be extracted.`;
+    }
+  };
+
+  reader.onerror = () => {
+    if (uploadStatus) uploadStatus.textContent = 'Could not read the file. Please try another file.';
+    event.target.value = '';
+  };
+
+  reader.readAsText(file);
+}
+
+function extractEmailFields(text) {
+  const headers = String(text || '').replace(/\r/g, '');
+  return {
+    domain: extractSenderDomain(headers),
+    ip: extractSenderIp(headers),
+  };
+}
+
+function extractSenderIp(headers) {
+  const patterns = [
+    /client-ip=([0-9a-fA-F:.]+)/i,
+    /X-Originating-IP:\s*\[?([0-9a-fA-F:.]+)\]?/i,
+    /Received-SPF:[^\n]*client-ip=([0-9a-fA-F:.]+)/i,
+    /Received:\s*from[^\n]*\[((?:\d{1,3}\.){3}\d{1,3})\]/i,
+    /Received:\s*from\s+[^\n]*\s+\[((?:\d{1,3}\.){3}\d{1,3})\]/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = headers.match(pattern);
+    if (match) return match[1];
+  }
+
+  return '';
+}
+
+function extractSenderDomain(headers) {
+  const patterns = [
+    /header\.from=([^;\s]+)/i,
+    /smtp\.mailfrom="?([^";>\s]+)"?/i,
+    /Return-Path:\s*<[^>]*@([^>\s]+)>/i,
+    /From:\s*(?:.*<)?[^@\s<>]+@([^>\s]+)>?/i,
+    /Authentication-Results:[^\n]*header\.from=([^;\s]+)/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = headers.match(pattern);
+    if (match) {
+      const value = match[1].trim().replace(/[<>"']/g, '');
+      if (value.includes('@')) return value.split('@').pop();
+      return value;
+    }
+  }
+
+  return '';
 }
 
 function renderCommercial(summary) {
@@ -723,9 +845,6 @@ function renderPolicySummary(data) {
   else                          recommendation = 'Review includes and reduce chained lookups; aim for clear enforcement when ready.';
   window.policySummaryRecommendation = recommendation;
 
-  policySummaryText.innerHTML = `
-    <div style="color:var(--muted); margin-bottom:8px;">${escapeHtml(recommendation)}</div>
-  `;
 }
 
 function clearAll() {
@@ -736,6 +855,8 @@ function clearAll() {
   if (mxInput)      mxInput.value = '';
   if (includeInput) includeInput.value = '';
   if (scenarioNote) scenarioNote.textContent = 'Select a scenario to preload data.';
+  if (uploadStatus) uploadStatus.textContent = 'No file selected.';
+  if (emailFileInput) emailFileInput.value = '';
   setResult('neutral', 'Run an evaluation to see the decision.');
   if (traceList) traceList.innerHTML = '';
 
@@ -757,6 +878,10 @@ document.addEventListener('DOMContentLoaded', () => {
   loadScenarios();
   setResult('neutral', 'Run an evaluation to see the decision.');
   renderCommercial(null);
+
+  if (emailFileInput) {
+    emailFileInput.addEventListener('change', handleEmailFileUpload);
+  }
 
   // Apply tooltips to all static elements that are already in the DOM
   applyTooltips();

@@ -16,10 +16,12 @@
       </div>
       <nav class="site-nav">
         <a class="nav-link" href="index.html">Studio</a>
-        <a class="nav-link active" href="spf-builder.html">SPF Builder</a>
         <a class="nav-link" href="spf.html">SPF POC</a>
+        <a class="nav-link active" href="spf-builder.html">SPF Builder</a>
         <a class="nav-link" href="spf-simulator.html">SPF Simulator</a>
         <a class="nav-link" href="dmarc.html">DMARC Lab</a>
+        <a class="nav-link" href="dns-studio.html">DNS Automation</a>
+
       </nav>
     </div>
   </header>
@@ -38,19 +40,34 @@
       <!-- ── LEFT: Builder Form ── -->
       <section class="stack">
 
-        <!-- Domain -->
-        <div class="card">
-          <h2 class="card-title">Your domain</h2>
-          <p class="card-hint">The domain you want to protect (e.g. company.com).</p>
-          <input
-            type="text"
-            id="spf-domain"
-            class="domain-field"
-            placeholder="yourdomain.com"
-            autocomplete="off"
-            spellcheck="false"
-            oninput="buildRecord()"
-          />
+        <div class="top-grid">
+          <!-- Domain -->
+          <div class="card">
+            <h2 class="card-title">Your domain</h2>
+            <p class="card-hint">The domain you want to protect (e.g. company.com).</p>
+            <input
+              type="text"
+              id="spf-domain"
+              class="domain-field"
+              placeholder="yourdomain.com"
+              autocomplete="off"
+              spellcheck="false"
+              oninput="buildRecord()"
+            />
+          </div>
+
+          <!-- Custom IPs -->
+          <div class="card">
+            <h2 class="card-title">Custom IP addresses</h2>
+            <p class="card-hint">
+              Add any mail servers you run yourself. Supports single IPs
+              (<code>203.0.113.10</code>) and CIDR ranges (<code>203.0.113.0/24</code>).
+            </p>
+            <div id="ip-list"></div>
+            <button class="btn-secondary add-ip-btn" onclick="addIP()">
+              + Add IP address
+            </button>
+          </div>
         </div>
 
         <!-- Services -->
@@ -61,19 +78,6 @@
             Each adds an <code>include:</code> mechanism to your record.
           </p>
           <div class="svc-grid" id="svc-grid"></div>
-        </div>
-
-        <!-- Custom IPs -->
-        <div class="card">
-          <h2 class="card-title">Custom IP addresses</h2>
-          <p class="card-hint">
-            Add any mail servers you run yourself. Supports single IPs
-            (<code>203.0.113.10</code>) and CIDR ranges (<code>203.0.113.0/24</code>).
-          </p>
-          <div id="ip-list"></div>
-          <button class="btn-secondary add-ip-btn" onclick="addIP()">
-            + Add IP address
-          </button>
         </div>
 
         <!-- Policy -->
@@ -105,25 +109,6 @@
               </div>
             </button>
           </div>
-        </div>
-
-        <!-- Advanced macros / exp -->
-        <div class="card">
-          <h2 class="card-title">Advanced: macros &amp; exp=</h2>
-          <p class="card-hint">
-            SPF macros let a record adapt to the sender context. Common examples include <code>%{i}</code>
-            for the sender IP and <code>%{d}</code> for the domain. The optional <code>exp=</code> modifier
-            can point to an explanation string or URL for fail cases.
-          </p>
-          <label class="exp-label" for="spf-exp">Optional explanation (exp=)</label>
-          <textarea
-            id="spf-exp"
-            class="exp-field"
-            rows="3"
-            placeholder="https://example.com/spf-error?ip=%{i}&amp;domain=%{d}"
-            oninput="buildRecord()"
-          ></textarea>
-          <div class="exp-note">This is optional. It is useful for teaching how SPF can surface failure explanations.</div>
         </div>
 
       </section>
@@ -164,9 +149,18 @@
         </div>
 
         <!-- Explanation -->
-        <div class="card" id="explain-card">
-          <h2 class="card-title">What each part means</h2>
-          <div id="explain-list" class="explain-list"></div>
+        <div class="card explain-card">
+          <div class="accordion-item open">
+            <button type="button" class="accordion-trigger explain-trigger" data-target="explain-panel">
+              <span><b>What each part means</b></span>
+              <span class="accordion-meta">
+                <span class="accordion-icon">▾</span>
+              </span>
+            </button>
+            <div id="explain-panel" class="accordion-panel">
+              <div id="explain-list" class="explain-list"></div>
+            </div>
+          </div>
         </div>
 
         <!-- DNS instructions -->

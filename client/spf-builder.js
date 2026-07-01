@@ -14,23 +14,34 @@
 
 // ── Known email services and their SPF include strings ────
 const SERVICES = [
-  { id: 'google',     name: 'Google Workspace', icon: '✉',  include: '_spf.google.com',            lookups: 4 },
-  { id: 'microsoft',  name: 'Microsoft 365',    icon: '🪟', include: 'spf.protection.outlook.com', lookups: 3 },
-  { id: 'sendgrid',   name: 'SendGrid',         icon: '📤', include: 'sendgrid.net',               lookups: 2 },
-  { id: 'mailchimp',  name: 'Mailchimp',        icon: '🐒', include: 'servers.mcsv.net',           lookups: 2 },
-  { id: 'mailgun',    name: 'Mailgun',          icon: '📨', include: 'mailgun.org',                lookups: 2 },
-  { id: 'hubspot',    name: 'HubSpot',          icon: '🔶', include: '_spf.hubspot.com',           lookups: 2 },
-  { id: 'salesforce', name: 'Salesforce',       icon: '☁',  include: '_spf.salesforce.com',        lookups: 2 },
-  { id: 'zoho',       name: 'Zoho Mail',        icon: '🔵', include: 'zoho.com',                   lookups: 2 },
-  { id: 'amazon',     name: 'Amazon SES',       icon: '📦', include: 'amazonses.com',              lookups: 2 },
-  { id: 'sparkpost',  name: 'SparkPost',        icon: '⚡', include: 'sparkpostmail.com',          lookups: 2 },
+  { id: 'google',     name: 'Google Workspace', include: '_spf.google.com',            lookups: 4 },
+  { id: 'microsoft',  name: 'Microsoft 365',    include: 'spf.protection.outlook.com', lookups: 3 },
+  { id: 'sendgrid',   name: 'SendGrid',         include: 'sendgrid.net',               lookups: 2 },
+  { id: 'mailchimp',  name: 'Mailchimp',        include: 'servers.mcsv.net',           lookups: 2 },
+  { id: 'mailgun',    name: 'Mailgun',          include: 'mailgun.org',                lookups: 2 },
+  { id: 'hubspot',    name: 'HubSpot',          include: '_spf.hubspot.com',           lookups: 2 },
+  { id: 'salesforce', name: 'Salesforce',       include: '_spf.salesforce.com',        lookups: 2 },
+  { id: 'zoho',       name: 'Zoho Mail',        include: 'zoho.com',                   lookups: 2 },
+  { id: 'amazon',     name: 'Amazon SES',       include: 'amazonses.com',              lookups: 2 },
+  { id: 'sparkpost',  name: 'SparkPost',        include: 'sparkpostmail.com',          lookups: 2 },
 ];
+
+const explanationTrigger = document.querySelector('.explain-trigger');
+const explanationPanel = document.getElementById('explain-panel');
+
+if (explanationTrigger && explanationPanel) {
+  explanationTrigger.addEventListener('click', () => {
+    const item = explanationTrigger.closest('.accordion-item');
+    const open = !explanationPanel.classList.contains('hidden');
+    explanationPanel.classList.toggle('hidden');
+    item?.classList.toggle('open', !open);
+  });
+}
 
 // ── State ──────────────────────────────────────────────────
 let selected = new Set();
 let ips      = [];
 let policy   = '-all';
-const expInput = document.getElementById('spf-exp');
 
 // ── Render service buttons ─────────────────────────────────
 function renderServices() {
@@ -41,7 +52,6 @@ function renderServices() {
       onclick="toggleService('${s.id}')"
       aria-pressed="${selected.has(s.id)}"
     >
-      <span class="svc-icon" aria-hidden="true">${s.icon}</span>
       <div>
         <div class="svc-name">${s.name}</div>
         <div class="svc-include">include:${s.include}</div>
@@ -120,10 +130,6 @@ function getRecord() {
     parts.push(`include:${s.include}`);
   });
 
-  if (expInput && expInput.value.trim()) {
-    parts.push(`exp=${expInput.value.trim()}`);
-  }
-
   parts.push(policy);
   return parts.join(' ');
 }
@@ -162,8 +168,6 @@ function buildExplanation(record) {
       items.push({ token: tok, desc: 'Mark all other senders as suspicious but still deliver.', sub: 'Soft fail — useful during testing or migration.' });
     } else if (tok === '?all') {
       items.push({ token: tok, desc: 'Take no action on other senders.', sub: 'Neutral — provides no protection. Not recommended.' });
-    } else if (tok.startsWith('exp=')) {
-      items.push({ token: tok, desc: 'Optional explanation for SPF failures.', sub: 'Commonly used with macros such as %{i} and %{d}.' });
     }
   });
 

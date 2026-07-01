@@ -35,8 +35,7 @@ const dmarcBadge    = document.getElementById('dmarc-badge');
 const dmarcSummary  = document.getElementById('dmarc-summary');
 const dmarcDetails  = document.getElementById('dmarc-details');
 
-const validationCard = document.getElementById('validation-card');
-const validationList = document.getElementById('validation-list');
+// validation UI removed: no DOM refs
 
 const accordionTriggers = document.querySelectorAll('.accordion-trigger');
 
@@ -302,7 +301,6 @@ async function analyseHeader() {
     }
 
     // Render all sections including AI
-    renderValidation(validateResponse(data));
     renderParsed(data.parsed     || {});
     renderSpf(data.results?.spf  || null);
     renderDkim(data.results?.dkim || null, data.results?.dmarc || null, data.parsed || {});
@@ -316,51 +314,7 @@ async function analyseHeader() {
   }
 }
 
-// ══════════════════════════════════════════════════════════
-// RENDER: API Response Validation
-// ══════════════════════════════════════════════════════════
-function renderValidation(missing) {
-  validationList.innerHTML = '';
-
-  if (missing.length === 0) {
-    const li = document.createElement('li');
-    li.textContent = '✅ All required fields are present.';
-    validationList.appendChild(li);
-  } else {
-    missing.forEach(item => {
-      const li = document.createElement('li');
-      li.textContent = item;
-      validationList.appendChild(li);
-    });
-  }
-
-  validationCard.classList.remove('hidden');
-}
-
-function validateResponse(data) {
-  const missing = [];
-  if (!data || typeof data !== 'object') return ['Response is missing or invalid.'];
-  if (!data.parsed)          missing.push('Missing: parsed');
-  if (!data.results)         missing.push('Missing: results');
-  if (!data.results?.spf)    missing.push('Missing: results.spf');
-  if (!data.results?.dkim)   missing.push('Missing: results.dkim');
-  if (!data.results?.dmarc)  missing.push('Missing: results.dmarc');
-
-  ['fromEmail','fromDomain','envelopeFrom','envelopeDomain','senderIP'].forEach(k => {
-    if (!data.parsed?.[k]) missing.push(`Missing: parsed.${k}`);
-  });
-  ['result','domain','ip'].forEach(k => {
-    if (!data.results?.spf?.[k]) missing.push(`Missing: results.spf.${k}`);
-  });
-  ['result','domain'].forEach(k => {
-    if (!data.results?.dkim?.[k]) missing.push(`Missing: results.dkim.${k}`);
-  });
-  ['verdict','policy'].forEach(k => {
-    if (!data.results?.dmarc?.[k]) missing.push(`Missing: results.dmarc.${k}`);
-  });
-
-  return missing;
-}
+// API response validation removed from UI; server-side tests remain unchanged.
 
 // ══════════════════════════════════════════════════════════
 // RENDER: Parsed Header Fields
@@ -549,12 +503,12 @@ function renderAI(ai) {
     </div>
 
     <div class="ai-section-block">
-      <div class="ai-section-label">📋 Summary for users</div>
+      <div class="ai-section-label">Summary for users</div>
       <p class="ai-explanation">${escHtml(ai.explanation)}</p>
     </div>
 
     <div class="ai-section-block">
-      <div class="ai-section-label">🔧 Technical summary</div>
+      <div class="ai-section-label">Technical summary</div>
       <p class="ai-tech">${escHtml(ai.technicalSummary)}</p>
     </div>
 
@@ -649,7 +603,6 @@ function clearResults() {
   dkimBadge.textContent     = 'PENDING'; dkimBadge.className = 'status-pill none';
   dmarcBadge.textContent    = 'PENDING'; dmarcBadge.className= 'status-pill none';
   aiBadge.textContent       = 'PENDING'; aiBadge.className   = 'ai-badge none';
-  validationList.innerHTML  = '<li>Awaiting analysis...</li>';
   testcaseNote.classList.add('hidden');
   document.querySelectorAll('.demo-btn').forEach(b => b.classList.remove('active-case'));
   document.querySelectorAll('.accordion-panel').forEach(panel => panel.classList.add('hidden'));

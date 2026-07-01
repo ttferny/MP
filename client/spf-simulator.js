@@ -334,7 +334,7 @@ function renderExplanations(response) {
     <details class="explain-more"><summary>More: protocol context & technical notes</summary>
       <div class="explain-more-body">
         <h4>Protocol context</h4>
-        <ul>
+        <ul style="padding-left: 24px;">
           <li><strong>SPF purpose:</strong> publish which IPs can send mail for this domain (envelope MAIL FROM).</li>
           <li><strong>SPF vs DKIM:</strong> SPF checks sending IP; DKIM signs content/headers — both feed DMARC.</li>
           <li><strong>SPF → DMARC:</strong> For SPF to help DMARC, SPF-authenticated domain must align with From:.</li>
@@ -434,7 +434,6 @@ function renderExplanations(response) {
 
   const html = `
     <div class="explain-run compact">
-      <h3>Key insight</h3>
       <p class="at-a-glance">${escapeHtml(atAGlance)}</p>
       ${boxes}
     </div>

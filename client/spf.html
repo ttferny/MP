@@ -4,137 +4,172 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SPF Live Auditor - Email Authentication Studio</title>
+  <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="spf.css" />
 </head>
 <body>
   <header class="site-header">
     <div class="header-inner">
-      <div class="logo">Email Authentication Studio</div>
+      <div class="logo">
+        <span class="logo-text">Email Authentication Studio</span>
+      </div>
       <nav class="site-nav">
         <a class="nav-link" href="index.html">Studio</a>
-        <a class="nav-link" href="spf-builder.html">SPF Builder</a>
         <a class="nav-link active" href="spf.html">SPF POC</a>
+        <a class="nav-link" href="spf-builder.html">SPF Builder</a>
         <a class="nav-link" href="spf-simulator.html">SPF Simulator</a>
         <a class="nav-link" href="dmarc.html">DMARC Lab</a>
+        <a class="nav-link" href="dns-studio.html">DNS Automation</a>
       </nav>
     </div>
   </header>
 
   <section class="hero">
-    <div class="hero-content">
-      <div class="eyebrow">Sender Policy Framework</div>
-      <h1>Live Domain Auditor</h1>
-      <p>
-        Type a real domain and this auditor will fetch its actual SPF record,
-        parse the policy, and show which senders are trusted in real time.
-      </p>
-      <p class="hero-note">
-        This is a live lookup tool for real DNS SPF records, not a simulated environment. It also includes a commercial risk panel with recommendation and business impact.
-      </p>
-    </div>
-    <div class="hero-panel">
-      <div class="panel-label">Quick Scenarios</div>
-      <div class="scenario-grid" id="scenario-grid"></div>
-      <div class="scenario-note" id="scenario-note">Select a scenario to preload data.</div>
-    </div>
+    <h1>Live Domain Auditor</h1>
+    <p class="hero-sub">
+      Type a domain and sender IP to fetch the live SPF record, and review the evaluation trace.
+    </p>
+    
   </section>
 
-  <main class="main-grid">
-    <section class="stack">
-      <div class="card">
-        <div class="card-title">Policy Inputs</div>
-        <div class="form-grid">
-          <label>
-            Domain
-            <input id="domain-input" type="text" placeholder="example.com" />
-          </label>
-          <label>
-            Sender IP
-            <input id="ip-input" type="text" placeholder="203.0.113.55" />
-          </label>
-          <label class="full">
-            SPF Record
-            <textarea id="record-input" rows="3" placeholder="Live SPF record will appear here" readonly></textarea>
-          </label>
-        </div>
-        <div class="actions">
-          <button id="evaluate-btn" class="btn-primary">Evaluate SPF</button>
-          <button id="reset-btn" class="btn-secondary">Clear</button>
-        </div>
-        <div class="helper-text">Live DNS lookup is used for the SPF record and resolver checks.</div>
-      </div>
+  <main class="main-content">
+    <div class="layout-grid">
+      <section class="stack left-panel">
+        <div class="card">
+          <div class="card-title">Policy Inputs</div>
+          <div class="form-grid">
+            <label>
+              Domain
+              <input id="domain-input" type="text" placeholder="example.com" />
+            </label>
+            <label>
+              Sender IP
+              <input id="ip-input" type="text" placeholder="203.0.113.55" />
+            </label>
+            <label class="full">
+              SPF Record
+              <textarea id="record-input" rows="3" placeholder="Live SPF record will appear here" readonly></textarea>
+            </label>
+            <label class="full">
+              Include Records (resolved)
+              <textarea id="include-input" rows="3" placeholder="Include lookups appear here" readonly></textarea>
+            </label>
+          </div>
 
-      <div class="card">
-        <div class="card-title">Live DNS Snapshot</div>
-        <div class="form-grid">
-          <label>
-            Resolved A Records
-            <input id="a-input" type="text" placeholder="Live DNS results" readonly />
-          </label>
-          <label>
-            Resolved MX Records
-            <input id="mx-input" type="text" placeholder="Live DNS results" readonly />
-          </label>
-          <label class="full">
-            Include Records (resolved)
-            <textarea id="include-input" rows="3" placeholder="Include lookups appear here" readonly></textarea>
-          </label>
-        </div>
-      </div>
-    </section>
+          <div class="upload-panel">
+            <div class="upload-label">Upload saved email file</div>
+            <div class="upload-hint">Accepts .eml or .txt with headers and body. The parser will try to extract the sender IP and domain automatically.</div>
+            <label class="upload-drop" for="email-file-input">
+              <span>Choose file</span>
+              <input id="email-file-input" type="file" accept=".eml,.txt,message/rfc822,text/plain" />
+            </label>
+            <div id="upload-status" class="upload-status">No file selected.</div>
+          </div>
 
-    <section class="stack">
-      <div class="card result-card">
-        <div class="card-title">SPF Result</div>
-        <div class="result-row">
-          <div id="result-badge" class="result-badge neutral">NEUTRAL</div>
-          <div id="result-summary" class="result-summary">Run an evaluation to see the decision.</div>
-        </div>
-        <div class="trace" id="trace-list"></div>
-      </div>
-
-      <div class="card commercial-card">
-        <div class="card-title">Live Policy Summary</div>
-        <div class="commercial-grid">
-          <div class="commercial-item">
-            <span class="commercial-label">Status</span>
-            <span id="commercial-status" class="commercial-value">Awaiting evaluation</span>
+          <div class="actions">
+            <button id="evaluate-btn" class="btn-primary">Evaluate SPF</button>
+            <button id="reset-btn" class="btn-secondary">Clear</button>
           </div>
-          <div class="commercial-item">
-            <span class="commercial-label">Risk score</span>
-            <span id="commercial-risk" class="commercial-value">—</span>
-          </div>
-          <div class="commercial-item">
-            <span class="commercial-label">Recommendation</span>
-            <span id="commercial-recommendation" class="commercial-value">Run the auditor to see guidance.</span>
-          </div>
-          <div class="commercial-item">
-            <span class="commercial-label">Business impact</span>
-            <span id="commercial-impact" class="commercial-value">—</span>
-          </div>
-        </div>
-        
-        <div class="commercial-policy">
-          <div class="commercial-policy-title">
-          </div>
-          <div id="policy-summary-text" class="policy-summary-text">
-          </div>
+          <div class="helper-text"></div>
         </div>
 
-        <div class="commercial-highlights" id="commercial-highlights"></div>
-      </div>
+        <div class="card result-card-panel">
+          <div class="section-header">
+            <div>
+              <div class="card-title">SPF Result</div>
+              <div class="card-hint">Technical step-by-step trace mechanism.</div>
+            </div>
+            <span id="result-badge" class="result-badge neutral">NEUTRAL</span>
+          </div>
 
-      <div class="card">
-        <div class="card-title">How SPF Works</div>
-        <ol class="steps">
-          <li>Mail server extracts the envelope domain from Return-Path.</li>
-          <li>It fetches the SPF record from DNS (TXT record).</li>
-          <li>Each mechanism is tested in order until one matches.</li>
-          <li>The matching qualifier decides the result (pass, fail, softfail, neutral).</li>
-          <li>If nothing matches, the result is neutral.</li>
-        </ol>
-      </div>
-    </section>
+          <div class="auth-accordion">
+            <div class="accordion-item">
+              <button type="button" class="accordion-trigger" data-target="spf-panel">
+                <span>Evaluation trace</span>
+                <span class="accordion-meta">
+                  <span class="accordion-icon">▾</span>
+                </span>
+              </button>
+              <div id="spf-panel" class="accordion-panel hidden">
+                <div class="result-row">
+                  
+                  <div id="result-summary" class="result-summary">Run an evaluation to see the decision.</div>
+                </div>
+                <div id="trace-list" class="trace"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="stack right-panel">
+        <div class="card scenario-card-panel">
+          <div class="card-title">Quick Scenarios</div>
+          <div class="card-hint">Pick a preset to preload the auditor with a real-world sender and domain.</div>
+          <div class="scenario-grid" id="scenario-grid"></div>
+          <div class="scenario-note" id="scenario-note">Select a scenario to preload data.</div>
+        </div>
+
+        <div class="card commercial-card">
+          <div class="card-title">Live Policy Summary</div>
+          <div class="card-hint">Status, risk, and recommended next action.</div>
+          <div class="commercial-grid">
+            <div class="commercial-item">
+              <span class="commercial-label">Status</span>
+              <span id="commercial-status" class="commercial-value">Awaiting evaluation</span>
+            </div>
+            <div class="commercial-item">
+              <span class="commercial-label">Risk score</span>
+              <span id="commercial-risk" class="commercial-value">—</span>
+            </div>
+            <div class="commercial-item">
+              <span class="commercial-label">Recommendation</span>
+              <span id="commercial-recommendation" class="commercial-value">Run the auditor to see guidance.</span>
+            </div>
+            <div class="commercial-item">
+              <span class="commercial-label">Business impact</span>
+              <span id="commercial-impact" class="commercial-value">—</span>
+            </div>
+          </div>
+
+          <div class="commercial-policy">
+            <div class="commercial-policy-title"></div>
+            <div id="policy-summary-text" class="policy-summary-text"></div>
+          </div>
+
+          <div class="commercial-highlights" id="commercial-highlights"></div>
+        </div>
+
+        <div class="card auth-dropdown how-works-card">
+          <div class="ai-header">
+            <div>
+              <div class="ai-title">How SPF Works</div>
+              <div class="ai-subtitle"></div>
+            </div>
+          </div>
+
+          <div class="auth-accordion">
+            <div class="accordion-item">
+              <button type="button" class="accordion-trigger" data-target="howworks-panel">
+                <span>Open steps</span>
+                <span class="accordion-meta">
+                  <span class="accordion-icon">▾</span>
+                </span>
+              </button>
+              <div id="howworks-panel" class="accordion-panel hidden">
+                <ol class="steps">
+                  <li>Mail server extracts the envelope domain from Return-Path.</li>
+                  <li>It fetches the SPF record from DNS (TXT record).</li>
+                  <li>Each mechanism is tested in order until one matches.</li>
+                  <li>The matching qualifier decides the result (pass, fail, softfail, neutral).</li>
+                  <li>If nothing matches, the result is neutral.</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
   </main>
 
   <footer class="site-footer">

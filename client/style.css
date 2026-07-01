@@ -147,7 +147,7 @@ a:hover { color: var(--accent-dark); }
 }
 
 .hero-sub {
-  color: var(--ink);
+  color: var(--accent-dark);
   max-width: 100%;
   font-size: 1rem;
   line-height: 1.4;
@@ -485,108 +485,8 @@ a:hover { color: var(--accent-dark); }
   padding-left: 8px;
 }
 
-#dkim-section {
-  position: relative;
-  background: linear-gradient(180deg, #121116 0%, #09080b 100%) !important;
-  border: 1px solid rgba(255, 165, 0, 0.25) !important;
-  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.52) !important;
-  overflow: hidden;
-}
 
-#dkim-section::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at top right, rgba(255, 165, 0, 0.15), transparent 35%);
-  pointer-events: none;
-}
 
-#dkim-section .card-title {
-  color: #fff;
-}
-
-#dkim-section .card-hint {
-  color: #f4c17a;
-}
-
-#dkim-section .spf-header {
-  border-bottom: 1px solid rgba(255, 165, 0, 0.18);
-  padding-bottom: 12px;
-  margin-bottom: 18px;
-}
-
-#dkim-section .status-pill {
-  background: rgba(255, 165, 0, 0.2) !important;
-  color: #fff !important;
-  border-color: rgba(255, 165, 0, 0.38) !important;
-}
-
-#dkim-section .status-pill.pass {
-  background: rgba(126, 229, 129, 0.18) !important;
-  color: #c7ffd8 !important;
-  border-color: rgba(126, 229, 129, 0.38) !important;
-}
-
-#dkim-section .status-pill.fail {
-  background: rgba(255, 77, 79, 0.2) !important;
-  color: #ffd8d8 !important;
-  border-color: rgba(255, 77, 79, 0.4) !important;
-}
-
-#dkim-section .status-pill.warn {
-  background: rgba(255, 165, 0, 0.24) !important;
-  color: #fff2d2 !important;
-  border-color: rgba(255, 165, 0, 0.42) !important;
-}
-
-#dkim-section .status-pill.none {
-  background: rgba(255, 255, 255, 0.06) !important;
-  color: #bdb8ad !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
-}
-
-#dkim-section .detail-list {
-  gap: 14px;
-}
-
-#dkim-section .detail-row {
-  padding: 16px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 165, 0, 0.16);
-}
-
-#dkim-section .detail-key {
-  color: #d8c8aa;
-}
-
-#dkim-section .detail-val {
-  color: #fff;
-}
-
-#dkim-section .alignment-note {
-  color: #f5d7a4;
-  border-color: rgba(255, 165, 0, 0.45);
-}
-
-/* ── Validation card ──────────────────────────────────────── */
-.validation-card {
-  border-left: 4px solid var(--accent-warm);
-  background: rgba(231,111,81,0.08);
-}
-
-.validation-list {
-  list-style: none;
-  display: grid;
-  gap: 6px;
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.validation-list li {
-  padding-left: 8px;
-  border-left: 2px solid rgba(231,111,81,0.4);
-}
 
 /* ── AI Analysis Card ─────────────────────────────────────── */
 .ai-card {
