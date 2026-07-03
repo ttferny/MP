@@ -15,8 +15,8 @@
         <span class="logo-text">Email Authentication Studio</span>
       </div>
       <nav class="site-nav">
-        <a class="nav-link" href="index.html">Studio</a>
-        <a class="nav-link" href="spf.html">SPF POC</a>
+        <a class="nav-link" href="index.html">Authenticator</a>
+        <a class="nav-link" href="spf.html">SPF Auditor</a>
         <a class="nav-link active" href="spf-builder.html">SPF Builder</a>
         <a class="nav-link" href="spf-simulator.html">SPF Simulator</a>
         <a class="nav-link" href="dmarc.html">DMARC Lab</a>
@@ -72,13 +72,51 @@
 
         <!-- Services -->
         <div class="card">
-          <h2 class="card-title">Email services you use</h2>
-          <p class="card-hint">
-            Tick every service that sends email on behalf of your domain.
-            Each adds an <code>include:</code> mechanism to your record.
-          </p>
+          <div class="services-header-container">
+            <div>
+              <h2 class="card-title">Email services you use</h2>
+              <p class="card-hint">
+                Tick every service that sends email on behalf of your domain.
+                Each adds an <code>include:</code> mechanism to your record.
+              </p>
+            </div>
+            <button type="button" id="clear-services-btn" class="clear-btn">Clear All</button>
+          </div>
           <div class="svc-grid" id="svc-grid"></div>
         </div>
+
+        <style>
+          /* Only overrides the spacing for this specific explanation panel */
+          #explain-panel {
+            padding-bottom: 0px !important;
+          }
+          
+          /* Styles for the new Clear All button layout */
+          .services-header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 12px;
+          }
+          .clear-btn {
+            background-color: transparent;
+            border: 1px solid #e6dfd5;
+            color: #666;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+          }
+          .clear-btn:hover {
+            background-color: #f5efe6;
+            color: #111;
+          }
+        </style>
+
 
         <!-- Policy -->
         <div class="card">
@@ -149,34 +187,65 @@
         </div>
 
         <!-- Explanation -->
-        <div class="card explain-card">
+        
+        <div class="card">
+          <div class="ai-header">
+            <div>
+              <div class="ai-title">Mechanism Added</div>
+              <div class="ai-subtitle"></div>
+            </div>
+          </div>
           <div class="accordion-item open">
             <button type="button" class="accordion-trigger explain-trigger" data-target="explain-panel">
-              <span><b>What each part means</b></span>
+              <span>Open Descriptions</span>
               <span class="accordion-meta">
                 <span class="accordion-icon">▾</span>
               </span>
             </button>
-            <div id="explain-panel" class="accordion-panel">
-              <div id="explain-list" class="explain-list"></div>
+            <div id="explain-panel" class="accordion-panel hidden">
+              <div id="explain-list" class="explain-list" ></div>
             </div>
           </div>
         </div>
 
+        <style>
+          /* Only overrides the spacing for this specific explanation panel */
+          #explain-panel {
+            padding-bottom: 0px !important;
+          }
+          
+        </style>
+
         <!-- DNS instructions -->
+        
         <div class="card">
-          <h2 class="card-title">How to add this to your DNS</h2>
-          <ol class="dns-steps">
-            <li>Log in to your domain registrar (e.g. GoDaddy, Namecheap, Cloudflare).</li>
-            <li>Go to <strong>DNS settings</strong> for your domain.</li>
-            <li>Add a new <strong>TXT record</strong>.</li>
-            <li>Set the name/host to <code>@</code> (represents your root domain).</li>
-            <li>Paste the generated record above as the value.</li>
-            <li>Save — DNS changes can take up to 48 hours to propagate.</li>
-          </ol>
-          <div class="dns-note">
-            You can only have <strong>one SPF record</strong> per domain.
-            If one already exists, edit it rather than adding a second.
+          <div class="ai-header">
+            <div>
+              <div class="ai-title">How to add this to your DNS</div>
+              <div class="ai-subtitle"></div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <button type="button" class="accordion-trigger" data-target="dns-panel">
+              <span>Open Instructions</span>
+              <span class="accordion-meta">
+                <span class="accordion-icon">▾</span>
+              </span>
+            </button>
+            <div id="dns-panel" class="accordion-panel hidden">
+              <ol class="dns-steps">
+                <li>Log in to your domain registrar (e.g. GoDaddy, Namecheap, Cloudflare).</li>
+                <li>Go to <strong>DNS settings</strong> for your domain.</li>
+                <li>Add a new <strong>TXT record</strong>.</li>
+                <li>Set the name/host to <code>@</code> (represents your root domain).</li>
+                <li>Paste the generated record above as the value.</li>
+                <li>Save — DNS changes can take up to 48 hours to propagate.</li>
+              </ol>
+              <div class="dns-note">
+                You can only have <strong>one SPF record</strong> per domain.
+                If one already exists, edit it rather than adding a second.
+              </div>
+            </div>
           </div>
         </div>
 

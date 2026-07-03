@@ -26,17 +26,19 @@ const SERVICES = [
   { id: 'sparkpost',  name: 'SparkPost',        include: 'sparkpostmail.com',          lookups: 2 },
 ];
 
-const explanationTrigger = document.querySelector('.explain-trigger');
-const explanationPanel = document.getElementById('explain-panel');
+document.querySelectorAll('.accordion-trigger').forEach((trigger) => {
+  const panelId = trigger.dataset.target;
+  const panel = document.getElementById(panelId);
+  const item = trigger.closest('.accordion-item');
 
-if (explanationTrigger && explanationPanel) {
-  explanationTrigger.addEventListener('click', () => {
-    const item = explanationTrigger.closest('.accordion-item');
-    const open = !explanationPanel.classList.contains('hidden');
-    explanationPanel.classList.toggle('hidden');
-    item?.classList.toggle('open', !open);
+  if (!panel || !item) return;
+
+  trigger.addEventListener('click', () => {
+    const isOpen = !panel.classList.contains('hidden');
+    panel.classList.toggle('hidden', isOpen);
+    item.classList.toggle('open', !isOpen);
   });
-}
+});
 
 // ── State ──────────────────────────────────────────────────
 let selected = new Set();
@@ -204,6 +206,10 @@ function buildRecord() {
     warnings.push({ text: `You are using ${lookups}/10 DNS lookups. You are close to the limit — be careful adding more services.`, error: false });
   }
 
+
+
+
+
   // Other logic checks
   if (policy === '?all') {
     warnings.push({ text: '"?all" (neutral) provides no real protection. Spoofed emails will still be delivered. Consider using "~all" or "-all".', error: false });
@@ -288,3 +294,10 @@ function escAttr(s) {
 renderServices();
 renderIPs();
 buildRecord();
+
+// ── Clear All Services Event Listener ──────────────────────
+document.getElementById('clear-services-btn')?.addEventListener('click', () => {
+  selected.clear();  // Empties the Set containing selected email services
+  renderServices();  // Redraws the service grid with zero active highlights
+  buildRecord();     // Re-generates the SPF text output live
+});

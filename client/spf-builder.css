@@ -53,7 +53,7 @@
   transition: all var(--transition);
   text-align: left;
   overflow: hidden;
-  min-height: 86px;
+  min-height: 70px;
 }
 
 .svc-btn:hover { border-color: var(--border-strong); }
@@ -312,7 +312,16 @@
 }
 
 /* Explanation list */
-.explain-list { display: flex; flex-direction: column; gap: 8px; }
+.explain-list { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 0; 
+}
+
+/* Removes extra spacing below the final row in the explanation list */
+.explain-list > *:last-child {
+  margin-bottom: 0 !important;
+}
 
 .explain-card .accordion-item {
   border: none;
@@ -335,38 +344,47 @@
 }
 
 .explain-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
   gap: 12px;
-  align-items: flex-start;
-  padding: 8px 0;
+  align-items: start;
+  padding: 10px 0;
   border-bottom: 1px solid var(--border);
+  min-height: 72px;
 }
 
 .explain-item:last-child { border-bottom: none; }
 
 .explain-token {
+  width: 112px;
+  max-width: 112px;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.8rem;
   background: var(--bg-alt);
   border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 2px 8px;
-  white-space: nowrap;
+  border-radius: 6px;
+  padding: 6px 8px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
   flex-shrink: 0;
-  min-width: 80px;
   text-align: center;
 }
 
-.explain-desc { font-size: 0.85rem; color: var(--ink); line-height: 1.5; }
+.explain-desc { font-size: 0.85rem; color: var(--ink); line-height: 1.5; min-width: 0; }
 .explain-desc small { display: block; color: var(--muted); font-size: 0.78rem; margin-top: 2px; }
 
 /* DNS steps */
 .dns-steps {
-  padding-left: 1.2rem;
-  font-size: 0.875rem;
-  color: var(--ink);
-  line-height: 1.8;
+  display: grid;
+  gap: 10px;
+  padding-left: 20px;
+  padding-top: 10px;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  color: var(--muted);
 }
+
 
 .dns-steps li { margin-bottom: 4px; }
 .dns-steps code { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; background: var(--bg-alt); padding: 1px 6px; border-radius: 4px; }
@@ -380,6 +398,8 @@
   border: 1px solid rgba(217,119,6,0.2);
   border-radius: var(--radius-sm);
 }
+
+
 
 /* Responsive */
 @media (max-width: 900px) {

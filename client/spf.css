@@ -125,7 +125,6 @@ body::after {
   flex-direction: column;
   justify-content: center;
   min-height: 180px;
-  background: #d4e9ff;
   border: none;
   border-radius: 0;
   box-shadow: none;

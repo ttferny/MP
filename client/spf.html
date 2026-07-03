@@ -14,8 +14,8 @@
         <span class="logo-text">Email Authentication Studio</span>
       </div>
       <nav class="site-nav">
-        <a class="nav-link" href="index.html">Studio</a>
-        <a class="nav-link active" href="spf.html">SPF POC</a>
+        <a class="nav-link" href="index.html">Authenticator</a>
+        <a class="nav-link active" href="spf.html">SPF Auditor</a>
         <a class="nav-link" href="spf-builder.html">SPF Builder</a>
         <a class="nav-link" href="spf-simulator.html">SPF Simulator</a>
         <a class="nav-link" href="dmarc.html">DMARC Lab</a>
@@ -25,7 +25,7 @@
   </header>
 
   <section class="hero">
-    <h1>Live Domain Auditor</h1>
+    <h1>Live SPF Auditor</h1>
     <p class="hero-sub">
       Type a domain and sender IP to fetch the live SPF record, and review the evaluation trace.
     </p>
@@ -58,7 +58,7 @@
 
           <div class="upload-panel">
             <div class="upload-label">Upload saved email file</div>
-            <div class="upload-hint">Accepts .eml or .txt with headers and body. The parser will try to extract the sender IP and domain automatically.</div>
+            <div class="upload-hint">Accepts .eml or .txt with headers and body.</div>
             <label class="upload-drop" for="email-file-input">
               <span>Choose file</span>
               <input id="email-file-input" type="file" accept=".eml,.txt,message/rfc822,text/plain" />
@@ -85,7 +85,7 @@
           <div class="auth-accordion">
             <div class="accordion-item">
               <button type="button" class="accordion-trigger" data-target="spf-panel">
-                <span>Evaluation trace</span>
+                <span>Evaluation Trace</span>
                 <span class="accordion-meta">
                   <span class="accordion-icon">▾</span>
                 </span>
@@ -151,7 +151,7 @@
           <div class="auth-accordion">
             <div class="accordion-item">
               <button type="button" class="accordion-trigger" data-target="howworks-panel">
-                <span>Open steps</span>
+                <span>Open Steps</span>
                 <span class="accordion-meta">
                   <span class="accordion-icon">▾</span>
                 </span>
