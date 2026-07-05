@@ -151,15 +151,14 @@ function applyTooltips() {
       width: 16px;
       height: 16px;
       border-radius: 50%;
-      background: rgba(15, 118, 110, 0.15);
-      color: var(--accent-dark);
+      background: #e6d9c8;
+      color: #8a8179;
       font-size: 0.68rem;
       font-weight: 700;
       font-family: 'JetBrains Mono', monospace;
       cursor: help;
       margin-left: 5px;
       flex-shrink: 0;
-      border: 1px solid rgba(15, 118, 110, 0.25);
       transition: background 0.15s ease;
       user-select: none;
     }
@@ -415,6 +414,7 @@ const scenarios = [
   }
 ];
 
+// Render the "Quick Scenarios" preset buttons and wire each to auto-run on click.
 function loadScenarios() {
   if (!scenarioGrid) return;
   scenarioGrid.innerHTML = '';
@@ -434,6 +434,7 @@ function loadScenarios() {
   });
 }
 
+// Load a preset's domain + IP into the inputs and immediately evaluate it.
 function applyScenario(scenario) {
   const { domain, ip } = scenario.data;
   if (domainInput) domainInput.value = domain;
@@ -442,6 +443,8 @@ function applyScenario(scenario) {
   evaluateSpf();
 }
 
+// Work out where the backend lives: an explicitly configured base wins, else the
+// page's own origin (when served over http/https), else localhost for dev.
 function getApiBaseUrl() {
   const configuredBase = document.body?.dataset?.apiBaseUrl;
   if (configuredBase) return configuredBase.replace(/\/$/, '');
@@ -449,6 +452,8 @@ function getApiBaseUrl() {
   return 'http://localhost:3000';
 }
 
+// Build an ordered list of backend URLs to try — primary first, then localhost as
+// a fallback — so the demo still works whether opened from a server or a file.
 function getApiTargets() {
   const targets = [];
   const apiBaseUrl = getApiBaseUrl();
@@ -458,6 +463,8 @@ function getApiTargets() {
   return targets;
 }
 
+// Call POST /api/spf/check, trying each candidate backend until one responds.
+// Returns the parsed JSON verdict, or throws the last error if all targets fail.
 async function fetchSpfEvaluation(domain, ip) {
   const payload = JSON.stringify({ domain, ip });
   console.debug('[SPF POC] Sending payload to /api/spf/check:', { domain, ip });
@@ -561,6 +568,8 @@ async function evaluateSpf() {
 }
 
 // ── Waterfall Trace Builder ──────────────────────────────────
+// Renders the step-by-step evaluation timeline. Short traces (≤5 steps) show in
+// full; longer ones collapse the middle so a presenter can focus on start + end.
 function renderTrace(steps, finalResult) {
   if (!traceList) return;
   traceList.innerHTML = '';
@@ -675,6 +684,8 @@ function renderTrace(steps, finalResult) {
 }
 
 // ── Helper Controllers ───────────────────────────────────────
+// Collapse the seven RFC result strings into the four the UI styles/animates
+// (pass/fail/softfail/neutral) — none/permerror/temperror all render as neutral.
 function mapResultClass(result) {
   const normalized = String(result || '').toLowerCase();
   if (['pass', 'fail', 'softfail', 'neutral'].includes(normalized)) return normalized;
@@ -682,6 +693,7 @@ function mapResultClass(result) {
   return 'neutral';
 }
 
+// Update the big result badge + summary line (and the small status pill).
 function setResult(result, summary) {
   if (!resultBadge || !resultSummary) return;
   resultBadge.className = `result-badge ${result}`;
@@ -694,6 +706,8 @@ function setResult(result, summary) {
   }
 }
 
+// Handle an uploaded .eml/.txt: read it, auto-extract the sender domain + IP,
+// and pre-fill the form — lets users audit a real message they received.
 function handleEmailFileUpload(event) {
   const file = event.target.files && event.target.files[0];
   if (!file) {
@@ -739,6 +753,7 @@ function handleEmailFileUpload(event) {
   reader.readAsText(file);
 }
 
+// Pull the sender domain and originating IP out of raw email header text.
 function extractEmailFields(text) {
   const headers = String(text || '').replace(/\r/g, '');
   return {
@@ -747,6 +762,7 @@ function extractEmailFields(text) {
   };
 }
 
+// Try several common header patterns to find the true originating sender IP.
 function extractSenderIp(headers) {
   const patterns = [
     /client-ip=([0-9a-fA-F:.]+)/i,
@@ -764,6 +780,7 @@ function extractSenderIp(headers) {
   return '';
 }
 
+// Try several common header patterns to find the sender's domain (the SPF owner).
 function extractSenderDomain(headers) {
   const patterns = [
     /header\.from=([^;\s]+)/i,
@@ -785,6 +802,8 @@ function extractSenderDomain(headers) {
   return '';
 }
 
+// Paint the business-facing panel (status, risk score, recommendation, impact,
+// highlights) from the backend's `commercial` object — the stakeholder view.
 function renderCommercial(summary) {
   if (!commercialStatus || !commercialRisk || !commercialRecommendation || !commercialImpact || !commercialHighlights) return;
 
@@ -820,6 +839,8 @@ function renderCommercial(summary) {
   }
 }
 
+// Derive a plain-English policy read-out from the raw record: enforcement level,
+// how many IPs/includes it trusts, and a recommendation on how to strengthen it.
 function renderPolicySummary(data) {
   if (!policySummaryText) return;
   const record         = String(data.record || '');
@@ -858,6 +879,7 @@ function renderPolicySummary(data) {
 
 }
 
+// Reset the whole page back to its initial, empty state (the "Clear" button).
 function clearAll() {
   if (domainInput)  domainInput.value = '';
   if (ipInput)      ipInput.value = '';
@@ -878,6 +900,7 @@ function clearAll() {
   document.querySelectorAll('.scenario-card').forEach((el) => el.classList.remove('active'));
 }
 
+// Toggle the evaluate button's disabled/label state while a request is in flight.
 function setLoading(isLoading) {
   if (!evaluateBtn) return;
   evaluateBtn.disabled  = isLoading;
@@ -885,6 +908,8 @@ function setLoading(isLoading) {
 }
 
 // ── Init ─────────────────────────────────────────────────────
+// Bootstrap once the DOM is ready: build scenarios, wire buttons + tooltips, and
+// auto-run an evaluation if a ?domain= parameter was passed (e.g. from the builder).
 document.addEventListener('DOMContentLoaded', () => {
   loadScenarios();
   setResult('neutral', 'Run an evaluation to see the decision.');

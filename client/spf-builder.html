@@ -1,14 +1,38 @@
 <!DOCTYPE html>
+<!--
+  ============================================================
+  spf-builder.html — SPF Record Builder (Presentation UI)
+  ============================================================
+
+  BUSINESS VIEW: A no-code wizard that lets a domain owner generate a correct
+  SPF TXT record by ticking the email services they use, adding custom IPs, and
+  choosing an enforcement policy (-all / ~all / ?all), copy TXT to registrar. 
+  It removes the #1 barrier to SPF adoption:
+  fear of hand-writing DNS syntax.
+  PITCH NOTE: The value here is "correct by construction" — the record updates
+  live, a lookup meter warns before the 10-lookup limit, and each mechanism is
+  explained in plain English. All logic lives in spf-builder.js (loaded at the end).
+
+  TECHNICAL:
+  All logic in spf-builder.js. Live record rebuild on every change.
+  DNS lookup counter warns before RFC 7208's 10-lookup PermError limit.
+
+  EMAIL AUTH LINK:
+  "Test this record" opens spf.html?domain= for live verification.
+  Published record is checked by spf.js in the full /api/analyse/header pipeline.
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SPF Record Builder — Email Authentication Studio</title>
+  <!-- style.css = shared studio theme; spf-builder.css = builder-specific styles. -->
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="spf-builder.css" />
 </head>
 <body>
 
+  <!-- Shared top bar: branding + navigation across all studio tools. -->
   <header class="site-header">
     <div class="header-inner">
       <div class="logo">
@@ -26,7 +50,10 @@
     </div>
   </header>
 
+
+  <!-- Hero: one-sentence value proposition shown at the top of the page. -->
   <section class="hero">
+    <!-- PITCH: Self-service SPF publishing without consulting a mail admin -->
     <h1>SPF Record Builder</h1>
     <p class="hero-sub">
       Generate a valid SPF TXT record for your domain. Select your mail services,
@@ -34,14 +61,15 @@
     </p>
   </section>
 
+  <!-- Two-column layout: inputs on the left, live output on the right. -->
   <main class="main-content">
     <div class="builder-grid">
 
-      <!-- ── LEFT: Builder Form ── -->
+      <!-- LEFT: builder form — domain, custom IPs, ESP includes, terminal policy (user inputs)-->
       <section class="stack">
 
         <div class="top-grid">
-          <!-- Domain -->
+          <!-- Domain: the protected identity the SPF record will belong to. -->
           <div class="card">
             <h2 class="card-title">Your domain</h2>
             <p class="card-hint">The domain you want to protect (e.g. company.com).</p>
@@ -56,7 +84,7 @@
             />
           </div>
 
-          <!-- Custom IPs -->
+          <!-- Custom IPs: self-hosted mail servers, ip4:/ip6: mechanisms — zero DNS lookup cost (direct allow-list) -->
           <div class="card">
             <h2 class="card-title">Custom IP addresses</h2>
             <p class="card-hint">
@@ -70,7 +98,7 @@
           </div>
         </div>
 
-        <!-- Services -->
+        <!-- Services: tick each provider that sends on your behalf (adds include:) — counts toward 10 DNS lookups -->
         <div class="card">
           <div class="services-header-container">
             <div>
@@ -118,7 +146,7 @@
         </style>
 
 
-        <!-- Policy -->
+        <!-- Policy: how receivers should treat mail that fails SPF (the enforcement dial). Terminal qualifier: -all (reject), ~all (softfail), ?all (neutral) -->
         <div class="card">
           <h2 class="card-title">Policy</h2>
           <p class="card-hint">
@@ -151,10 +179,10 @@
 
       </section>
 
-      <!-- ── RIGHT: Output ── -->
+      <!-- RIGHT: (auto generated output) Generated TXT, lookup meter, mechanism glossary, DNS steps -->
       <section class="stack">
 
-        <!-- Generated record -->
+        <!-- Live generated record: the live SPF string + a 10-lookup budget meter + coloured tokens + warnings + copy / test actions -->
         <div class="card output-card">
           <h2 class="card-title">Generated SPF record</h2>
           <p class="card-hint">Add this as a DNS TXT record on your domain.</p>
@@ -186,8 +214,7 @@
           </div>
         </div>
 
-        <!-- Explanation -->
-        
+        <!-- Plain-English every token breakdown in the record -->
         <div class="card">
           <div class="ai-header">
             <div>
@@ -216,8 +243,8 @@
           
         </style>
 
-        <!-- DNS instructions -->
-        
+        <!-- DNS instructions Registrar walkthrough — one SPF TXT per domain (RFC rule) 
+         the last-mile guide to actually publish the record at a registrar — closes the gap between "generated" and "live". -->
         <div class="card">
           <div class="ai-header">
             <div>
@@ -258,6 +285,7 @@
     <p>Email Authentication Studio — Academic POC</p>
   </footer>
 
+  
   <script src="spf-builder.js"></script>
 </body>
 </html>

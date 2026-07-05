@@ -1,4 +1,21 @@
 <!DOCTYPE html>
+<!--
+  ============================================================
+  spf-simulator.html — SPF Learning Experience (Presentation UI)
+  ============================================================
+
+  BUSINESS VIEW: A visual "story mode" that teaches SPF by replaying real-world
+  scenarios (approved sender, spoofed CEO, phishing, ESP, misconfig) and showing
+  — side by side — how a soft (~all) vs hard (-all) policy treats the same email, before/after spoofing risk.
+
+  TECHNICAL:
+  Client-side scenario data in spf-simulator.js (no API required for tabs).
+  Optional POST /api/spf/simulate for server-driven CEO-fraud scenarios.
+
+PITCH NOTE: This is the persuasion tool. It makes the case for STRICT
+  enforcement by letting the audience watch an attack get blocked (or slip
+  through) in a safe sandbox. All logic is client-side in spf-simulator.js.
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -9,6 +26,7 @@
 </head>
 <body>
 
+<!-- Shared top bar: branding + navigation across all studio tools. -->
   <header class="site-header">
     <div class="header-inner">
       <div class="logo">
@@ -43,10 +61,13 @@
     </nav>
   -->
 
+    <!-- DNS VISUALIZER — the end-to-end journey of an email through an SPF check,
+         from sending server all the way to the authentication decision for non-technical audiences -->
     <section id="visualizer" class="section">
       <div class="card">
         <h2 class="card-title">SPF DNS lookup visualizer</h2>
         <div class="visualizer-shell">
+          <!-- Stage 1–6: sender → receiver → DNS → TXT → mechanisms → verdict -->
           <div class="visualizer-stage" id="stage-1">Sending server</div>
           <div class="visualizer-arrow">→</div>
           <div class="visualizer-stage" id="stage-2">Receiving server</div>
@@ -62,9 +83,11 @@
       </div>
     </section>
 
+    <!-- INTERACTIVE SIMULATOR — scenario tabs + ~all vs -all comparison -->
     <section id="simulator" class="section">
       <div class="card">
         <h2 class="card-title">Interactive SPF simulator</h2>
+        <!-- Scenario tabs are injected by spf-simulator.js from its dataset. -->
         <div class="scenario-tabs" id="scenario-tabs"></div>
 
         <div class="sim-controls">
@@ -90,7 +113,9 @@
           <div id="spf-result-bar" class="spf-result-bar"></div>
         </div>
 
+        <!-- Side-by-side policy comparison: the same email under ~all vs -all/softfail delivers, hardfail rejects -->
         <div class="pipeline-grid">
+          <!-- Soft-fail (~all): unauthorised mail is flagged but still delivered. -->
           <div class="card result-card" id="card-soft">
             <div class="policy-header softfail-header">
               <span class="policy-code">~all</span>
@@ -102,6 +127,7 @@
             <div class="verdict-box" id="verdict-soft"></div>
           </div>
 
+          <!-- Hard-fail (-all): unauthorised mail is rejected outright. -->
           <div class="card result-card" id="card-hard">
             <div class="policy-header hardfail-header">
               <span class="policy-code">-all</span>
@@ -114,6 +140,7 @@
           </div>
         </div>
 
+        <!-- Key insight: why + final result; links SPF to DKIM/DMARC stack -->
         <div class="card insight-card">
           <h2 class="card-title">Key insight</h2>
           <div id="insight-text" class="insight-text"></div>
@@ -122,6 +149,7 @@
     </section>
 
     <div class="info-grid">
+      <!-- RECORD BREAKDOWN — a clickable glossary that decodes each SPF token. -->
       <section id="breakdown" class="section">
         <div class="card">
           <h2 class="card-title">SPF record breakdown</h2>
@@ -133,6 +161,7 @@
         </div>
       </section>
 
+      <!-- MECHANISM REFERENCE — the core SPF mechanisms and qualifiers at a glance-ip4, include, mx/a, qualifiers -->
       <section id="mechanisms" class="section">
         <div class="card">
           <h2 class="card-title">SPF mechanisms &amp; qualifiers</h2>
@@ -164,6 +193,7 @@
 
     
 
+    <!-- BEFORE/AFTER — executive summary of SPF business value -->
     <section id="before-after" class="section">
       <div class="card">
         <h2 class="card-title">Before vs after SPF</h2>

@@ -1,7 +1,40 @@
 /**
- * spf-simulator.js — interactive SPF learning experience
+ * ============================================================
+ * spf-simulator.js — Interactive SPF Learning Experience
+ * ============================================================
+ *
+ * BUSINESS PITCH:
+ * A guided, beginner-friendly "story mode" for SPF. The user picks a real-world
+ * scenario (approved sender, spoofed CEO, phishing, third-party ESP, etc.) and
+ * the page shows — side by side — how a SOFT warns(~all) vs a HARD rejects(-all) policy would
+ * treat that same email.
+ *
+ * TECHNICAL:
+ * Client-side only for tab scenarios; data mirrors spfRoutes simulator keys.
+ * renderSimulation() drives soft/hard step lists and verdict boxes.
+ *
+ *  * WHY IT MATTERS (pitch note):
+ * ----------------------------
+ * This page sells the *value* of strict enforcement. By replaying attacks in a
+ * safe sandbox, it makes an abstract DNS rule tangible: "with -all, this fake
+ * CEO email gets rejected; with ~all it still lands with a warning."
+ *
+ * NOTE: This screen is fully self-contained (client-side only). Unlike spf.js it
+ * does not call the backend — every outcome is pre-authored in the `scenarios`
+ * dataset below so demos are 100% reliable with no network dependency.
  */
 
+// ─────────────────────────────────────────────────────────────
+// SCENARIO DATASET — the scripted stories shown as tabs
+// ─────────────────────────────────────────────────────────────
+// Each object is one teaching case. Key fields:
+//   domain/attackerIP/record — the "email snapshot" shown to the user
+//   softResult / hardResult   — the verdict under ~all vs -all (the whole point)
+//   softSteps / hardSteps     — the animated step-by-step trace per policy
+//   why / final               — plain-English explanation + headline verdict
+//   *Banner                   — what the recipient's inbox would show
+// TECH: softSteps/hardSteps mirror buildTimelineSteps() in spfRoutes.js.
+// ─────────────────────────────────────────────
 const scenarios = [
   {
     key: 'approved',
@@ -245,6 +278,13 @@ const scenarios = [
   }
 ];
 
+// ─────────────────────────────────────────────────────────────
+// SPF "CHEAT SHEET" — clickable glossary of record tokens
+// ─────────────────────────────────────────────────────────────
+// Powers the "record breakdown" panel: each chip explains one piece of SPF
+// syntax in one sentence — handy for onboarding a non-technical audience.
+// TECH: Maps to parseSPFRecord() token types in server/services/spf.js.
+// ─────────────────────────────────────────────
 const recordChips = [
   { token: 'v=spf1', detail: 'This starts every SPF record and shows the version being used.' },
   { token: 'ip4', detail: 'Allows a specific IPv4 address or range to send mail.' },
@@ -263,6 +303,7 @@ const recordChips = [
   { token: '?', detail: 'Neutral means “take no action” for this match.' }
 ];
 
+// DOM references — keeps render functions readable during live demos/cache every element we update, so render functions stay fast.
 const nodes = {
   scenarioTabs: document.getElementById('scenario-tabs'),
   targetDomain: document.getElementById('target-domain'),
@@ -281,9 +322,11 @@ const nodes = {
   insight: document.getElementById('insight-text')
 };
 
+// UI state: which scenario tab and which glossary chip are currently selected.
 let activeScenario = 0;
 let activeChip = recordChips[0].token;
 
+// Escape user/data text before injecting into innerHTML — prevents markup breakage/XSS.
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -292,6 +335,8 @@ function escapeHtml(value) {
     .replace(/"/g, '&quot;');
 }
 
+// Build the row of scenario tabs and wire each one to switch the active story.
+/** Render scenario tab buttons; active tab drives populateInputs(). */
 function renderScenarioTabs() {
   nodes.scenarioTabs.innerHTML = scenarios.map((scenario, index) => `
     <button class="scenario-tab ${index === activeScenario ? 'active' : ''}" data-index="${index}">
@@ -309,6 +354,7 @@ function renderScenarioTabs() {
   });
 }
 
+// Load a scenario into the input fields and refresh the whole simulation view.
 function populateInputs(scenario) {
   nodes.targetDomain.value = scenario.domain;
   nodes.attackerIP.value = scenario.attackerIP;
@@ -317,6 +363,7 @@ function populateInputs(scenario) {
   renderSimulation();
 }
 
+// Show the "email under inspection" card (sender, MAIL FROM, IP, SPF record).
 function renderSnapshot(scenario) {
   nodes.emailPreview.innerHTML = [
     row('Sender email', `sender@${scenario.domain}`),
@@ -332,6 +379,7 @@ function renderSnapshot(scenario) {
   `;
 }
 
+// Small helper: one label/value line inside the email snapshot card.
 function row(label, value) {
   return `
     <div class="email-row">
@@ -341,6 +389,12 @@ function row(label, value) {
   `;
 }
 
+// ─────────────────────────────────────────────────────────────
+// renderSimulation — the main "run" that paints the whole comparison
+// ─────────────────────────────────────────────────────────────
+// Renders the result bar, the soft vs hard step lists, both verdict boxes,
+// the inbox/terminal views, and the closing "key insight" — the money shot
+// that contrasts the two enforcement levels for the audience.
 function renderSimulation() {
   const scenario = scenarios[activeScenario];
 
@@ -396,6 +450,7 @@ function renderSimulation() {
   `;
 }
 
+// Render an ordered list of trace steps with pass/fail/warn/info status dots.
 function renderSteps(container, steps) {
   container.innerHTML = steps.map((step) => `
     <div class="step-row">
@@ -408,6 +463,9 @@ function renderSteps(container, steps) {
   `).join('');
 }
 
+
+// Map a result + policy to the final delivery verdict shown in the verdict box
+// (delivered / delivered-with-warning / rejected) plus its icon and styling.
 function verdictMeta(result, policy) {
   const normalized = String(result || '').toLowerCase();
   if (normalized === 'pass') {
@@ -419,6 +477,7 @@ function verdictMeta(result, policy) {
   return { label: 'Rejected at SMTP layer', detail: 'The sender is not trusted and is blocked.', icon: '🚫', className: 'verdict-danger' };
 }
 
+// Paint one verdict box using the metadata produced by verdictMeta().
 function renderVerdict(container, meta) {
   container.className = `verdict-box ${meta.className}`;
   container.innerHTML = `
@@ -430,6 +489,7 @@ function renderVerdict(container, meta) {
   `;
 }
 
+// Normalise an SPF result into the CSS class used for the coloured status pill.
 function resultClass(result) {
   const normalized = String(result || '').toLowerCase();
   if (normalized === 'pass') return 'pass';
@@ -438,6 +498,7 @@ function resultClass(result) {
   return 'none';
 }
 
+// Build the clickable glossary chips and wire selection of each token.
 function renderChips() {
   const grid = document.getElementById('chip-grid');
   grid.innerHTML = recordChips.map((chip) => `
@@ -455,11 +516,13 @@ function renderChips() {
   });
 }
 
+// Show the one-line explanation for whichever glossary chip is selected.
 function renderChipDetail() {
   const chip = recordChips.find((item) => item.token === activeChip) || recordChips[0];
   document.getElementById('chip-detail').innerHTML = `<strong>${chip.token}</strong> — ${chip.detail}`;
 }
 
+// Highlight the in-page nav link for whichever section is currently on screen.
 function initNavHighlight() {
   const links = Array.from(document.querySelectorAll('.nav-link'));
   const sections = Array.from(document.querySelectorAll('section[id]'));
@@ -473,6 +536,7 @@ function initNavHighlight() {
   sections.forEach((section) => observer.observe(section));
 }
 
+// Optional knowledge-check quiz: gives instant right/wrong feedback per answer.
 function initQuiz() {
   document.querySelectorAll('.quiz-question').forEach((question) => {
     const buttons = question.querySelectorAll('.quiz-btn');
@@ -490,6 +554,10 @@ function initQuiz() {
   });
 }
 
+// ─────────────────────────────────────────────────────────────
+// EVENT WIRING + INITIAL RENDER (runs on page load)
+// ─────────────────────────────────────────────────────────────
+// "Run simulation" re-paints the current scenario; "Reset" restores its defaults.
 nodes.runButton.addEventListener('click', () => {
   renderSimulation();
 });
@@ -498,6 +566,7 @@ nodes.resetButton.addEventListener('click', () => {
   populateInputs(scenarios[activeScenario]);
 });
 
+// Bootstrap the page: tabs → load first scenario → glossary → scroll-spy nav.
 renderScenarioTabs();
 populateInputs(scenarios[activeScenario]);
 renderChips();

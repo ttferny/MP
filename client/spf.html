@@ -1,4 +1,29 @@
 <!DOCTYPE html>
+<!--
+  ============================================================
+  spf.html — Live SPF Auditor (Presentation UI)
+  ============================================================
+
+  BUSINESS PITCH:
+  Demonstrates real-time SPF enforcement for any domain + sender IP.
+  Left panel = technical inputs and evaluation trace.
+  Right panel = business summary (risk, recommendation) and demo scenarios.
+  The production tool of the SPF suite. Enter a real domain +
+  sender IP (or upload an .eml) and it performs a LIVE SPF audit against DNS,
+  returning both a technical trace and a business risk summary.
+
+  TECHNICAL FLOW:
+  User enters domain/IP → spf.js POSTs /api/spf/check → spfRoutes.js → spf.js
+  → live DNS evaluation → trace + commercial summary rendered on page.
+
+  PITCH NOTE: This page deliberately speaks two languages at once — the left
+  panel is the engineer's evidence (record, includes, evaluation trace), the
+  right panel is the stakeholder's dashboard (status, risk score, next action).
+  All behaviour lives in spf.js, which calls the backend at /api/spf/check.
+
+  HANDOFF:
+  spf-builder.html links here with ?domain= for post-build verification.
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -26,7 +51,7 @@
   </header>
 
   <section class="hero">
-    <!-- Hero copy: short business-facing description of the feature. -->
+    <!-- PITCH: One-line value prop for slides — "live SPF check in seconds." -->
     <h1>Live SPF Auditor</h1>
     <p class="hero-sub">
       Type a domain and sender IP to fetch the live SPF record, and review the evaluation trace.
@@ -36,30 +61,37 @@
 
   <main class="main-content">
     <div class="layout-grid">
-      <!-- Left panel: technical inputs and the live result trace. -->
+      <!-- LEFT PANEL — Technical evaluation workspace
+           PITCH: "Here is exactly how the mail server decided pass or fail."
+           TECH: Inputs mirror MAIL FROM domain + connecting IP (RFC 7208). -->
       <section class="stack left-panel">
         <div class="card">
-          <!-- Inputs: the minimum data needed to explain an SPF decision. -->
+          <!-- Policy Inputs: minimum fields to reproduce an SPF check -->
           <div class="card-title">Policy Inputs</div>
           <div class="form-grid">
+            <!-- Domain = envelope / Return-Path owner (not visible From:) -->
             <label>
               Domain
               <input id="domain-input" type="text" placeholder="example.com" />
             </label>
+            <!-- Sender IP = connecting MTA address from Received chain -->
             <label>
               Sender IP
               <input id="ip-input" type="text" placeholder="203.0.113.55" />
             </label>
+            <!-- Read-only: live v=spf1 TXT fetched from public DNS -->
             <label class="full">
               SPF Record
               <textarea id="record-input" rows="3" placeholder="Live SPF record will appear here" readonly></textarea>
             </label>
+            <!-- Read-only: resolved include:/redirect: child records (lookup budget) -->
             <label class="full">
               Include Records (resolved)
               <textarea id="include-input" rows="3" placeholder="Include lookups appear here" readonly></textarea>
             </label>
           </div>
 
+          <!-- Optional: upload .eml/.txt to auto-fill domain + IP from headers -->
           <div class="upload-panel">
             <div class="upload-label">Upload saved email file</div>
             <div class="upload-hint">Accepts .eml or .txt with headers and body.</div>
@@ -71,6 +103,7 @@
           </div>
 
           <div class="actions">
+            <!-- Triggers evaluateSpf() in spf.js → POST /api/spf/check -->
             <button id="evaluate-btn" class="btn-primary">Evaluate SPF</button>
             <button id="reset-btn" class="btn-secondary">Clear</button>
           </div>
@@ -78,7 +111,7 @@
         </div>
 
         <div class="card result-card-panel">
-          <!-- Result summary: a concise verdict for both demos and engineering review. -->
+          <!-- SPF verdict badge + expandable mechanism trace (presentation centerpiece) -->
           <div class="section-header">
             <div>
               <div class="card-title">SPF Result</div>
@@ -107,10 +140,11 @@
         </div>
       </section>
 
-      <!-- Right panel: business summary, scenario shortcuts, and guided explanation. -->
+      <!-- RIGHT PANEL — Business narrative + guided learning
+           PITCH: Risk score and recommendation for non-technical stakeholders. -->
       <section class="stack right-panel">
         <div class="card scenario-card-panel">
-          <!-- Scenarios: fast demo presets that show realistic SPF outcomes. -->
+          <!-- One-click demo presets (Google, example.com, SendGrid, custom) -->
           <div class="card-title">Quick Scenarios</div>
           <div class="card-hint">Pick a preset to preload the auditor with a real-world sender and domain.</div>
           <div class="scenario-grid" id="scenario-grid"></div>
@@ -118,7 +152,7 @@
         </div>
 
         <div class="card commercial-card">
-          <!-- Business summary: plain-English impact, risk, and recommendation. -->
+          <!-- Maps technical SPF result → Authorised / Suspicious / Not Authorised -->
           <div class="card-title">Live Policy Summary</div>
           <div class="card-hint">Status, risk, and recommended next action.</div>
           <div class="commercial-grid">
@@ -149,7 +183,7 @@
         </div>
 
         <div class="card auth-dropdown how-works-card">
-          <!-- How it works: a narratable sequence for technical presentations. -->
+          <!-- Slide-ready 5-step SPF narrative; links to DMARC as next layer -->
           <div class="ai-header">
             <div>
               <div class="ai-title">How SPF Works</div>
@@ -167,10 +201,15 @@
               </button>
               <div id="howworks-panel" class="accordion-panel hidden">
                 <ol class="steps">
+                  <!-- Step 1: envelope domain (Return-Path), not From: header -->
                   <li>Mail server extracts the envelope domain from Return-Path.</li>
+                  <!-- Step 2: TXT lookup at domain root -->
                   <li>It fetches the SPF record from DNS (TXT record).</li>
+                  <!-- Step 3: first-match-wins mechanism walk -->
                   <li>Each mechanism is tested in order until one matches.</li>
+                  <!-- Step 4: qualifier on matched mechanism (+ - ~ ?) -->
                   <li>The matching qualifier decides the result (pass, fail, softfail, neutral).</li>
+                  <!-- Step 5: implicit neutral if no mechanism matches -->
                   <li>If nothing matches, the result is neutral.</li>
                 </ol>
               </div>
