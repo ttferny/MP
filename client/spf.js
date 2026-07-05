@@ -819,18 +819,17 @@ function renderCommercial(summary) {
   commercialStatus.textContent        = summary.status || 'Unknown';
   commercialRisk.textContent          = summary.riskScore != null ? `${summary.riskScore}%` : 'N/A';
 
-  const recommendationText =
-    summary.recommendation || 'Review SPF configuration and retry.';
-
-  const policyRecommendation =
-    window.policySummaryRecommendation || '';
-
+  // Recipient-facing guidance: what to DO with the email you just received.
+  // We intentionally show ONLY the backend's recipient recommendation here and
+  // do NOT append record-fixing advice — this panel answers "how do I handle
+  // THIS email?", not "how do I fix the sender's SPF?".
   commercialRecommendation.textContent =
-    policyRecommendation
-      ? `${recommendationText} ${policyRecommendation}`
-      : recommendationText;
+    summary.recommendation ||
+    'Treat this email as unverified — confirm the sender through a trusted channel before acting on it.';
 
-  commercialImpact.textContent        = summary.businessImpact || 'Authentication result requires review.';
+  commercialImpact.textContent        =
+    summary.businessImpact ||
+    'This email\'s authenticity could not be confirmed — treat it with caution.';
 
   if (Array.isArray(summary.highlights) && summary.highlights.length) {
     commercialHighlights.innerHTML = `<ul>${summary.highlights.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
@@ -839,8 +838,9 @@ function renderCommercial(summary) {
   }
 }
 
-// Derive a plain-English policy read-out from the raw record: enforcement level,
-// how many IPs/includes it trusts, and a recommendation on how to strengthen it.
+// Derive a plain-English policy read-out from the raw record: enforcement level
+// and how many IPs/includes it trusts. This is factual context about the record;
+// the "what should I do with this email" guidance lives in the commercial panel.
 function renderPolicySummary(data) {
   if (!policySummaryText) return;
   const record         = String(data.record || '');
@@ -869,14 +869,6 @@ function renderPolicySummary(data) {
   if (includes.length)  highlights.push(`${includes.length} include/redirect domain${includes.length > 1 ? 's' : ''}`);
   if (redirects.length) highlights.push(`Redirects to ${redirects.join(', ')}`);
   if (lookups > 10)     highlights.push(`High DNS lookup count: ${lookups} (may cause PermError)`);
-
-  let recommendation = 'No immediate action required.';
-  if (/\-all\b/.test(record))  recommendation = 'Policy is enforcing; monitor and maintain known senders.';
-  else if (/~all\b/.test(record)) recommendation = 'Consider moving to -all after validating all legitimate senders.';
-  else if (!record)             recommendation = 'Publish an SPF record to state authorized senders.';
-  else                          recommendation = 'Review includes and reduce chained lookups; aim for clear enforcement when ready.';
-  window.policySummaryRecommendation = recommendation;
-
 }
 
 // Reset the whole page back to its initial, empty state (the "Clear" button).

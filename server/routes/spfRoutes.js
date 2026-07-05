@@ -236,25 +236,28 @@ function buildCommercialSummary({ domain, ip, result, record, matchedMechanism, 
     permerror: 75,
     fail: 90,
   };
-  // Technical verdict → the single most useful next action to take.
+  // Technical verdict → what the PERSON WHO RECEIVED this email should DO.
+  // Written from the recipient/auditor's chair: the focus is on how to safely
+  // handle THIS message, not on fixing the sender's SPF configuration.
   const recommendationMap = {
-    pass: 'Maintain current SPF policy and monitor for drift.',
-    softfail: 'Review sending infrastructure and tighten to -all once verified.',
-    neutral: 'Publish a definitive SPF policy (ideally -all) for enforcement.',
-    none: 'Publish an SPF record to prevent unauthorized senders.',
-    temperror: 'Retry evaluation; if persistent, check DNS availability.',
-    permerror: 'Fix SPF syntax errors to enable reliable enforcement.',
-    fail: 'Block this sender IP; investigate for spoofing attempts.',
+    pass: 'Sender is authorized for this domain. You can proceed with normal caution — but if the email asks for money, credentials, or sensitive data, still verify the request through a channel you already trust.',
+    softfail: 'The sender could not be fully verified. Treat this email as suspicious: do not click links, open attachments, or act on any request until you confirm it with the sender through a separate, known-good channel.',
+    neutral: 'There is no clear verdict on this sender. Do not assume the email is genuine — independently verify the sender before acting, and be wary of links, attachments, and requests.',
+    none: 'The sending domain publishes no SPF policy, so this email\'s origin cannot be verified. Treat it as unverified: avoid clicking links or sharing information, and confirm with the sender using a contact you already have.',
+    temperror: 'SPF could not be checked right now (temporary lookup issue). Do not rely on this result — hold off on acting on the email and re-check later, or confirm the sender directly before trusting it.',
+    permerror: 'The sender\'s SPF is misconfigured, so authentication could not complete. Do not treat this email as verified — confirm the sender through a trusted channel before acting on it.',
+    fail: 'This email failed authentication — the sender is NOT authorized for this domain and may be spoofed. Do not click links, open attachments, reply, or act on any request. Report it to your IT/security team and delete it.',
   };
-  // Technical verdict → the real-world consequence, in business terms.
+  // Technical verdict → what this result MEANS for the recipient: how much they
+  // can trust THIS specific email, framed in terms of personal/organisational risk.
   const impactMap = {
-    pass: 'Low spoofing exposure for this sender path.',
-    softfail: 'Elevated exposure; spoofing may still slip through.',
-    neutral: 'Unclear protection; mail systems may treat spoofing as acceptable.',
-    none: 'High exposure; no SPF-based protection in place.',
-    temperror: 'Temporary blind spot; authentication cannot be verified.',
-    permerror: 'Policy unusable; authentication decisions are unreliable.',
-    fail: 'High risk event; sender is not authorized by SPF.',
+    pass: 'You can have reasonable confidence this email genuinely came from the stated domain.',
+    softfail: 'This email may be impersonating the sender — treat its contents as potentially untrustworthy.',
+    neutral: 'You have no assurance this email is genuine — treat it as unverified.',
+    none: 'There is no way to confirm who sent this email — assume it could be forged.',
+    temperror: 'The email\'s authenticity is currently unknown — do not rely on it until it can be verified.',
+    permerror: 'The email\'s authenticity cannot be established — treat it as unverified.',
+    fail: 'This email is very likely a spoof or phishing attempt — acting on it could expose you to fraud or malware.',
   };
 
   // Quantify the domain's sending footprint — evidence behind the summary.
@@ -273,8 +276,8 @@ function buildCommercialSummary({ domain, ip, result, record, matchedMechanism, 
   return {
     status: statusMap[normalized] || 'Inconclusive',
     riskScore: riskMap[normalized] ?? 70,
-    recommendation: recommendationMap[normalized] || 'Review SPF configuration and retry.',
-    businessImpact: impactMap[normalized] || 'Authentication result requires review.',
+    recommendation: recommendationMap[normalized] || 'Treat this email as unverified — confirm the sender through a trusted channel before acting on it.',
+    businessImpact: impactMap[normalized] || 'This email\'s authenticity could not be confirmed — treat it with caution.',
     inputs: { domain, ip },
     highlights,
   };
