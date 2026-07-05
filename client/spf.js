@@ -819,18 +819,12 @@ function renderCommercial(summary) {
   commercialStatus.textContent        = summary.status || 'Unknown';
   commercialRisk.textContent          = summary.riskScore != null ? `${summary.riskScore}%` : 'N/A';
 
-  const recommendationText =
-    summary.recommendation || 'Review SPF configuration and retry.';
-
-  const policyRecommendation =
-    window.policySummaryRecommendation || '';
-
   commercialRecommendation.textContent =
-    policyRecommendation
-      ? `${recommendationText} ${policyRecommendation}`
-      : recommendationText;
+    summary.recommendation
+    || 'Sender could not be verified. Treat this email as unverified and confirm the sender through a trusted channel before acting.';
 
-  commercialImpact.textContent        = summary.businessImpact || 'Authentication result requires review.';
+  commercialImpact.textContent        = summary.businessImpact
+    || 'Unknown risk. Sender authenticity is unconfirmed, so treat any request in this email with caution.';
 
   if (Array.isArray(summary.highlights) && summary.highlights.length) {
     commercialHighlights.innerHTML = `<ul>${summary.highlights.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
