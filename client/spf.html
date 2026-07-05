@@ -1,4 +1,17 @@
 <!DOCTYPE html>
+<!--
+  ============================================================
+  spf.html — SPF Live Auditor (page markup)
+  ============================================================
+  BUSINESS VIEW: The production tool of the SPF suite. Enter a real domain +
+  sender IP (or upload an .eml) and it performs a LIVE SPF audit against DNS,
+  returning both a technical trace and a business risk summary.
+
+  PITCH NOTE: This page deliberately speaks two languages at once — the left
+  panel is the engineer's evidence (record, includes, evaluation trace), the
+  right panel is the stakeholder's dashboard (status, risk score, next action).
+  All behaviour lives in spf.js, which calls the backend at /api/spf/check.
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />

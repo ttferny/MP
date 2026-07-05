@@ -39,6 +39,7 @@ document.querySelectorAll('.accordion-trigger').forEach((trigger) => {
 
   if (!panel || !item) return;
 
+  // Collapsible "Descriptions" / "How to add this to DNS" panels — click to expand.
   trigger.addEventListener('click', () => {
     const isOpen = !panel.classList.contains('hidden');
     panel.classList.toggle('hidden', isOpen);
@@ -47,11 +48,14 @@ document.querySelectorAll('.accordion-trigger').forEach((trigger) => {
 });
 
 // ── State ──────────────────────────────────────────────────
-let selected = new Set();
-let ips      = [];
-let policy   = '-all';
+// The three inputs that fully describe the record being built. Everything the
+// UI shows is derived from these, so the generated SPF string stays in sync.
+let selected = new Set();  // service IDs the user ticked (→ include: mechanisms)
+let ips      = [];         // custom sender IPs typed in (→ ip4:/ip6: mechanisms)
+let policy   = '-all';     // enforcement level: -all (hard) / ~all (soft) / ?all
 
 // ── Render service buttons ─────────────────────────────────
+// Draws one toggle button per known email provider; active buttons are included.
 function renderServices() {
   const grid = document.getElementById('svc-grid');
   grid.innerHTML = SERVICES.map(s => `
@@ -68,6 +72,7 @@ function renderServices() {
   `).join('');
 }
 
+// Flip a service on/off, then re-render buttons and regenerate the record.
 function toggleService(id) {
   selected.has(id) ? selected.delete(id) : selected.add(id);
   renderServices();
@@ -75,6 +80,7 @@ function toggleService(id) {
 }
 
 // ── Render IP rows ─────────────────────────────────────────
+// Append a blank custom-IP row for the user to fill in.
 function addIP() {
   ips.push('');
   renderIPs();
@@ -91,6 +97,7 @@ function updateIP(i, val) {
   buildRecord();
 }
 
+// Re-draw the editable list of custom IP inputs from the `ips` array.
 function renderIPs() {
   const el = document.getElementById('ip-list');
   el.innerHTML = ips.map((ip, i) => `
@@ -108,6 +115,7 @@ function renderIPs() {
 }
 
 // ── Policy selection ───────────────────────────────────────
+// Record the chosen enforcement level and highlight the matching policy button.
 function setPolicy(p) {
   policy = p;
   document.querySelectorAll('.policy-btn').forEach(b => b.classList.remove('active'));
@@ -117,6 +125,8 @@ function setPolicy(p) {
 }
 
 // ── Count DNS lookups ──────────────────────────────────────
+// SPF permits at most 10 DNS lookups (RFC 7208). Each include: costs several,
+// so we sum them up to warn the user before they hit the limit (a PermError).
 function countLookups() {
   return SERVICES
     .filter(s => selected.has(s.id))
@@ -124,6 +134,8 @@ function countLookups() {
 }
 
 // ── Build the SPF record string ────────────────────────────
+// Assemble the final TXT value in RFC order:
+//   v=spf1 → ip4/ip6 (cheapest, no lookup) → include: (per service) → policy
 function getRecord() {
   const parts = ['v=spf1'];
 
@@ -144,6 +156,7 @@ function getRecord() {
 }
 
 // ── Build coloured HTML for the record display ─────────────
+// Syntax-highlight each token so the record is easy to read on screen / in a demo.
 function getRecordHTML(record) {
   return record.split(' ').map(tok => {
     if (tok === 'v=spf1')                            return `<span class="tok-ver">${tok}</span>`;
@@ -186,6 +199,8 @@ function buildExplanation(record) {
 }
 
 // ── Main build function — called on every change ───────────
+// The single source of truth for the output panel. Every input handler calls
+// this, so the record, lookup meter, warnings, and explanations update live.
 function buildRecord() {
   const record  = getRecord();
   const domain  = document.getElementById('spf-domain').value.trim() || 'yourdomain.com';
@@ -251,6 +266,7 @@ function buildRecord() {
 }
 
 // ── Copy to clipboard ──────────────────────────────────────
+// One-click copy of the generated record, with a brief "✓ Copied" confirmation.
 function copyRecord() {
   const record = getRecord();
   navigator.clipboard.writeText(record).then(() => {
@@ -290,6 +306,7 @@ async function testRecord() {
 }
 
 // ── Utilities ──────────────────────────────────────────────
+// Escape helpers — sanitise user input before putting it into HTML / attributes.
 function escHtml(s) {
   return String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -301,6 +318,8 @@ function escAttr(s) {
 }
 
 // ── Init ───────────────────────────────────────────────────
+// First paint on page load: draw services, the (empty) IP list, and the default
+// "v=spf1 -all" record so the user always sees a valid starting point.
 renderServices();
 renderIPs();
 buildRecord();

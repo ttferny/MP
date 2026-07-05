@@ -1,14 +1,29 @@
 <!DOCTYPE html>
+<!--
+  ============================================================
+  spf-builder.html — SPF Record Builder (page markup)
+  ============================================================
+  BUSINESS VIEW: A no-code wizard that lets a domain owner generate a correct
+  SPF TXT record by ticking the email services they use, adding custom IPs, and
+  choosing an enforcement policy. It removes the #1 barrier to SPF adoption:
+  fear of hand-writing DNS syntax.
+
+  PITCH NOTE: The value here is "correct by construction" — the record updates
+  live, a lookup meter warns before the 10-lookup limit, and each mechanism is
+  explained in plain English. All logic lives in spf-builder.js (loaded at the end).
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SPF Record Builder — Email Authentication Studio</title>
+  <!-- style.css = shared studio theme; spf-builder.css = builder-specific styles. -->
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="spf-builder.css" />
 </head>
 <body>
 
+  <!-- Shared top bar: branding + navigation across all studio tools. -->
   <header class="site-header">
     <div class="header-inner">
       <div class="logo">
@@ -26,6 +41,7 @@
     </div>
   </header>
 
+  <!-- Hero: one-sentence value proposition shown at the top of the page. -->
   <section class="hero">
     <h1>SPF Record Builder</h1>
     <p class="hero-sub">
@@ -34,14 +50,15 @@
     </p>
   </section>
 
+  <!-- Two-column layout: inputs on the left, live output on the right. -->
   <main class="main-content">
     <div class="builder-grid">
 
-      <!-- ── LEFT: Builder Form ── -->
+      <!-- ── LEFT: Builder Form (the inputs a user edits) ── -->
       <section class="stack">
 
         <div class="top-grid">
-          <!-- Domain -->
+          <!-- Domain: the protected identity the SPF record will belong to. -->
           <div class="card">
             <h2 class="card-title">Your domain</h2>
             <p class="card-hint">The domain you want to protect (e.g. company.com).</p>
@@ -56,7 +73,7 @@
             />
           </div>
 
-          <!-- Custom IPs -->
+          <!-- Custom IPs: self-hosted mail servers (ip4:/ip6:, no DNS lookup cost). -->
           <div class="card">
             <h2 class="card-title">Custom IP addresses</h2>
             <p class="card-hint">
@@ -70,7 +87,7 @@
           </div>
         </div>
 
-        <!-- Services -->
+        <!-- Services: tick each provider that sends on your behalf (adds include:). -->
         <div class="card">
           <div class="services-header-container">
             <div>
@@ -118,7 +135,7 @@
         </style>
 
 
-        <!-- Policy -->
+        <!-- Policy: how receivers should treat mail that fails SPF (the enforcement dial). -->
         <div class="card">
           <h2 class="card-title">Policy</h2>
           <p class="card-hint">
@@ -151,10 +168,10 @@
 
       </section>
 
-      <!-- ── RIGHT: Output ── -->
+      <!-- ── RIGHT: Output (auto-generated, read-only results) ── -->
       <section class="stack">
 
-        <!-- Generated record -->
+        <!-- Generated record: the live SPF string + a 10-lookup budget meter. -->
         <div class="card output-card">
           <h2 class="card-title">Generated SPF record</h2>
           <p class="card-hint">Add this as a DNS TXT record on your domain.</p>
@@ -186,8 +203,8 @@
           </div>
         </div>
 
-        <!-- Explanation -->
-        
+        <!-- Explanation: plain-English breakdown of every token in the record —
+             the teaching layer that turns raw syntax into understanding. -->
         <div class="card">
           <div class="ai-header">
             <div>
@@ -216,8 +233,8 @@
           
         </style>
 
-        <!-- DNS instructions -->
-        
+        <!-- DNS instructions: the last-mile guide to actually publish the record
+             at a registrar — closes the gap between "generated" and "live". -->
         <div class="card">
           <div class="ai-header">
             <div>
@@ -258,6 +275,7 @@
     <p>Email Authentication Studio — Academic POC</p>
   </footer>
 
+  <!-- All builder behaviour (record generation, warnings, copy/test) lives here. -->
   <script src="spf-builder.js"></script>
 </body>
 </html>
