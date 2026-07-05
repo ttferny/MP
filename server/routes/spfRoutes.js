@@ -160,22 +160,22 @@ function buildCommercialSummary({ domain, ip, result, record, matchedMechanism, 
     fail: 90,
   };
   const recommendationMap = {
-    pass: 'Maintain current SPF policy and monitor for drift.',
-    softfail: 'Review sending infrastructure and tighten to -all once verified.',
-    neutral: 'Publish a definitive SPF policy (ideally -all) for enforcement.',
-    none: 'Publish an SPF record to prevent unauthorized senders.',
-    temperror: 'Retry evaluation; if persistent, check DNS availability.',
-    permerror: 'Fix SPF syntax errors to enable reliable enforcement.',
-    fail: 'Block this sender IP; investigate for spoofing attempts.',
+    pass: 'Safe to proceed. This email genuinely came from a server authorized for this domain — treat it as legitimate, while still applying normal caution to unexpected requests.',
+    softfail: 'Proceed with caution. The domain owner does not fully vouch for this sender. Verify the sender through a known, trusted channel before clicking links, opening attachments, or acting on any request.',
+    neutral: 'Do not rely on this email\'s stated identity. SPF gives no clear verdict, so independently confirm the sender through a trusted channel before acting on it.',
+    none: 'Treat this email as unverified. The domain publishes no way to confirm its senders, so be skeptical of any links, attachments, or requests and confirm directly with the sender.',
+    temperror: 'Hold off on acting. The sender\'s identity could not be checked right now — re-check later or verify the sender through a trusted channel before trusting this email.',
+    permerror: 'Treat this email as unverified. The sender\'s identity could not be confirmed, so verify with the sender through a trusted channel before acting on it.',
+    fail: 'Do not trust this email. The sender is not authorized to use this domain and it is likely spoofed — do not click links, open attachments, or act on requests, and report it to your security team.',
   };
   const impactMap = {
-    pass: 'Low spoofing exposure for this sender path.',
-    softfail: 'Elevated exposure; spoofing may still slip through.',
-    neutral: 'Unclear protection; mail systems may treat spoofing as acceptable.',
-    none: 'High exposure; no SPF-based protection in place.',
-    temperror: 'Temporary blind spot; authentication cannot be verified.',
-    permerror: 'Policy unusable; authentication decisions are unreliable.',
-    fail: 'High risk event; sender is not authorized by SPF.',
+    pass: 'Low impersonation risk. The sender\'s identity is backed by the domain\'s published policy, so this message is very unlikely to be a spoof.',
+    softfail: 'Elevated risk. The domain owner flags this sender as not clearly authorized, so acting on the email could mean engaging with a spoofed message.',
+    neutral: 'No assurance of authenticity. Trusting this email could expose you to spoofing or phishing, since its origin cannot be confirmed.',
+    none: 'No sender verification is possible. Anyone can impersonate this domain, so this email carries a high phishing risk.',
+    temperror: 'Authenticity is temporarily unverifiable. Acting on the email now risks trusting a sender that has not been confirmed.',
+    permerror: 'Authenticity cannot be confirmed. You cannot tell a genuine sender from an impersonator, so this email should not be trusted as-is.',
+    fail: 'High risk of fraud. This message failed authentication and is likely a spoofing or phishing attempt aimed at the recipient.',
   };
 
   const aCount = Array.isArray(dns?.aRecords) ? dns.aRecords.length : 0;
@@ -192,8 +192,8 @@ function buildCommercialSummary({ domain, ip, result, record, matchedMechanism, 
   return {
     status: statusMap[normalized] || 'Inconclusive',
     riskScore: riskMap[normalized] ?? 70,
-    recommendation: recommendationMap[normalized] || 'Review SPF configuration and retry.',
-    businessImpact: impactMap[normalized] || 'Authentication result requires review.',
+    recommendation: recommendationMap[normalized] || 'Verify the sender through a trusted channel before acting on this email.',
+    businessImpact: impactMap[normalized] || 'The sender\'s authenticity could not be confirmed, so this email should be treated with caution.',
     inputs: { domain, ip },
     highlights,
   };

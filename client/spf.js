@@ -114,11 +114,11 @@ const TOOLTIPS = {
   },
   'commercial-recommendation': {
     title: 'Recommendation',
-    body: 'The suggested next action based on the evaluation result — e.g. "Enforce strict -all policy" or "Validate all authorised senders before tightening enforcement".',
+    body: 'What you, the recipient, should do with this email based on the result — e.g. "Safe to proceed" or "Verify the sender through a trusted channel before clicking links or acting on requests".',
   },
   'commercial-impact': {
     title: 'Business Impact',
-    body: 'The likely real-world effect of this result — e.g. whether legitimate emails might be rejected or whether attackers could spoof the domain without consequence.',
+    body: 'What trusting this email could mean for you — e.g. whether it is very unlikely to be a spoof or whether acting on it risks engaging with a phishing or impersonation attempt.',
   },
   'commercial-highlights': {
     title: 'SPF Policy Analysis',
@@ -819,18 +819,10 @@ function renderCommercial(summary) {
   commercialStatus.textContent        = summary.status || 'Unknown';
   commercialRisk.textContent          = summary.riskScore != null ? `${summary.riskScore}%` : 'N/A';
 
-  const recommendationText =
-    summary.recommendation || 'Review SPF configuration and retry.';
-
-  const policyRecommendation =
-    window.policySummaryRecommendation || '';
-
   commercialRecommendation.textContent =
-    policyRecommendation
-      ? `${recommendationText} ${policyRecommendation}`
-      : recommendationText;
+    summary.recommendation || 'Verify the sender through a trusted channel before acting on this email.';
 
-  commercialImpact.textContent        = summary.businessImpact || 'Authentication result requires review.';
+  commercialImpact.textContent        = summary.businessImpact || 'The sender\'s authenticity could not be confirmed, so this email should be treated with caution.';
 
   if (Array.isArray(summary.highlights) && summary.highlights.length) {
     commercialHighlights.innerHTML = `<ul>${summary.highlights.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
