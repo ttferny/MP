@@ -1,16 +1,19 @@
 /**
  * ============================================================
- * spf-simulator.js — interactive SPF learning experience
+ * spf-simulator.js — Interactive SPF Learning Experience
  * ============================================================
  *
- * WHAT THIS DOES (business view):
- * -------------------------------
+ * BUSINESS PITCH:
  * A guided, beginner-friendly "story mode" for SPF. The user picks a real-world
  * scenario (approved sender, spoofed CEO, phishing, third-party ESP, etc.) and
- * the page shows — side by side — how a SOFT (~all) vs a HARD (-all) policy would
- * treat that same email. It is the classroom/demo companion to the live auditor.
+ * the page shows — side by side — how a SOFT warns(~all) vs a HARD rejects(-all) policy would
+ * treat that same email.
  *
- * WHY IT MATTERS (pitch note):
+ * TECHNICAL:
+ * Client-side only for tab scenarios; data mirrors spfRoutes simulator keys.
+ * renderSimulation() drives soft/hard step lists and verdict boxes.
+ *
+ *  * WHY IT MATTERS (pitch note):
  * ----------------------------
  * This page sells the *value* of strict enforcement. By replaying attacks in a
  * safe sandbox, it makes an abstract DNS rule tangible: "with -all, this fake
@@ -30,6 +33,8 @@
 //   softSteps / hardSteps     — the animated step-by-step trace per policy
 //   why / final               — plain-English explanation + headline verdict
 //   *Banner                   — what the recipient's inbox would show
+// TECH: softSteps/hardSteps mirror buildTimelineSteps() in spfRoutes.js.
+// ─────────────────────────────────────────────
 const scenarios = [
   {
     key: 'approved',
@@ -278,6 +283,8 @@ const scenarios = [
 // ─────────────────────────────────────────────────────────────
 // Powers the "record breakdown" panel: each chip explains one piece of SPF
 // syntax in one sentence — handy for onboarding a non-technical audience.
+// TECH: Maps to parseSPFRecord() token types in server/services/spf.js.
+// ─────────────────────────────────────────────
 const recordChips = [
   { token: 'v=spf1', detail: 'This starts every SPF record and shows the version being used.' },
   { token: 'ip4', detail: 'Allows a specific IPv4 address or range to send mail.' },
@@ -296,9 +303,7 @@ const recordChips = [
   { token: '?', detail: 'Neutral means “take no action” for this match.' }
 ];
 
-// ─────────────────────────────────────────────────────────────
-// DOM references — cache every element we update, so render functions stay fast.
-// ─────────────────────────────────────────────────────────────
+// DOM references — keeps render functions readable during live demos/cache every element we update, so render functions stay fast.
 const nodes = {
   scenarioTabs: document.getElementById('scenario-tabs'),
   targetDomain: document.getElementById('target-domain'),
@@ -321,7 +326,7 @@ const nodes = {
 let activeScenario = 0;
 let activeChip = recordChips[0].token;
 
-// Escape user/data text before injecting into HTML — prevents markup breakage/XSS.
+// Escape user/data text before injecting into innerHTML — prevents markup breakage/XSS.
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -331,6 +336,7 @@ function escapeHtml(value) {
 }
 
 // Build the row of scenario tabs and wire each one to switch the active story.
+/** Render scenario tab buttons; active tab drives populateInputs(). */
 function renderScenarioTabs() {
   nodes.scenarioTabs.innerHTML = scenarios.map((scenario, index) => `
     <button class="scenario-tab ${index === activeScenario ? 'active' : ''}" data-index="${index}">
@@ -456,6 +462,7 @@ function renderSteps(container, steps) {
     </div>
   `).join('');
 }
+
 
 // Map a result + policy to the final delivery verdict shown in the verdict box
 // (delivered / delivered-with-warning / rejected) plus its icon and styling.

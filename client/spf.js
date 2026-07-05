@@ -151,15 +151,14 @@ function applyTooltips() {
       width: 16px;
       height: 16px;
       border-radius: 50%;
-      background: rgba(15, 118, 110, 0.15);
-      color: var(--accent-dark);
+      background: #e6d9c8;
+      color: #8a8179;
       font-size: 0.68rem;
       font-weight: 700;
       font-family: 'JetBrains Mono', monospace;
       cursor: help;
       margin-left: 5px;
       flex-shrink: 0;
-      border: 1px solid rgba(15, 118, 110, 0.25);
       transition: background 0.15s ease;
       user-select: none;
     }

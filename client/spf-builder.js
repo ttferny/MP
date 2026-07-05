@@ -39,7 +39,7 @@ document.querySelectorAll('.accordion-trigger').forEach((trigger) => {
 
   if (!panel || !item) return;
 
-  // Collapsible "Descriptions" / "How to add this to DNS" panels — click to expand.
+// Collapsible "Descriptions" / "How to add this to DNS" panels — click to expand.
   trigger.addEventListener('click', () => {
     const isOpen = !panel.classList.contains('hidden');
     panel.classList.toggle('hidden', isOpen);
@@ -47,7 +47,6 @@ document.querySelectorAll('.accordion-trigger').forEach((trigger) => {
   });
 });
 
-// ── State ──────────────────────────────────────────────────
 // The three inputs that fully describe the record being built. Everything the
 // UI shows is derived from these, so the generated SPF string stays in sync.
 let selected = new Set();  // service IDs the user ticked (→ include: mechanisms)
@@ -71,6 +70,7 @@ function renderServices() {
     </button>
   `).join('');
 }
+
 
 // Flip a service on/off, then re-render buttons and regenerate the record.
 function toggleService(id) {
@@ -156,7 +156,7 @@ function getRecord() {
 }
 
 // ── Build coloured HTML for the record display ─────────────
-// Syntax-highlight each token so the record is easy to read on screen / in a demo.
+// Syntax-highlight each token so the record is easy to read on screen / in a demo.\
 function getRecordHTML(record) {
   return record.split(' ').map(tok => {
     if (tok === 'v=spf1')                            return `<span class="tok-ver">${tok}</span>`;
@@ -266,7 +266,6 @@ function buildRecord() {
 }
 
 // ── Copy to clipboard ──────────────────────────────────────
-// One-click copy of the generated record, with a brief "✓ Copied" confirmation.
 function copyRecord() {
   const record = getRecord();
   navigator.clipboard.writeText(record).then(() => {
@@ -318,6 +317,7 @@ function escAttr(s) {
 }
 
 // ── Init ───────────────────────────────────────────────────
+
 // First paint on page load: draw services, the (empty) IP list, and the default
 // "v=spf1 -all" record so the user always sees a valid starting point.
 renderServices();
