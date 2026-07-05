@@ -10,6 +10,7 @@
 <body>
   <header class="site-header">
     <div class="header-inner">
+      <!-- Branding and navigation: keeps the SPF auditor aligned with the rest of the studio. -->
       <div class="logo">
         <span class="logo-text">Email Authentication Studio</span>
       </div>
@@ -25,6 +26,7 @@
   </header>
 
   <section class="hero">
+    <!-- Hero copy: short business-facing description of the feature. -->
     <h1>Live SPF Auditor</h1>
     <p class="hero-sub">
       Type a domain and sender IP to fetch the live SPF record, and review the evaluation trace.
@@ -34,8 +36,10 @@
 
   <main class="main-content">
     <div class="layout-grid">
+      <!-- Left panel: technical inputs and the live result trace. -->
       <section class="stack left-panel">
         <div class="card">
+          <!-- Inputs: the minimum data needed to explain an SPF decision. -->
           <div class="card-title">Policy Inputs</div>
           <div class="form-grid">
             <label>
@@ -74,6 +78,7 @@
         </div>
 
         <div class="card result-card-panel">
+          <!-- Result summary: a concise verdict for both demos and engineering review. -->
           <div class="section-header">
             <div>
               <div class="card-title">SPF Result</div>
@@ -102,8 +107,10 @@
         </div>
       </section>
 
+      <!-- Right panel: business summary, scenario shortcuts, and guided explanation. -->
       <section class="stack right-panel">
         <div class="card scenario-card-panel">
+          <!-- Scenarios: fast demo presets that show realistic SPF outcomes. -->
           <div class="card-title">Quick Scenarios</div>
           <div class="card-hint">Pick a preset to preload the auditor with a real-world sender and domain.</div>
           <div class="scenario-grid" id="scenario-grid"></div>
@@ -111,6 +118,7 @@
         </div>
 
         <div class="card commercial-card">
+          <!-- Business summary: plain-English impact, risk, and recommendation. -->
           <div class="card-title">Live Policy Summary</div>
           <div class="card-hint">Status, risk, and recommended next action.</div>
           <div class="commercial-grid">
@@ -141,6 +149,7 @@
         </div>
 
         <div class="card auth-dropdown how-works-card">
+          <!-- How it works: a narratable sequence for technical presentations. -->
           <div class="ai-header">
             <div>
               <div class="ai-title">How SPF Works</div>

@@ -23,6 +23,10 @@
  *  2. spf.js takes those values, looks up the domain's SPF DNS record,
  *     then checks if the senderIP is authorised
  *  3. The result { result, reason } is passed to dmarc.js for final verdict
+ *
+ * PITCH NOTE:
+ * This file is the trust engine. It turns a DNS policy into a clear answer
+ * for business stakeholders while preserving trace data for engineers.
  */
 
 const { lookupSPFRecord } = require('./dns');
@@ -31,6 +35,7 @@ const logger = require('../utils/logger');
 // ─────────────────────────────────────────────
 // CONSTANTS — SPF result strings (RFC 7208)
 // ─────────────────────────────────────────────
+// Shared vocabulary for the backend, UI, and DMARC layer.
 const SPF_RESULTS = {
   PASS:      'pass',       // IP is authorised — email is legitimate
   FAIL:      'fail',       // IP is NOT authorised — likely spoofed
@@ -77,6 +82,9 @@ function parseSPFRecord(record = '') {
   }
 
   const mechanisms = [];
+
+  // Each token becomes structured data so the evaluator can explain what it
+  // matched instead of treating the SPF record as a raw string.
 
   for (const token of tokens.slice(1)) {
     // Qualifier: + (pass), - (fail), ~ (softfail), ? (neutral)
@@ -136,6 +144,8 @@ async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0, stats =
 
     // ip4:1.2.3.4 or ip4:1.2.3.0/24
     case 'ip4': {
+      // Direct IP or subnet checks are the clearest way to explain authorised
+      // senders to non-technical audiences.
       const matched = mechValue.includes('/')
         ? ipMatchesCIDR(senderIP, mechValue)
         : senderIP === mechValue;
@@ -172,6 +182,7 @@ async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0, stats =
       const targetDomain = mechValue || domain;
       try {
         if (stats) stats.lookupCount += 1;
+        // A/AAAA checks show that SPF is a live DNS policy lookup, not a static list.
         // Resolve both A and AAAA so IPv6 senders can be matched
         const aRecords = await dns.resolveA(targetDomain).catch(() => []);
         const aaaaRecords = (dns.resolveAAAA ? await dns.resolveAAAA(targetDomain).catch(() => []) : []);
@@ -200,6 +211,8 @@ async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0, stats =
       const targetDomain = mechValue || domain;
       try {
         if (stats) stats.lookupCount += 1;
+        // MX checks illustrate that the policy can trust a provider's mail hosts
+        // instead of manually listing every sender IP.
         const mxRecords = await dns.resolveMx(targetDomain);
         for (const mx of mxRecords) {
           if (stats) stats.lookupCount += 1;
@@ -226,6 +239,8 @@ async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0, stats =
     case 'include': {
       if (!mechValue) return { matched: false, detail: 'Include missing domain' };
       logger.info(`SPF: following include → ${mechValue}`);
+      // Include is delegated trust: one domain can rely on another provider's
+      // SPF record without duplicating every allowed sender.
       const includeResult = await evaluateSPFRecord(mechValue, senderIP, dns, depth + 1, stats, lookupRecordFn);
       const matched = includeResult.result === SPF_RESULTS.PASS;
       return {
@@ -241,6 +256,8 @@ async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0, stats =
     case 'redirect': {
       if (!mechValue) return { matched: false, detail: 'Redirect missing domain' };
       logger.info(`SPF: redirect → ${mechValue}`);
+      // Redirect hands policy authority to another domain while keeping one
+      // coherent evaluation result for the caller.
       const redirectResult = await evaluateSPFRecord(mechValue, senderIP, dns, depth + 1, stats, lookupRecordFn);
       return {
         matched: true,
@@ -310,6 +327,8 @@ async function evaluateSPFRecord(domain, senderIP, dns, depth = 0, stats = null,
 
   // Walk mechanisms in order — first match wins
   for (const mech of mechanisms) {
+    // The trace below is what makes the check presentation-ready: it explains
+    // why the evaluator stopped where it did.
     const { matched, result, redirectResult, detail } = await evaluateMechanism(mech, senderIP, domain, dns, depth, localStats, lookupRecordFn);
     if (localStats.trace) {
       localStats.trace.push({
@@ -369,6 +388,8 @@ async function evaluateSPFRecord(domain, senderIP, dns, depth = 0, stats = null,
 async function checkSPF(parsed) {
   const { envelopeDomain, senderIP } = parsed;
 
+  // The route layer hands this function parsed headers so the story stays
+  // simple: identify the sender, check policy, explain the result.
   logger.info(`SPF check — domain: ${envelopeDomain}, IP: ${senderIP}`);
 
   // Validation: we need both a domain and an IP to run SPF
@@ -396,6 +417,8 @@ async function evaluateSPFInteractive(domain, senderIP, lookupRecordFn = lookupS
   const dnsPromises = require('dns').promises;
   const resolver = dnsResolver || buildDnsResolver(dnsPromises);
   const stats = { lookupCount: 0, trace: [] };
+  // Interactive mode powers the UI and demos, where the trace matters as much
+  // as the verdict.
   const spfResult = await evaluateSPFRecord(domain, senderIP, resolver, 0, stats, lookupRecordFn);
   return {
     ...spfResult,

@@ -8,6 +8,10 @@
  * 3. Injects a custom 10 DNS Lookup Speedometer with real-time flashing red error indicators.
  * 4. Renders an interactive waterfall evaluation mechanism trace timeline.
  * 5. Adds tooltip popovers to all labelled data fields explaining what each value means.
+ *
+ * PITCH NOTE:
+ * The UI speaks in two registers: plain-English business value for non-technical
+ * stakeholders, and trace-level detail for technical review.
  */
 
 // ── DOM Element Selectors ───────────────────────────────────
@@ -65,6 +69,8 @@ function escapeHtml(value) {
 // ── Tooltip Definitions ──────────────────────────────────────
 // Plain-language explanation of each field shown on the page.
 // Each entry maps an element ID (or semantic key) → { title, body }.
+// The tooltip copy is intended to let a presenter switch between business
+// explanation and protocol detail without changing screens.
 const TOOLTIPS = {
   'domain-input': {
     title: 'Domain',
@@ -211,6 +217,9 @@ function applyTooltips() {
   document.head.appendChild(tooltipStyle);
 
   // Attach tooltip to each element that has a definition
+// ── Scenarios Dataset ────────────────────────────────────────
+// Prebuilt scenarios make the feature easy to demo while still showing
+// realistic SPF policy outcomes and edge cases.
   Object.entries(TOOLTIPS).forEach(([id, tip]) => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -481,6 +490,8 @@ async function fetchSpfEvaluation(domain, ip) {
 }
 
 // ── Core Evaluation Logic ────────────────────────────────────
+// The flow below mirrors how an actual mail server reasons about SPF, but the
+// output is arranged so a presenter can explain each stage in sequence.
 async function evaluateSpf() {
   const domain = domainInput?.value.trim();
   const ip     = ipInput?.value.trim();

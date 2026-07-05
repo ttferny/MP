@@ -10,9 +10,15 @@
  * The generated record updates live as they make changes.
  * Includes DNS lookup counting, specific warning thresholds, 
  * and backend health-check routing.
+ *
+ * PITCH NOTE:
+ * This builder translates SPF from a protocol rule into a practical business
+ * control by surfacing cost, risk, and enforcement strength as the record grows.
  */
 
 // ── Known email services and their SPF include strings ────
+// These presets let the presenter talk about common vendors instead of raw
+// DNS syntax, which makes the control easier to explain.
 const SERVICES = [
   { id: 'google',     name: 'Google Workspace', include: '_spf.google.com',            lookups: 4 },
   { id: 'microsoft',  name: 'Microsoft 365',    include: 'spf.protection.outlook.com', lookups: 3 },
@@ -122,6 +128,7 @@ function getRecord() {
   const parts = ['v=spf1'];
 
   // Add custom IPs first (no DNS lookup cost)
+  // Explicit sender IPs are the simplest business-friendly control.
   ips.filter(ip => ip).forEach(ip => {
     const isIPv6 = ip.includes(':') && !ip.includes('.');
     parts.push(`${isIPv6 ? 'ip6' : 'ip4'}:${ip}`);
@@ -154,6 +161,8 @@ function buildExplanation(record) {
   const parts = record.split(' ');
 
   parts.forEach(tok => {
+    // Each explanation line doubles as demo narration: what the token means,
+    // why it matters operationally, and what risk it implies.
     if (tok === 'v=spf1') {
       items.push({ token: tok, desc: 'SPF version declaration.', sub: 'Every SPF record must start with this.' });
     } else if (tok.startsWith('ip4:')) {
@@ -228,6 +237,7 @@ function buildRecord() {
     `Add as a <strong>TXT record</strong> in DNS for <strong>${escHtml(domain)}</strong> — name: <code>@</code>`;
 
   // Explanation list
+  // The explanation list is the presentation layer for the SPF syntax.
   const items = buildExplanation(record);
   document.getElementById('explain-list').innerHTML = items.map(item => `
     <div class="explain-item">
