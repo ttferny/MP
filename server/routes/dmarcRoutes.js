@@ -235,11 +235,20 @@ router.post('/smtp/send-test', async (req, res) => {
   });
 
   const emails = {
-    'legitimate':   { from: 'noreply@google.com',    subject: 'Legitimate Email Test',      auth: 'spf=pass smtp.mailfrom=google.com; dkim=pass header.d=google.com',      returnPath: 'noreply@google.com' },
-    'spoof':        { from: 'security@dbs.com.sg',   subject: 'Basic Spoof Test',           auth: 'spf=fail smtp.mailfrom=evil.com; dkim=fail',                            returnPath: 'bounce@evil.com' },
-    'ceo-fraud':    { from: 'ceo@company.com',       subject: 'CEO Fraud Test',             auth: 'spf=pass smtp.mailfrom=ceo-company.com; dkim=none',                     returnPath: 'ceo@ceo-company.com' },
-    'spf-misalign': { from: 'support@dbs.com.sg', subject: 'SPF Misalign Test',          auth: 'spf=pass smtp.mailfrom=evil.com; dkim=fail',                            returnPath: 'bounce@evil.com' },
-  };
+  'legitimate':       { from: 'noreply@google.com',          subject: 'Legitimate Email Test',          auth: 'spf=pass smtp.mailfrom=google.com; dkim=pass header.d=google.com',             returnPath: 'noreply@google.com' },
+  'spoof':            { from: 'security@dbs.com.sg',          subject: 'Basic Spoof Test',               auth: 'spf=fail smtp.mailfrom=evil.com; dkim=fail',                                   returnPath: 'bounce@evil.com' },
+  'ceo-fraud':        { from: 'ceo@company.com',              subject: 'CEO Fraud Test',                 auth: 'spf=pass smtp.mailfrom=ceo-company.com; dkim=none',                            returnPath: 'ceo@ceo-company.com' },
+  'banking-phish':    { from: 'security@dbs.com.sg',          subject: 'Banking Phishing Test',          auth: 'spf=fail smtp.mailfrom=phish-server.com; dkim=fail',                           returnPath: 'bounce@phish-server.com' },
+  'monitor-only':     { from: 'noreply@example.com',          subject: 'Weak DMARC Policy Test',        auth: 'spf=fail smtp.mailfrom=evil.com; dkim=fail',                                   returnPath: 'bounce@evil.com' },
+  'spf-misalign':     { from: 'support@dbs.com.sg',           subject: 'SPF Misalign Test',              auth: 'spf=pass smtp.mailfrom=evil.com; dkim=fail',                                   returnPath: 'bounce@evil.com' },
+  'strict-fail':      { from: 'info@legitbank.com',           subject: 'Strict Alignment Fail Test',     auth: 'spf=pass smtp.mailfrom=mail.legitbank.com; dkim=none',                         returnPath: 'info@mail.legitbank.com' },
+  'relaxed-pass':     { from: 'info@legitbank.com',           subject: 'Relaxed Alignment Pass Test',    auth: 'spf=pass smtp.mailfrom=mail.legitbank.com; dkim=none',                         returnPath: 'info@mail.legitbank.com' },
+  'forwarded-email':  { from: 'user@example.com',             subject: 'Forwarded Email Test',           auth: 'spf=fail smtp.mailfrom=gmail.com; dkim=pass header.d=example.com',             returnPath: 'forwarded@gmail.com' },
+  'subdomain-spoof':  { from: 'alerts@company.com',           subject: 'Subdomain Spoof Test',           auth: 'spf=pass smtp.mailfrom=newsletter.company.com; dkim=fail',                     returnPath: 'bounce@newsletter.company.com' },
+  'pct-50-pass':      { from: 'noreply@legitbank.com',        subject: 'Partial Enforcement Pass Test',  auth: 'spf=pass smtp.mailfrom=legitbank.com; dkim=pass header.d=legitbank.com',       returnPath: 'noreply@legitbank.com' },
+  'pct-50-fail':      { from: 'noreply@company.com',          subject: 'Partial Enforcement Fail Test',  auth: 'spf=fail smtp.mailfrom=evil.com; dkim=fail',                                   returnPath: 'bounce@evil.com' },
+  'subdomain-policy': { from: 'info@mail.legitbank.com',      subject: 'Subdomain Policy Test',          auth: 'spf=fail smtp.mailfrom=evil.com; dkim=fail',                                   returnPath: 'bounce@evil.com' },
+};
 
   const email = emails[type] || emails['legitimate'];
 

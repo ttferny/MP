@@ -48,6 +48,14 @@
 
       <div class="card">
         <div class="card-title">Step 1 — Choose a Scenario</div>
+
+        <!-- How to use intro box -->
+        <div style="background:rgba(0,212,255,0.05); border:1px solid rgba(0,212,255,0.15); border-radius:8px; padding:14px 16px; margin-bottom:20px; font-size:13px; color:var(--text); line-height:1.7;">
+          <strong style="color:var(--accent); font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.08em;">How to use this tab</strong><br>
+          Pick any scenario below to see how that email would be handled by the DMARC engine.
+          A good place to start is <strong>Basic Spoof</strong> to see an attack get blocked, or <strong>SPF Pass, Misaligned ★</strong> to see the most important gap DMARC was designed to close.
+          After picking a scenario, try changing the policy dropdown to see how different settings affect the outcome.
+        </div>
         <div class="scenario-grid">
 
           <button class="scenario-card" onclick="loadScenario('legitimate')">
@@ -80,10 +88,11 @@
             <span class="scenario-tag tag-warn">MONITOR ONLY</span>
           </button>
 
-          <button class="scenario-card" onclick="loadScenario('spf-misalign')">
+          <button class="scenario-card" onclick="loadScenario('spf-misalign')" style="border-color:var(--accent); position:relative;">
+            <span style="position:absolute; top:-8px; right:8px; background:var(--accent); color:#000; font-family:var(--mono); font-size:9px; font-weight:700; padding:2px 8px; border-radius:10px; letter-spacing:0.05em;">★ KEY SCENARIO</span>
             <span class="scenario-icon">🔀</span>
             <span class="scenario-name">SPF Pass, Misaligned</span>
-            <span class="scenario-tag tag-reject">REJECT</span>
+            <span class="scenario-tag tag-reject">🚫 Attack Blocked</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('strict-fail')">
@@ -153,7 +162,7 @@
 
         <div class="policy-row">
           <div class="form-group">
-            <label>SPF Alignment (aspf=)</label>
+            <label>SPF Alignment (aspf=) <span title="Relaxed allows emails from subdomains like mail.company.com to pass. Strict requires an exact match." style="cursor:help; color:var(--accent); font-size:11px; border:1px solid var(--accent); border-radius:50%; padding:0 4px; font-family:var(--mono);">?</span></label>
             <select id="aspf-mode">
               <option value="r">r — relaxed (default)</option>
               <option value="s">s — strict</option>
@@ -162,7 +171,7 @@
           </div>
 
           <div class="form-group">
-            <label>DKIM Alignment (adkim=)</label>
+            <label>DKIM Alignment (adkim=) <span title="Relaxed allows the DKIM signing domain to be a parent domain. Strict requires it to match exactly." style="cursor:help; color:var(--accent); font-size:11px; border:1px solid var(--accent); border-radius:50%; padding:0 4px; font-family:var(--mono);">?</span></label>
             <select id="adkim-mode">
               <option value="r">r — relaxed (default)</option>
               <option value="s">s — strict</option>
@@ -181,7 +190,7 @@
           </div>
 
           <div class="form-group">
-            <label>Subdomain Policy (sp=) — optional</label>
+            <label>Subdomain Policy (sp=) — optional <span title="Sets a separate policy for emails from subdomains like mail.company.com. If not set, subdomains inherit the main policy." style="cursor:help; color:var(--accent); font-size:11px; border:1px solid var(--accent); border-radius:50%; padding:0 4px; font-family:var(--mono);">?</span></label>
             <select id="sp-mode">
               <option value="">— not set (inherit from p=)</option>
               <option value="reject">reject</option>
@@ -198,9 +207,10 @@
           </div>
         </div>
 
-        <button class="btn-evaluate" onclick="runDMARC()">
+        <button class="btn-evaluate" id="run-dmarc-btn" onclick="runDMARC()" disabled style="opacity:0.4; cursor:not-allowed;" title="Select a scenario above first">
           ⚡ &nbsp; Run DMARC Policy Engine
         </button>
+        <p id="run-hint" style="font-family:var(--mono); font-size:11px; color:var(--muted); text-align:center; margin-top:8px;">← Select a scenario above first</p>
       </div>
 
       <!-- Step 3: Result -->
@@ -228,29 +238,36 @@
           <div class="detail-chip">
             <div class="chip-label">Risk Score</div>
             <div class="chip-value" id="res-risk">N/A</div>
+            <div style="margin-top:6px; background:var(--surface); border-radius:4px; height:6px; overflow:hidden;">
+              <div id="res-risk-bar" style="height:100%; border-radius:4px; width:0; transition:width 0.6s ease;"></div>
+            </div>
+            <div id="res-risk-label" style="font-family:var(--mono); font-size:10px; color:var(--muted); margin-top:3px;"></div>
           </div>
         </div>
 
         <div class="reason-box" id="res-reason"></div>
 
         <div class="alignment-row">
-          <div class="align-chip" style="flex-direction:column; align-items:flex-start; gap:6px;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <div class="align-dot" id="spf-dot"></div>
-              <span id="spf-align-text">SPF Alignment</span>
-            </div>
-            <div id="spf-align-reason" style="font-family:var(--mono); font-size:11px; color:var(--muted); line-height:1.5; padding-left:16px;"></div>
+          <div class="align-chip">
+            <div class="align-dot" id="spf-dot"></div>
+            <span id="spf-align-text">SPF Alignment</span>
           </div>
-          <div class="align-chip" style="flex-direction:column; align-items:flex-start; gap:6px;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <div class="align-dot" id="dkim-dot"></div>
-              <span id="dkim-align-text">DKIM Alignment</span>
-            </div>
-            <div id="dkim-align-reason" style="font-family:var(--mono); font-size:11px; color:var(--muted); line-height:1.5; padding-left:16px;"></div>
+          <div class="align-chip">
+            <div class="align-dot" id="dkim-dot"></div>
+            <span id="dkim-align-text">DKIM Alignment</span>
           </div>
         </div>
 
         <div class="explain-box" id="explain-box"></div>
+
+        <!-- Plain English verdict summary -->
+        <div id="verdict-summary" style="display:none; margin-top:12px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:14px 16px; font-size:13px; color:var(--text); line-height:1.7;"></div>
+
+        <!-- Try this next suggestion -->
+        <div id="try-next" style="display:none; margin-top:12px; background:rgba(124,58,237,0.06); border:1px solid rgba(124,58,237,0.2); border-radius:8px; padding:12px 16px; font-family:var(--mono); font-size:12px; color:var(--accent2);">
+          <span style="font-weight:700; text-transform:uppercase; letter-spacing:0.08em; font-size:10px;">Try this next →</span>
+          <span id="try-next-text" style="display:block; margin-top:4px; color:var(--text); font-family:var(--sans); font-size:13px;"></span>
+        </div>
       </div>
 
     </div><!-- end tab-scenarios -->
@@ -260,6 +277,13 @@
 
       <div class="card">
         <div class="card-title">Policy Impact Comparison</div>
+
+        <div style="background:rgba(0,212,255,0.05); border:1px solid rgba(0,212,255,0.15); border-radius:8px; padding:14px 16px; margin-bottom:16px; font-size:13px; color:var(--text); line-height:1.7;">
+          <strong style="color:var(--accent); font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.08em;">How to use this tab</strong><br>
+          Pick a scenario below and see the same email evaluated under four different DMARC policies at once.
+          This shows how a single DNS setting change determines whether an attack succeeds or gets blocked.
+          Start with <strong>Basic Spoof</strong> then change to <strong>SPF Misaligned</strong> to see the most dangerous case.
+        </div>
         <p style="color:var(--muted); font-size:14px; margin-bottom:20px;">
           Run the same spoofed email through four different DMARC configurations at once.
           See how a single DNS record change determines whether an attack succeeds or fails.
@@ -424,9 +448,13 @@
 
       <div class="card">
         <div class="card-title">Live Email Monitor</div>
-        <p style="color:var(--muted); font-size:14px; margin-bottom:20px;">
-          Send a test email to the local SMTP server on port 2525 and watch the DMARC engine evaluate it in real time.
-        </p>
+        <div style="background:rgba(0,212,255,0.05); border:1px solid rgba(0,212,255,0.15); border-radius:8px; padding:14px 16px; margin-bottom:20px; font-size:13px; color:var(--text); line-height:1.7;">
+          <strong style="color:var(--accent); font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.08em;">How to use this tab</strong><br>
+          1. Click <strong>Start Monitor</strong> to begin listening for emails.<br>
+          2. Click any button below to send a test email to the local server.<br>
+          3. The result appears automatically within a few seconds, showing whether the email was delivered, sent to spam, or blocked.<br>
+          Try <strong>Legitimate</strong> first to see a passing email, then <strong>Basic Spoof</strong> to see a blocked attack.
+        </div>
 
         <!-- Monitor status + controls -->
         <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">

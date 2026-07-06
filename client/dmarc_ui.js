@@ -37,6 +37,17 @@ function loadScenario(key) {
   document.getElementById("dmarc-policy").value        = s.defaultPolicy;
   document.getElementById("from-domain").value = s.fromDomain;
 
+  // Enable run button now that a scenario is selected
+  const runBtn = document.getElementById("run-dmarc-btn");
+  if (runBtn) {
+    runBtn.disabled = false;
+    runBtn.style.opacity = "1";
+    runBtn.style.cursor = "pointer";
+    runBtn.title = "";
+  }
+  const runHint = document.getElementById("run-hint");
+  if (runHint) runHint.style.display = "none";
+
   // Show detail card, hide result
   const detailCard = document.getElementById("scenario-detail");
   detailCard.style.display = "block";
@@ -45,6 +56,8 @@ function loadScenario(key) {
   detailCard.style.animation = "fadeUp 0.4s ease both";
 
   document.getElementById("result").style.display = "none";
+  document.getElementById("verdict-summary").style.display = "none";
+  document.getElementById("try-next").style.display = "none";
 }
 
 // Call backend: POST /api/dmarc/scenarios/:key
@@ -130,14 +143,61 @@ function renderResult(r) {
   document.getElementById("spf-align-text").textContent  = "SPF: "  + (r.spfAligned  ? "Aligned ✓" : "Not Aligned ✗");
   document.getElementById("dkim-align-text").textContent = "DKIM: " + (r.dkimAligned ? "Aligned ✓" : "Not Aligned ✗");
 
-  // Alignment reason text — shows WHY checkAlignment() decided pass/fail,
-  // not just the verdict. Comes from r.alignmentDetails in dmarc.js.
-  const ad = r.alignmentDetails || {};
-  document.getElementById("spf-align-reason").textContent  = ad.spf  || "";
-  document.getElementById("dkim-align-reason").textContent = ad.dkim || "";
-
   // Explanation — comes from scenarioService.js on the backend
   document.getElementById("explain-box").textContent = r.explanation || "";
+
+  // Risk score bar — visual colour bar under the number
+  const riskBar   = document.getElementById("res-risk-bar");
+  const riskLabel = document.getElementById("res-risk-label");
+  if (riskBar && r.riskScore !== undefined) {
+    const pct   = r.riskScore;
+    const color = pct <= 20 ? "var(--pass)" : pct <= 60 ? "var(--warn)" : "var(--fail)";
+    const level = pct <= 20 ? "LOW" : pct <= 60 ? "MODERATE" : "HIGH";
+    riskBar.style.width      = pct + "%";
+    riskBar.style.background = color;
+    if (riskLabel) { riskLabel.textContent = level; riskLabel.style.color = color; }
+  }
+
+  // Plain English verdict summary
+  const summaryEl = document.getElementById("verdict-summary");
+  if (summaryEl) {
+    summaryEl.style.display = "block";
+    const policy = (r.policy || "none").toLowerCase();
+    if (r.status === "pass") {
+      summaryEl.innerHTML = "✅ <strong>This email is genuine.</strong> The sending server is authorised to send on behalf of this domain and the authentication checks passed. The email reaches the inbox normally.";
+    } else if (r.action === "reject") {
+      summaryEl.innerHTML = "🚫 <strong>This email was blocked and never reached the inbox.</strong> DMARC detected that the sender is not authorised to send on behalf of this domain. The receiving mail server rejected it entirely.";
+    } else if (r.action === "quarantine") {
+      summaryEl.innerHTML = "⚠️ <strong>This email was flagged as suspicious and sent to the spam or junk folder.</strong> DMARC detected a problem with the sender. The recipient may still see it if they check their spam folder — which is why p=reject offers stronger protection than p=quarantine.";
+    } else if (r.action === "deliver" && r.status === "fail") {
+      summaryEl.innerHTML = "👀 <strong>This spoofed email still reached the inbox because the DMARC policy is set to p=none (monitor only).</strong> The attack succeeded. This is the danger of leaving DMARC in monitoring mode — it detects the problem but takes no action.";
+    } else {
+      summaryEl.innerHTML = r.reason || "";
+    }
+  }
+
+  // Try this next suggestion
+  const tryNextEl   = document.getElementById("try-next");
+  const tryNextText = document.getElementById("try-next-text");
+  if (tryNextEl && tryNextText && currentScenario) {
+    tryNextEl.style.display = "block";
+    const suggestions = {
+      "legitimate":       "Now try Basic Spoof to see what happens when someone fakes this sender address.",
+      "basic-spoof":      "Try changing the policy dropdown above to p=none to see why weak policies are dangerous.",
+      "ceo-fraud":        "Try the Before/After tab to see this exact attack across all four policy levels at once.",
+      "banking-phish":    "Try SPF Pass, Misaligned ★ to see an even trickier attack that bypasses basic SPF checks.",
+      "monitor-only":     "Try changing the policy dropdown above to p=reject to see how enforcement stops this attack.",
+      "spf-misalign":     "This is the most important scenario. Try the Before/After tab to see it across all four policies.",
+      "strict-fail":      "Try Relaxed Alignment Pass next to see how changing aspf=r fixes this for legitimate emails.",
+      "relaxed-pass":     "Try Strict Alignment Fail above and compare — same email, different alignment setting, different result.",
+      "forwarded-email":  "Try Legitimate Email to see the same domain when the email is not forwarded.",
+      "subdomain-spoof":  "Try Basic Spoof to compare — both fail, but for different reasons.",
+      "pct-50-pass":      "Try Partial Enforcement (Fail) to see what happens to a spoofed email with the same pct=50 setting.",
+      "pct-50-fail":      "Change pct to 100 in the dropdown above to see full enforcement block this attack completely.",
+      "subdomain-policy": "Try Basic Spoof on the Before/After tab to compare a simple attack against a fully protected domain.",
+    };
+    tryNextText.textContent = suggestions[currentScenario] || "Try another scenario to explore different authentication outcomes.";
+  }
 }
 
 
@@ -719,20 +779,8 @@ function renderMonitorResult(r) {
     </div>
 
     <div class="alignment-row">
-      <div class="align-chip" style="flex-direction:column; align-items:flex-start; gap:6px;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <div class="align-dot ${r.spfAligned ? 'pass' : 'fail'}"></div>
-          <span>SPF: ${r.spfAligned ? 'Aligned ✓' : 'Not Aligned ✗'}</span>
-        </div>
-        <div style="font-family:var(--mono); font-size:11px; color:var(--muted); line-height:1.5; padding-left:16px;">${r.alignmentDetails?.spf || ''}</div>
-      </div>
-      <div class="align-chip" style="flex-direction:column; align-items:flex-start; gap:6px;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <div class="align-dot ${r.dkimAligned ? 'pass' : 'fail'}"></div>
-          <span>DKIM: ${r.dkimAligned ? 'Aligned ✓' : 'Not Aligned ✗'}</span>
-        </div>
-        <div style="font-family:var(--mono); font-size:11px; color:var(--muted); line-height:1.5; padding-left:16px;">${r.alignmentDetails?.dkim || ''}</div>
-      </div>
+      <div class="align-chip"><div class="align-dot ${r.spfAligned ? 'pass' : 'fail'}"></div><span>SPF: ${r.spfAligned ? 'Aligned ✓' : 'Not Aligned ✗'}</span></div>
+      <div class="align-chip"><div class="align-dot ${r.dkimAligned ? 'pass' : 'fail'}"></div><span>DKIM: ${r.dkimAligned ? 'Aligned ✓' : 'Not Aligned ✗'}</span></div>
     </div>`;
 
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
