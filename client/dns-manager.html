@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DNS Manager - Email Authentication Studio</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      padding: 30px;
+    }
+
+    @media (max-width: 900px) {
+      .content {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .section {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .section h2 {
+      font-size: 1.5em;
+      margin-bottom: 20px;
+      color: #333;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: #333;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 1em;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 1em;
+      cursor: pointer;
+      transition: all 0.3s;
+      min-width: 120px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+
+    .btn-danger {
+      background: #ff4757;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #ff3838;
+    }
+
+    .btn-success {
+      background: #2ed573;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #26a65b;
+    }
+
+    .records-list {
+      max-height: 500px;
+      overflow-y: auto;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+    }
+
+    .record-item {
+      padding: 12px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f9f9f9;
+    }
+
+    .record-item:last-child {
+      border-bottom: none;
+    }
+
+    .record-info {
+      flex: 1;
+    }
+
+    .record-name {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 3px;
+    }
+
+    .record-type {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 0.8em;
+      font-weight: 600;
+      margin-right: 5px;
+    }
+
+    .record-content {
+      color: #666;
+      font-size: 0.9em;
+      word-break: break-all;
+    }
+
+    .record-actions {
+      display: flex;
+      gap: 5px;
+      margin-left: 10px;
+    }
+
+    .record-actions button {
+      padding: 5px 10px;
+      font-size: 0.85em;
+      min-width: 70px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2em;
+      font-weight: bold;
+    }
+
+    .stat-label {
+      font-size: 0.9em;
+      opacity: 0.9;
+      margin-top: 5px;
+    }
+
+    .message {
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      display: none;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .message.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 30px;
+      color: #999;
+    }
+
+    .empty-state-icon {
+      font-size: 3em;
+      margin-bottom: 10px;
+    }
+
+    .tab-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #e0e0e0;
+    }
+
+    .tab-btn {
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-weight: 600;
+      color: #999;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .tab-btn.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .zone-file {
+      background: #f5f5f5;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 15px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: #667eea;
+    }
+
+    .loading.show {
+      display: block;
+    }
+
+    .footer {
+      background: #f9f9f9;
+      border-top: 1px solid #e0e0e0;
+      padding: 20px;
+      text-align: center;
+      color: #999;
+      font-size: 0.9em;
+    }
+
+    .quick-setup {
+      background: #f0f4ff;
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+
+    .quick-setup h3 {
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+
+    .quick-setup ul {
+      margin-left: 20px;
+      color: #333;
+    }
+
+    .quick-setup li {
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🌐 DNS Manager</h1>
+      <p>Complete DNS record management for email authentication</p>
+    </div>
+
+    <div class="content">
+      <!-- Left Column: Add/Edit Records -->
+      <div>
+        <div class="section">
+          <h2>Add DNS Record</h2>
+
+          <div id="message" class="message"></div>
+
+          <div class="form-group">
+            <label for="domain">Domain Name *</label>
+            <input type="text" id="domain" placeholder="example.com" value="example.com">
+          </div>
+
+          <div class="form-group">
+            <label for="recordType">Record Type *</label>
+            <select id="recordType" onchange="updateRecordFields()">
+              <option value="A">A - IPv4 Address</option>
+              <option value="AAAA">AAAA - IPv6 Address</option>
+              <option value="MX">MX - Mail Server</option>
+              <option value="CNAME">CNAME - Alias</option>
+              <option value="TXT">TXT - Text Record</option>
+              <option value="NS">NS - Nameserver</option>
+              <option value="CAA">CAA - Certificate Authority</option>
+              <option value="SRV">SRV - Service Record</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="recordName">Record Name</label>
+            <input type="text" id="recordName" placeholder="www (or leave empty for root @)">
+            <small style="color: #999;">Leave empty for root domain (@)</small>
+          </div>
+
+          <div class="form-group">
+            <label for="recordContent">Content/Target *</label>
+            <input type="text" id="recordContent" placeholder="e.g., 192.168.1.1">
+          </div>
+
+          <div id="advancedFields" style="display: none;">
+            <div class="form-group">
+              <label for="priority">Priority</label>
+              <input type="number" id="priority" placeholder="10" min="0" max="65535">
+            </div>
+
+            <div class="form-group">
+              <label for="weight">Weight</label>
+              <input type="number" id="weight" placeholder="60" min="0" max="65535">
+            </div>
+
+            <div class="form-group">
+              <label for="port">Port</label>
+              <input type="number" id="port" placeholder="5060" min="1" max="65535">
+            </div>
+
+            <div class="form-group">
+              <label for="flag">Flag (CAA)</label>
+              <input type="number" id="flag" placeholder="0" min="0" max="255">
+            </div>
+
+            <div class="form-group">
+              <label for="tag">Tag (CAA)</label>
+              <select id="tag">
+                <option value="">Select tag</option>
+                <option value="issue">issue</option>
+                <option value="issuewild">issuewild</option>
+                <option value="iodef">iodef</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="ttl">TTL (seconds)</label>
+            <input type="number" id="ttl" value="3600" min="60" max="86400">
+            <small style="color: #999;">Default: 3600 (1 hour). Range: 60-86400</small>
+          </div>
+
+          <div class="button-group">
+            <button class="btn-primary" onclick="addRecord()">Add Record</button>
+            <button class="btn-secondary" onclick="clearForm()">Clear</button>
+          </div>
+
+          <div id="loading" class="loading">
+            <div class="spinner"></div> Processing...
+          </div>
+        </div>
+
+        <!-- Quick Setup Section -->
+        <div class="section" style="margin-top: 20px;">
+          <h2>⚡ Quick Setup</h2>
+          <div class="quick-setup">
+            <h3>Email Authentication Setup</h3>
+            <ul>
+              <li><strong>SPF Record:</strong> Authorizes mail servers</li>
+              <li><strong>DKIM Record:</strong> Adds digital signature</li>
+              <li><strong>DMARC Record:</strong> Sets policy & reporting</li>
+              <li><strong>CAA Record:</strong> Restricts certificate issuance</li>
+            </ul>
+          </div>
+          <button class="btn-success" onclick="setupEmailAuth()" style="width: 100%; margin-top: 10px;">
+            Setup Email Authentication
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Column: Records List -->
+      <div>
+        <div class="section">
+          <h2>DNS Records</h2>
+
+          <div class="tab-buttons">
+            <button class="tab-btn active" onclick="switchTab('records')">Records</button>
+            <button class="tab-btn" onclick="switchTab('stats')">Statistics</button>
+            <button class="tab-btn" onclick="switchTab('export')">Export</button>
+          </div>
+
+          <!-- Records Tab -->
+          <div id="records" class="tab-content active">
+            <button class="btn-secondary" style="width: 100%; margin-bottom: 15px;" onclick="loadRecords()">
+              Refresh Records
+            </button>
+            <div id="recordsList" class="records-list">
+              <div class="empty-state">
+                <div class="empty-state-icon">📭</div>
+                <p>No records yet. Add one to get started!</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Statistics Tab -->
+          <div id="stats" class="tab-content">
+            <button class="btn-secondary" style="width: 100%; margin-bottom: 15px;" onclick="loadStats()">
+              Refresh Statistics
+            </button>
+            <div id="statsContainer" class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value">0</div>
+                <div class="stat-label">Total Records</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Export Tab -->
+          <div id="export" class="tab-content">
+            <button class="btn-secondary" style="width: 100%; margin-bottom: 15px;" onclick="exportZoneFile()">
+              Download Zone File
+            </button>
+            <label style="display: block; margin-bottom: 10px; font-weight: 600;">Zone File Preview:</label>
+            <div id="zoneFileContent" class="zone-file">No zone file data</div>
+            <button class="btn-primary" style="width: 100%; margin-top: 15px;" onclick="copyZoneFile()">
+              Copy to Clipboard
+            </button>
+          </div>
+        </div>
+
+        <!-- Bulk Operations -->
+        <div class="section" style="margin-top: 20px;">
+          <h2>⚙️ Bulk Operations</h2>
+          
+          <div class="form-group">
+            <label for="bulkJson">Import Records (JSON)</label>
+            <textarea id="bulkJson" placeholder='[{"type":"A","name":"www","content":"192.168.1.1","ttl":3600}]'></textarea>
+          </div>
+
+          <button class="btn-primary" style="width: 100%; margin-bottom: 10px;" onclick="bulkImport()">
+            Import Records
+          </button>
+
+          <button class="btn-danger" onclick="clearAllRecords()" style="width: 100%;">
+            Clear All Records
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>DNS Manager v1.0 • Email Authentication Studio • API: /api/dns-mgmt</p>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '/api/dns-mgmt';
+    let currentDomain = 'example.com';
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      loadRecords();
+      loadStats();
+    });
+
+    // Update advanced fields based on record type
+    function updateRecordFields() {
+      const type = document.getElementById('recordType').value;
+      const advanced = document.getElementById('advancedFields');
+      
+      if (['MX', 'SRV', 'CAA'].includes(type)) {
+        advanced.style.display = 'block';
+      } else {
+        advanced.style.display = 'none';
+      }
+    }
+
+    // Add a DNS record
+    async function addRecord() {
+      const domain = document.getElementById('domain').value.trim();
+      const type = document.getElementById('recordType').value;
+      const name = document.getElementById('recordName').value.trim();
+      const content = document.getElementById('recordContent').value.trim();
+      const ttl = parseInt(document.getElementById('ttl').value) || 3600;
+
+      if (!domain || !content) {
+        showMessage('Please fill in all required fields', 'error');
+        return;
+      }
+
+      currentDomain = domain;
+      const payload = { domain, type, name, content, ttl };
+
+      // Add optional fields
+      if (['MX', 'SRV'].includes(type) && document.getElementById('priority').value) {
+        payload.priority = parseInt(document.getElementById('priority').value);
+      }
+      if (type === 'SRV' && document.getElementById('weight').value) {
+        payload.weight = parseInt(document.getElementById('weight').value);
+      }
+      if (type === 'SRV' && document.getElementById('port').value) {
+        payload.port = parseInt(document.getElementById('port').value);
+      }
+      if (type === 'CAA' && document.getElementById('flag').value) {
+        payload.flag = parseInt(document.getElementById('flag').value);
+      }
+      if (type === 'CAA' && document.getElementById('tag').value) {
+        payload.tag = document.getElementById('tag').value;
+      }
+
+      showLoading(true);
+
+      try {
+        const res = await fetch(`${API_BASE}/records`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showMessage(`✓ Added ${type} record for ${name || '@'}`, 'success');
+          clearForm();
+          loadRecords();
+          loadStats();
+        } else {
+          showMessage(`Error: ${data.error}`, 'error');
+        }
+      } catch (err) {
+        showMessage(`Network error: ${err.message}`, 'error');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // Load records
+    async function loadRecords() {
+      const domain = document.getElementById('domain').value.trim() || currentDomain;
+      if (!domain) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/records/${domain}`);
+        const data = await res.json();
+
+        const list = document.getElementById('recordsList');
+
+        if (!data.success || data.count === 0) {
+          list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>No records found</p></div>';
+          return;
+        }
+
+        list.innerHTML = data.data.map(record => `
+          <div class="record-item">
+            <div class="record-info">
+              <div class="record-name">${record.name || '@'}</div>
+              <div>
+                <span class="record-type">${record.type}</span>
+                <span style="color: #999; font-size: 0.85em;">TTL: ${record.ttl}s</span>
+              </div>
+              <div class="record-content">${record.content}</div>
+            </div>
+            <div class="record-actions">
+              <button class="btn-danger" onclick="deleteRecord('${record.id}')">Delete</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        document.getElementById('recordsList').innerHTML = '<div class="empty-state">Error loading records</div>';
+      }
+    }
+
+    // Load statistics
+    async function loadStats() {
+      const domain = document.getElementById('domain').value.trim() || currentDomain;
+      if (!domain) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/stats/${domain}`);
+        const data = await res.json();
+
+        if (!data.success) return;
+
+        const stats = data.data;
+        let html = '';
+
+        Object.entries(stats).forEach(([key, value]) => {
+          html += `
+            <div class="stat-card">
+              <div class="stat-value">${value}</div>
+              <div class="stat-label">${key}</div>
+            </div>
+          `;
+        });
+
+        document.getElementById('statsContainer').innerHTML = html;
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Export zone file
+    async function exportZoneFile() {
+      const domain = document.getElementById('domain').value.trim() || currentDomain;
+      if (!domain) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/export/${domain}`);
+        const zoneFile = await res.text();
+        document.getElementById('zoneFileContent').textContent = zoneFile;
+      } catch (err) {
+        showMessage('Error exporting zone file', 'error');
+      }
+    }
+
+    // Copy zone file
+    function copyZoneFile() {
+      const content = document.getElementById('zoneFileContent').textContent;
+      navigator.clipboard.writeText(content);
+      showMessage('✓ Copied to clipboard!', 'success');
+    }
+
+    // Delete record
+    async function deleteRecord(recordId) {
+      if (!confirm('Delete this record?')) return;
+
+      const domain = document.getElementById('domain').value.trim() || currentDomain;
+
+      try {
+        const res = await fetch(`${API_BASE}/records/${domain}/${recordId}`, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (data.success) {
+          showMessage('✓ Record deleted', 'success');
+          loadRecords();
+          loadStats();
+        } else {
+          showMessage(`Error: ${data.error}`, 'error');
+        }
+      } catch (err) {
+        showMessage(`Error: ${err.message}`, 'error');
+      }
+    }
+
+    // Bulk import
+    async function bulkImport() {
+      const domain = document.getElementById('domain').value.trim();
+      const jsonText = document.getElementById('bulkJson').value.trim();
+
+      if (!domain || !jsonText) {
+        showMessage('Please fill in domain and records', 'error');
+        return;
+      }
+
+      try {
+        const records = JSON.parse(jsonText);
+        showLoading(true);
+
+        const res = await fetch(`${API_BASE}/records/${domain}/bulk`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ records })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showMessage(`✓ Imported ${data.created} records`, 'success');
+          document.getElementById('bulkJson').value = '';
+          loadRecords();
+          loadStats();
+        } else {
+          showMessage(`Error: ${data.errors || data.error}`, 'error');
+        }
+      } catch (err) {
+        showMessage(`Invalid JSON: ${err.message}`, 'error');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // Clear all records
+    async function clearAllRecords() {
+      if (!confirm('Delete ALL records for this domain? This cannot be undone!')) return;
+
+      const domain = document.getElementById('domain').value.trim();
+
+      try {
+        const res = await fetch(`${API_BASE}/clear/${domain}?confirm=true`, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (data.success) {
+          showMessage('✓ All records cleared', 'success');
+          loadRecords();
+          loadStats();
+        } else {
+          showMessage(`Error: ${data.error}`, 'error');
+        }
+      } catch (err) {
+        showMessage(`Error: ${err.message}`, 'error');
+      }
+    }
+
+    // Setup email authentication
+    async function setupEmailAuth() {
+      const domain = document.getElementById('domain').value.trim();
+      if (!domain) {
+        showMessage('Please enter a domain', 'error');
+        return;
+      }
+
+      const records = [
+        { type: 'TXT', name: '', content: 'v=spf1 include:sendgrid.net ~all', ttl: 3600 },
+        { type: 'TXT', name: 'default._domainkey', content: 'v=DKIM1; k=rsa; p=YOUR_PUBLIC_KEY_HERE', ttl: 3600 },
+        { type: 'TXT', name: '_dmarc', content: 'v=DMARC1; p=quarantine; rua=mailto:admin@' + domain, ttl: 3600 },
+        { type: 'CAA', name: '', content: 'letsencrypt.org', flag: 0, tag: 'issue', ttl: 3600 }
+      ];
+
+      try {
+        const res = await fetch(`${API_BASE}/records/${domain}/bulk`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ records })
+        });
+
+        const data = await res.json();
+        showMessage(`✓ Setup complete! Added ${data.created} records`, 'success');
+        loadRecords();
+        loadStats();
+      } catch (err) {
+        showMessage(`Error: ${err.message}`, 'error');
+      }
+    }
+
+    // Utility functions
+    function clearForm() {
+      document.getElementById('recordName').value = '';
+      document.getElementById('recordContent').value = '';
+      document.getElementById('priority').value = '';
+      document.getElementById('weight').value = '';
+      document.getElementById('port').value = '';
+      document.getElementById('flag').value = '';
+      document.getElementById('tag').value = '';
+      document.getElementById('ttl').value = '3600';
+    }
+
+    function showMessage(msg, type) {
+      const msgEl = document.getElementById('message');
+      msgEl.textContent = msg;
+      msgEl.className = `message show ${type}`;
+      setTimeout(() => msgEl.classList.remove('show'), 4000);
+    }
+
+    function showLoading(show) {
+      document.getElementById('loading').classList.toggle('show', show);
+    }
+
+    function switchTab(tabName) {
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+      // Show selected tab
+      document.getElementById(tabName).classList.add('active');
+      event.target.classList.add('active');
+
+      // Load data for tab
+      if (tabName === 'stats') loadStats();
+      if (tabName === 'export') exportZoneFile();
+    }
+
+    // Auto-load when domain changes
+    document.getElementById('domain').addEventListener('change', () => {
+      currentDomain = document.getElementById('domain').value.trim();
+      loadRecords();
+      loadStats();
+    });
+  </script>
+</body>
+</html>
