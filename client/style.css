@@ -333,6 +333,8 @@ a:hover { color: var(--accent-dark); }
   flex-shrink: 0;
 }
 
+
+
 .scenario-btn-container { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .demo-btn {

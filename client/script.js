@@ -344,10 +344,10 @@ function renderParsed(parsed) {
 
     const el = document.createElement('div');
     el.className = `parsed-field${isMismatch ? ' mismatch-field' : ''}`;
+    el.id = key;
     el.innerHTML = `
       <div class="parsed-field-key">
         ${label}
-        ${tip ? `<span class="parsed-tip" title="${tip}">?</span>` : ''}
       </div>
       <div class="parsed-field-value ${isEmpty ? 'empty' : ''}">
         ${isEmpty ? '(not found)' : escHtml(val)}
@@ -359,6 +359,9 @@ function renderParsed(parsed) {
 
   spoofWarning.classList.toggle('hidden', !domainsMismatch);
   parsedSection.classList.remove('hidden');
+
+  // Apply custom tooltips to parsed fields
+  applyParsedTooltips();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -608,6 +611,154 @@ function clearResults() {
   document.querySelectorAll('.accordion-panel').forEach(panel => panel.classList.add('hidden'));
   document.querySelectorAll('.accordion-item').forEach(item => item.classList.remove('open'));
   renderParsed({});
+}
+
+// ── Tooltip Definitions for Parsed Fields ───────────────────
+const PARSED_TOOLTIPS = {
+  'fromEmail': {
+    title: 'From (visible sender)',
+    body: 'What the recipient sees in their inbox. This is the visible From address shown in the email client.'
+  },
+  'fromDomain': {
+    title: 'From Domain',
+    body: 'The domain part of the visible From address. DMARC checks alignment against this domain.'
+  },
+  'envelopeFrom': {
+    title: 'Envelope From (Return-Path)',
+    body: 'The actual delivery address used by mail servers. This is where bounce messages are sent.'
+  },
+  'envelopeDomain': {
+    title: 'Envelope Domain',
+    body: 'The domain part of the envelope From address. SPF checks this domain to determine if the sender is authorised.'
+  },
+  'senderIP': {
+    title: 'Sender IP Address',
+    body: 'The IP address of the server that sent the email. SPF checks if this IP is authorised to send for the domain.'
+  }
+};
+
+// ── Tooltip DOM Injection for Parsed Fields ─────────────────
+function injectParsedTooltipStyles() {
+  if (document.getElementById('parsed-tooltip-styles')) return;
+  const tooltipStyle = document.createElement('style');
+  tooltipStyle.id = 'parsed-tooltip-styles';
+  tooltipStyle.textContent = `
+    .parsed-tooltip-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .parsed-tooltip-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #e6d9c8;
+      color: #8a8179;
+      font-size: 0.68rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: help;
+      margin-left: 5px;
+      flex-shrink: 0;
+      transition: background 0.15s ease;
+      user-select: none;
+    }
+    .parsed-tooltip-bubble {
+      display: none;
+      position: absolute;
+      left: 0;
+      top: calc(100% + 6px);
+      z-index: 9999;
+      width: 260px;
+      background: var(--ink);
+      color: #f3efe8;
+      text-transform: none !important;
+      letter-spacing: normal !important;
+      font-weight: 400 !important;
+      border-radius: 10px;
+      padding: 10px 13px;
+      font-size: 0.78rem;
+      line-height: 1.5;
+      font-family: 'Sora', sans-serif;
+      pointer-events: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+    }
+    .parsed-tooltip-bubble::before {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: 14px;
+      width: 10px;
+      height: 10px;
+      background: var(--ink);
+      transform: rotate(45deg);
+      border-radius: 2px;
+    }
+    .parsed-tooltip-bubble .tip-title {
+      font-weight: 700;
+      font-size: 0.8rem;
+      margin-bottom: 4px;
+      color: #fff;
+    }
+    .parsed-tooltip-icon:hover + .parsed-tooltip-bubble,
+    .parsed-tooltip-icon:focus + .parsed-tooltip-bubble {
+      display: block;
+    }
+    .parsed-tooltip-wrap:hover .parsed-tooltip-bubble {
+      display: block;
+    }
+  `;
+  document.head.appendChild(tooltipStyle);
+}
+
+function applyParsedTooltips() {
+  injectParsedTooltipStyles();
+
+  Object.entries(PARSED_TOOLTIPS).forEach(([key, tip]) => {
+    const fieldEl = document.getElementById(key);
+    if (!fieldEl) return;
+    attachParsedTooltip(fieldEl, tip);
+  });
+}
+
+function attachParsedTooltip(fieldEl, tip) {
+  const keyEl = fieldEl.querySelector('.parsed-field-key');
+  if (!keyEl) return;
+
+  // Remove existing tooltip if present to avoid duplicates
+  const existingIcon = keyEl.querySelector('.parsed-tooltip-icon');
+  if (existingIcon) {
+    const existingWrap = existingIcon.closest('.parsed-tooltip-wrap');
+    if (existingWrap) existingWrap.remove();
+  }
+
+  const wrap = document.createElement('span');
+  wrap.className = 'parsed-tooltip-wrap';
+  wrap.style.display = 'inline-flex';
+  wrap.style.alignItems = 'center';
+
+  const icon = document.createElement('span');
+  icon.className = 'parsed-tooltip-icon';
+  icon.setAttribute('aria-label', `What is ${tip.title}?`);
+  icon.setAttribute('role', 'tooltip');
+  icon.setAttribute('tabindex', '0');
+  icon.textContent = 'i';
+  icon.style.textTransform = 'lowercase';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'parsed-tooltip-bubble';
+  bubble.innerHTML = `<div class="tip-title">${escHtml(tip.title)}</div>${escHtml(tip.body)}`;
+
+  wrap.appendChild(icon);
+  wrap.appendChild(bubble);
+  keyEl.appendChild(wrap);
+
+  // Remove old native tooltip if present
+  const oldTip = keyEl.querySelector('.parsed-tip');
+  if (oldTip) oldTip.remove();
 }
 
 // ── Init ───────────────────────────────────────────────────

@@ -295,18 +295,30 @@ async function handleEvaluate(req, res) {
           .map((m) => m.mechValue)
           .filter(Boolean);
 
-        const includeLookups = await Promise.all(
-          includeDomains.map(async (includeDomain) => ({
-            domain: includeDomain,
-            record: await lookupSPFRecord(includeDomain),
-          }))
+        // Fetch include records with individual error handling
+        // so one failure doesn't prevent others from being fetched
+        const includeLookups = await Promise.allSettled(
+          includeDomains.map(async (includeDomain) => {
+            try {
+              const record = await lookupSPFRecord(includeDomain);
+              return { domain: includeDomain, record: record || '(no SPF record found)', success: true };
+            } catch (err) {
+              logger.warn(`SPF include lookup failed for ${includeDomain}: ${err.message}`);
+              return { domain: includeDomain, record: '(lookup failed)', success: false, error: err.message };
+            }
+          })
         );
 
-        includeLookups.forEach((entry) => {
-          includeRecords[entry.domain] = entry.record || '(no SPF record found)';
+        includeLookups.forEach((result) => {
+          if (result.status === 'fulfilled') {
+            includeRecords[result.value.domain] = result.value.record;
+          } else {
+            logger.warn(`SPF include promise rejected: ${result.reason?.message || 'unknown error'}`);
+          }
         });
       } catch (err) {
         logger.warn(`SPF include parsing failed: ${err.message}`);
+        // Continue without include records - this is non-critical
       }
     }
 

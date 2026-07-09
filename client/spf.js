@@ -162,9 +162,14 @@ function applyTooltips() {
       transition: background 0.15s ease;
       user-select: none;
     }
-    .spf-tooltip-icon:hover {
-      background: rgba(15, 118, 110, 0.28);
+    .spf-tooltip-icon.small-icon {
+      width: 16px;
+      height: 16px;
+      font-size: 0.68rem;
+      text-transform: lowercase;
+      
     }
+    
     .spf-tooltip-bubble {
       display: none;
       position: absolute;
@@ -288,6 +293,11 @@ function attachTooltipInline(el, tip) {
   textSpan.innerHTML = el.innerHTML;
 
   const icon = buildTooltipIcon(tip);
+  
+  // Add small-icon class for commercial labels (Status, Risk Score, Recommendation, Business Impact)
+  if (el.classList.contains('commercial-label')) {
+    icon.icon.classList.add('small-icon');
+  }
 
   wrap.appendChild(textSpan);
   wrap.appendChild(icon.icon);
@@ -303,7 +313,7 @@ function buildTooltipIcon(tip) {
   icon.setAttribute('aria-label', `What is ${tip.title}?`);
   icon.setAttribute('role', 'tooltip');
   icon.setAttribute('tabindex', '0');
-  icon.textContent = '?';
+  icon.textContent = 'i';
 
   const bubble = document.createElement('div');
   bubble.className = 'spf-tooltip-bubble';
@@ -553,14 +563,46 @@ async function evaluateSpf() {
     renderCommercial(data.commercial || null);
 
   } catch (err) {
-    console.error('Critical Connection Error:', err);
-    setResult('fail', 'Server Connection Offline: Unreachable API endpoint.');
+    console.error('SPF Evaluation Error:', err);
+    
+    // Determine error type for better user messaging
+    let errorMessage = 'Unable to complete SPF evaluation.';
+    let errorDetail = '';
+    
+    if (err.message?.includes('fetch') || err.message?.includes('network') || err.name === 'TypeError') {
+      errorMessage = 'Network Connection Error';
+      errorDetail = 'Could not reach the SPF evaluation server. Please check your internet connection and try again.';
+    } else if (err.message?.includes('timeout')) {
+      errorMessage = 'Request Timeout';
+      errorDetail = 'The server took too long to respond. Please try again.';
+    } else if (err.responseData?.error) {
+      errorMessage = 'SPF Validation Error';
+      errorDetail = err.responseData.error;
+    } else {
+      errorMessage = 'Unexpected Error';
+      errorDetail = err.message || 'An unknown error occurred during SPF evaluation.';
+    }
+    
+    setResult('fail', errorMessage);
     if (traceList) {
       traceList.innerHTML = `
         <div class="trace-row" style="border-color: var(--danger); background: rgba(185,28,28,0.05);">
-          <strong style="color: var(--danger);">⚠️ HTTP Fetch Exception</strong>
-          <span>Failed to connect to backend server. Ensure the backend is running on the correct port.</span>
+          <strong style="color: var(--danger);">⚠️ ${errorMessage}</strong>
+          <span style="color: var(--muted); font-size: 0.85rem; margin-top: 4px;">${errorDetail}</span>
         </div>`;
+    }
+    
+    // Clear commercial summary on error
+    if (commercialStatus) commercialStatus.textContent = 'Error';
+    if (commercialRisk) commercialRisk.textContent = '—';
+    if (commercialRecommendation) commercialRecommendation.textContent = 'Please try again.';
+    if (commercialImpact) commercialImpact.textContent = '—';
+    
+    // Update DNS status badge
+    if (dnsStatusBadge) {
+      dnsStatusBadge.textContent = 'ERROR';
+      dnsStatusBadge.classList.remove('pass', 'warn');
+      dnsStatusBadge.classList.add('fail');
     }
   } finally {
     setLoading(false);

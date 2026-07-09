@@ -299,8 +299,16 @@ async function testRecord() {
     
   } catch (error) {
     console.error("Backend Connection Error:", error);
-    // Graceful UI alert for offline backend
-    alert('⚠️ Error: The backend server appears to be offline or unreachable. Please try again later.');
+    
+    // Improved error handling with specific messages
+    let errorMessage = 'The backend server appears to be offline or unreachable.';
+    if (error.message?.includes('network') || error.message?.includes('fetch')) {
+      errorMessage = 'Network connection error. Please check your internet connection.';
+    } else if (error.message?.includes('timeout')) {
+      errorMessage = 'Request timed out. Please try again.';
+    }
+    
+    alert(`⚠️ Error: ${errorMessage} Please try again later.`);
   }
 }
 
