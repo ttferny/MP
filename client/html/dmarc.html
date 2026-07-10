@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DMARC Lab — Email Authentication Studio</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="dmarc.css">
-  <link rel="stylesheet" href="dmarc_analyzer.css">
+  <link rel="stylesheet" href="../css/dmarc.css">
+  
 </head>
 <body>
 
@@ -30,7 +30,6 @@
     </div>
   </header>
 
-  <!-- Hero section — same class as spf.html -->
   <section class="hero">
     <h1>Email Authentication Simulator</h1>
     <p class="hero-sub">Explore DMARC, SPF, DKIM alignment and policy enforcement</p>
@@ -312,7 +311,7 @@
           <div class="explain-box" id="comparison-takeaway"></div>
         </div>
       </div>
-
+      <br><br>
     </div><!-- end tab-scenarios -->
     
     <!-- ===================== DMARC AUDIT TAB ===================== -->
@@ -405,7 +404,7 @@
           <div id="audit-recs"></div>
         </div>
       </div>
-
+      <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
     </div><!-- end tab-audit -->
 
     <!-- ===================== LIVE MONITOR TAB ===================== -->
@@ -489,7 +488,7 @@
           </div>
         </div>
       </div>
-
+      <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
     </div><!-- end tab-monitor -->
 
     <!-- ===================== REPORTS TAB ===================== -->
@@ -680,11 +679,12 @@
       </div>
 
     </div><!-- end tab-analyzer -->
+    
 
     
 
-  <script src="dmarc_ui.js"></script>
-  <script src="dmarc_analyzer.js"></script>
+  <script src="../js/dmarc_ui.js"></script>
+  <script src="../js/dmarc_analyzer.js"></script>
   <script>
     function switchTab(tabName) {
   // Remove active class from all tab divs AND hide them
