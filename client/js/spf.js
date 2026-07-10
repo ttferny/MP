@@ -432,6 +432,7 @@ function loadScenarios() {
     const card = document.createElement('button');
     card.className = 'scenario-card';
     card.type = 'button';
+    card.dataset.result = '';
     card.innerHTML = `<strong>${scenario.title}</strong><span>${scenario.note}</span>`;
 
     card.addEventListener('click', () => {
@@ -638,7 +639,7 @@ function renderTrace(steps, finalResult) {
     row.innerHTML = `
       <div class="trace-row-head">
         <strong class="trace-title">${escapeHtml(stepTitle)}</strong>
-        <button class="trace-toggle-details" aria-expanded="false">Details</button>
+        <button class="trace-toggle-details" data-result="neutral" aria-expanded="false">Details</button>
       </div>
       <div class="trace-row-body" style="display:none; margin-top:6px;">
         <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--muted);">
@@ -675,7 +676,7 @@ function renderTrace(steps, finalResult) {
   const collapsed = document.createElement('div');
   collapsed.className = 'trace-collapsed';
   collapsed.style.cssText = 'padding: 8px 12px; margin-bottom:8px; color: var(--muted); background: rgba(243, 239, 232, 0.95); border-radius: 8px;';
-  collapsed.innerHTML = `<button class="btn-secondary" id="show-full-trace" aria-expanded="false">Show ${remainingCount} more steps</button>`;
+  collapsed.innerHTML = `<button class="btn-secondary" id="show-full-trace" data-result="neutral" aria-expanded="false">Show ${remainingCount} more steps</button>`;
   traceList.appendChild(collapsed);
 
   // Append the last two steps (final step marked accordingly) and keep a reference
@@ -741,6 +742,8 @@ function setResult(result, summary) {
   resultBadge.className = `result-badge ${result}`;
   resultBadge.textContent = String(result || '').toUpperCase() || 'NEUTRAL';
   resultSummary.textContent = summary;
+  const activeScenario = document.querySelector('.scenario-card.active');
+  if (activeScenario) activeScenario.dataset.result = result || 'neutral';
   if (spfStatusBadge) {
     spfStatusBadge.classList.remove('pass', 'fail', 'warn', 'neutral');
     spfStatusBadge.classList.add(result || 'neutral');
