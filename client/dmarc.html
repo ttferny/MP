@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DMARC Policy Engine</title>
+  <title>DMARC Lab — Email Authentication Studio</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="dmarc.css">
   <link rel="stylesheet" href="dmarc_analyzer.css">
@@ -13,25 +13,30 @@
   <div class="glow-orb"></div>
   <div class="glow-orb2"></div>
 
-  <div class="container">
+  <!-- Shared top bar: same structure as spf-simulator.html -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-text">Email Authentication Studio</span>
+      </div>
+      <nav class="site-nav">
+        <a class="nav-link" href="index.html">Authenticator</a>
+        <a class="nav-link" href="spf.html">SPF Auditor</a>
+        <a class="nav-link" href="spf-builder.html">SPF Builder</a>
+        <a class="nav-link" href="spf-simulator.html">SPF Simulator</a>
+        <a class="nav-link active" href="dmarc.html">DMARC Lab</a>
+        <a class="nav-link" href="dns-studio.html">DNS Automation</a>
+      </nav>
+    </div>
+  </header>
 
-    <header>
-      <div class="badge">DMARC Policy Engine</div>
-      <h1>Email <span>Authentication</span> Simulator</h1>
-      <!-- Link back to main project page -->
-<a href="index.html" style="
-  display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(124,58,237,0.1);
-  border: 1px solid rgba(124,58,237,0.2);
-  color: var(--accent2);
-  font-family: var(--mono); font-size: 11px; font-weight: 600;
-  letter-spacing: 0.1em; padding: 4px 12px; border-radius: 100px;
-  text-decoration: none; margin-bottom: 16px; margin-left: 8px;
-  transition: all 0.2s;">
-  ← Go Back To Studio
-</a>
-      <p class="subtitle">Explore DMARC, SPF, DKIM alignment and policy enforcement</p>
-    </header>
+  <!-- Hero section — same class as spf.html -->
+  <section class="hero">
+    <h1>Email Authentication Simulator</h1>
+    <p class="hero-sub">Explore DMARC, SPF, DKIM alignment and policy enforcement</p>
+  </section>
+
+  <div class="container">
 
     <!-- Tab Navigation -->
     <div class="tab-nav">
