@@ -39,15 +39,31 @@
 
     <!-- Tab Navigation -->
     <div class="tab-nav">
-      <button class="tab-btn active" onclick="switchTab('scenarios')">Scenarios</button>
-      <button class="tab-btn" onclick="switchTab('audit')">DMARC Audit</button>
-      <button class="tab-btn" onclick="switchTab('monitor')">Live Monitor</button>
-      <button class="tab-btn" onclick="switchTab('reports')">Reports</button>
-      <button class="tab-btn" onclick="switchTab('analyzer')">Report Analyzer</button>
+      <button class="tab-btn active" onclick="switchTab('scenarios')">🎯 Try an Attack</button>
+      <button class="tab-btn" onclick="switchTab('audit')">🔍 Check a Domain</button>
+      <button class="tab-btn" onclick="switchTab('monitor')">📡 Watch it Live</button>
+      <button class="tab-btn" onclick="switchTab('reports')">📋 Reports</button>
+      <button class="tab-btn" onclick="switchTab('analyzer')">📊 Analyse Reports</button>
     </div>
 
     <!-- ===================== SCENARIOS TAB ===================== -->
     <div id="tab-scenarios" class="tab-content active">
+
+      <!-- Welcome card -->
+      <div class="card" style="background:linear-gradient(135deg,rgba(0,212,255,0.06),rgba(124,58,237,0.06)); border-color:rgba(0,212,255,0.2);">
+        <div style="display:flex; align-items:flex-start; gap:16px;">
+          <div style="font-size:36px; flex-shrink:0;">🛡️</div>
+          <div>
+            <div style="font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">What is DMARC?</div>
+            <p style="font-size:14px; color:var(--text); line-height:1.7; margin-bottom:8px;">
+              <strong style="color:#fff;">DMARC</strong> is a security rule that tells email servers what to do when someone tries to fake your email address — like a hacker pretending to be your bank or your boss.
+            </p>
+            <p style="font-size:13px; color:var(--muted); line-height:1.6;">
+              Pick a scenario below to see a real attack in action, then watch your DMARC engine decide whether to <span style="color:var(--pass); font-weight:600;">deliver</span>, <span style="color:var(--warn); font-weight:600;">send to spam</span>, or <span style="color:var(--fail); font-weight:600;">block</span> the email.
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div class="card">
         <div class="card-title">Step 1 — Choose a Scenario</div>
@@ -248,6 +264,12 @@
         </div>
 
         <div class="explain-box" id="explain-box"></div>
+
+        <!-- Real world cost callout — shown only for failed/attack scenarios -->
+        <div id="cost-callout" style="display:none; margin-top:12px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.2); border-radius:8px; padding:14px 16px;">
+          <div style="font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--fail); margin-bottom:6px;">💸 Real World Impact</div>
+          <div id="cost-callout-text" style="font-size:13px; color:var(--text); line-height:1.6;"></div>
+        </div>
       </div>
 
       <!-- Inline Policy Comparison — appears after result is shown -->
@@ -316,6 +338,22 @@
     
     <!-- ===================== DMARC AUDIT TAB ===================== -->
     <div id="tab-audit" class="tab-content" style="display:none">
+
+      <!-- Health Check card -->
+      <div class="card" style="background:linear-gradient(135deg,rgba(0,212,255,0.06),rgba(124,58,237,0.06)); border-color:rgba(0,212,255,0.2);">
+        <div style="font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px;">🏥 Quick Domain Health Check</div>
+        <p style="font-size:14px; color:var(--text); line-height:1.6; margin-bottom:16px;">
+          Type any domain below to instantly check if it can be spoofed. (e.g., your company domain, email domain, or any domain you want to verify.)
+        </p>
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <input id="health-check-domain" type="text" placeholder="e.g. yourcompany.com" style="flex:1;"
+            onkeydown="if(event.key==='Enter') runHealthCheck()">
+          <button class="btn-evaluate" onclick="runHealthCheck()" style="width:auto; padding:10px 20px; white-space:nowrap;">
+            Check Now
+          </button>
+        </div>
+        <div id="health-check-result" style="margin-top:16px; display:none;"></div>
+      </div>
 
       <div class="card">
         <div class="card-title">DMARC Record Auditor</div>
@@ -386,6 +424,7 @@
           <div style="flex:1;">
             <div style="font-family:var(--mono); font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Security Grade</div>
             <div id="audit-grade-desc" style="font-size:15px; color:var(--text); line-height:1.5;"></div>
+            <div id="audit-real-world" style="margin-top:8px; font-size:13px; color:var(--muted); line-height:1.5; font-style:italic;"></div>
             <div style="margin-top:8px; background:var(--surface2); border-radius:6px; height:8px; overflow:hidden;">
               <div id="audit-score-bar" style="height:100%; border-radius:6px; transition:width 0.6s ease;"></div>
             </div>

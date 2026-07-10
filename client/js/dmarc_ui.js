@@ -133,15 +133,30 @@ function renderResult(r) {
   // Explanation — comes from scenarioService.js on the backend
   document.getElementById("explain-box").textContent = r.explanation || "";
 
-  // Show the "compare across 4 policies" button now that we have a result
-  const triggerEl = document.getElementById("inline-comparison-trigger");
-  if (triggerEl) {
-    triggerEl.style.display = "block";
-    // Hide previous comparison when a new scenario is run
-    document.getElementById("inline-comparison").style.display = "none";
-    document.getElementById("inline-comparison-grid").style.display = "none";
-    document.getElementById("inline-takeaway-card").style.display = "none";
-    document.getElementById("compare-btn").textContent = "📊   See this scenario across all 4 DMARC policies";
+  // Attack cost callout — show real world impact for failed/attack scenarios
+  const costEl = document.getElementById("cost-callout");
+  const costText = document.getElementById("cost-callout-text");
+  if (costEl && costText) {
+    const costs = {
+      "basic-spoof":      "Phishing emails cost businesses an average of <strong>$136,000 per incident</strong> in 2023. A DMARC policy of p=reject would have blocked this email entirely before it reached anyone.",
+      "ceo-fraud":        "CEO fraud (Business Email Compromise) is the most expensive cyber crime — costing businesses <strong>over $2.9 billion globally in 2023</strong>. p=quarantine reduces risk but only p=reject stops it completely.",
+      "banking-phish":    "Banking phishing campaigns target thousands of customers at once. A single campaign can steal <strong>millions in credentials</strong>. Banks with p=reject protected their customers — those without did not.",
+      "monitor-only":     "Having DMARC at p=none is like having a security camera with no alarm. You can see the attack happening but you cannot stop it. <strong>Most spoofing victims had DMARC configured but at p=none.</strong>",
+      "spf-misalign":     "This attack bypasses SPF checks entirely — which is why <strong>SPF alone is not enough</strong>. DMARC closes this gap by checking that the visible From address also aligns. Without DMARC, this attack succeeds silently.",
+      "subdomain-spoof":  "Subdomain attacks are harder to detect because the sending domain looks legitimate. <strong>One in three phishing emails uses a subdomain variation</strong> of a trusted brand.",
+      "pct-50-fail":      "With pct=50, attackers have a <strong>50% chance of reaching the inbox</strong> on every attempt. For a campaign sending 10,000 emails, that means 5,000 attacks still succeed.",
+    };
+    const key = currentScenario;
+    if (r.action !== "deliver" || r.status === "fail") {
+      if (costs[key]) {
+        costEl.style.display = "block";
+        costText.innerHTML = costs[key];
+      } else {
+        costEl.style.display = "none";
+      }
+    } else {
+      costEl.style.display = "none";
+    }
   }
 }
 
@@ -337,68 +352,29 @@ const comparisonScenarios = {
   }
 };
 
-// toggleInlineComparison — shows/hides the inline comparison grid
-// Called by the "See across 4 policies" button after a scenario result
-function toggleInlineComparison() {
-  const ic = document.getElementById("inline-comparison");
-  const btn = document.getElementById("compare-btn");
-  if (ic.style.display === "block") {
-    ic.style.display = "none";
-    btn.textContent = "📊   See this scenario across all 4 DMARC policies";
-    return;
-  }
-  ic.style.display = "block";
-  btn.textContent = "▲   Hide comparison";
-
-  // Run comparison for the current scenario
-  if (currentScenario) {
-    loadComparison(currentScenario, true);
-  }
-}
-
 // Run all four policy columns for the selected attack
-// inline=true means it was triggered from the Scenarios tab, not the old comparison tab
-async function loadComparison(key, inline) {
+async function loadComparison(key) {
   const s = comparisonScenarios[key];
   if (!s) return;
 
-  // Highlight selected button (only when called from standalone comparison, not inline)
-  if (!inline && event && event.currentTarget) {
-    document.querySelectorAll('#tab-comparison .scenario-btn').forEach(b => {
-      b.style.borderColor = '';
-      b.style.color = '';
-    });
-    event.currentTarget.style.borderColor = 'var(--accent)';
-    event.currentTarget.style.color = 'var(--accent)';
-  }
+  // Highlight selected button
+  document.querySelectorAll('#tab-comparison .scenario-btn').forEach(b => {
+    b.style.borderColor = '';
+    b.style.color = '';
+  });
+  event.currentTarget.style.borderColor = 'var(--accent)';
+  event.currentTarget.style.color = 'var(--accent)';
 
-  // Show attack description — in inline mode use the dedicated attack box
-  const attackBoxId = "inline-attack-box";
-  const attackEl = document.getElementById(attackBoxId);
-  if (attackEl) {
-    attackEl.style.display = "block";
-    attackEl.innerHTML = "<strong style='color:var(--fail); font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:0.08em;'>What happens in this scenario</strong><br>" + s.attack;
-  }
+  // Show attack description
+  document.getElementById("comparison-attack-box").style.display = "block";
+  document.getElementById("comparison-attack-text").textContent = s.attack;
 
-  // Show loading bar
-  const loadingBar  = document.getElementById("inline-loading-bar");
-  const loadingText = document.getElementById("inline-loading-text");
-  const gridEl      = document.getElementById("inline-comparison-grid");
-  const takeawayCard = document.getElementById("inline-takeaway-card");
-  if (loadingBar)  { loadingBar.style.width = "60%"; }
-  if (loadingText) { loadingText.textContent = "Running all four policy evaluations..."; }
-  if (gridEl)      { gridEl.style.display = "none"; }
-  if (takeawayCard){ takeawayCard.style.display = "none"; }
-
-  // Also support old standalone comparison-result div if it still exists
+  // Show loading state
   const resultEl = document.getElementById("comparison-result");
-  if (resultEl) {
-    resultEl.style.display = "block";
-    ['nodmarc','none','quarantine','reject'].forEach(id => {
-      const col = document.getElementById(`comp-col-${id}`);
-      if (col) col.innerHTML = `<div style="color:var(--muted); font-family:var(--mono); font-size:12px; text-align:center; padding:20px;">Loading...</div>`;
-    });
-  }
+  resultEl.style.display = "block";
+  ['nodmarc','none','quarantine','reject'].forEach(id => {
+    document.getElementById(`comp-col-${id}`).innerHTML = `<div style="color:var(--muted); font-family:var(--mono); font-size:12px; text-align:center; padding:20px;">Loading...</div>`;
+  });
 
   // Fire all four evaluations in parallel
   try {
@@ -437,18 +413,10 @@ async function loadComparison(key, inline) {
 
     document.getElementById("comparison-takeaway").textContent = s.takeaway;
 
-    // Show inline grid and takeaway
-    if (loadingBar)   { loadingBar.style.width = "100%"; }
-    if (loadingText)  { loadingText.textContent = "Done."; setTimeout(() => { if (loadingText) loadingText.textContent = ""; }, 800); }
-    if (gridEl)       { gridEl.style.display = "grid"; gridEl.style.animation = "none"; void gridEl.offsetWidth; gridEl.style.animation = "fadeUp 0.4s ease both"; }
-    if (takeawayCard) { takeawayCard.style.display = "block"; }
-
-    // Animate in old standalone div too if present
-    if (resultEl) {
-      resultEl.style.animation = "none";
-      void resultEl.offsetWidth;
-      resultEl.style.animation = "fadeUp 0.4s ease both";
-    }
+    // Animate in
+    resultEl.style.animation = "none";
+    void resultEl.offsetWidth;
+    resultEl.style.animation = "fadeUp 0.4s ease both";
 
   } catch (err) {
     ['nodmarc','none','quarantine','reject'].forEach(id => {
@@ -607,6 +575,19 @@ function renderAuditResult(r) {
   badge.className   = `grade-${r.grade}`;
   badge.style.cssText = "width:80px; height:80px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:40px; font-weight:700; flex-shrink:0;";
   document.getElementById("audit-grade-desc").textContent = r.gradeDescription || "";
+
+  // Real world context sentence based on grade
+  const rwEl = document.getElementById("audit-real-world");
+  if (rwEl && r.domain) {
+    const rwText = {
+      "A": `${r.domain} is well protected. Spoofed emails claiming to be from this domain will be blocked by mail servers worldwide.`,
+      "B": `${r.domain} has good protection but some gaps. Most spoofed emails will be blocked, but the configuration could be stronger.`,
+      "C": `${r.domain} has partial protection. Some spoofed emails may still reach inboxes depending on how the receiving server handles them.`,
+      "D": `${r.domain} has weak protection. Attackers can likely send emails pretending to be from this domain with a reasonable chance of success.`,
+      "F": `${r.domain} has no DMARC protection. Anyone can send emails pretending to be from this domain right now and most mail servers will deliver them.`,
+    };
+    rwEl.textContent = rwText[r.grade] || "";
+  }
   const scoreBar   = document.getElementById("audit-score-bar");
   const scoreColor = r.score >= 90 ? "var(--pass)" : r.score >= 60 ? "var(--warn)" : "var(--fail)";
   scoreBar.style.width      = r.score + "%";
@@ -961,4 +942,55 @@ function renderPropagationResult(data) {
     </div>`;
 
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+
+// =============================================================
+// HEALTH CHECK — Quick domain spoofability check
+// Calls GET /api/dmarc/audit/:domain
+// =============================================================
+async function runHealthCheck() {
+  const domain = document.getElementById("health-check-domain").value.trim();
+  if (!domain) { alert("Please enter a domain name."); return; }
+
+  const resultEl = document.getElementById("health-check-result");
+  resultEl.style.display = "block";
+  resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;color:var(--muted);"><div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--accent);animation:spin 0.8s linear infinite;"></div>Checking ' + domain + '...</div>';
+
+  try {
+    const response = await fetch("/api/dmarc/audit/" + encodeURIComponent(domain));
+    if (!response.ok) throw new Error("Server error");
+    const r = await response.json();
+
+    const grade = r.grade;
+    const isProtected = grade === "A" || grade === "B";
+    const isVulnerable = grade === "F" || grade === "D";
+
+    const icon   = isProtected ? "🛡️" : isVulnerable ? "🚨" : "⚠️";
+    const color  = isProtected ? "var(--pass)" : isVulnerable ? "var(--fail)" : "var(--warn)";
+    const bg     = isProtected ? "rgba(16,185,129,0.08)" : isVulnerable ? "rgba(239,68,68,0.08)" : "rgba(245,158,11,0.08)";
+    const bdr    = isProtected ? "rgba(16,185,129,0.25)" : isVulnerable ? "rgba(239,68,68,0.25)" : "rgba(245,158,11,0.25)";
+
+    const verdict = isProtected
+      ? "<strong style='color:var(--pass);'>" + domain + " is protected.</strong> Spoofed emails claiming to be from this domain will be blocked."
+      : isVulnerable
+      ? "<strong style='color:var(--fail);'>" + domain + " can be spoofed right now.</strong> Anyone can send fake emails pretending to be from this domain."
+      : "<strong style='color:var(--warn);'>" + domain + " is partially protected.</strong> Some spoofed emails may still get through.";
+
+    resultEl.innerHTML =
+      '<div style="background:' + bg + ';border:1px solid ' + bdr + ';border-radius:8px;padding:14px 16px;display:flex;align-items:center;gap:14px;">' +
+        '<div style="font-size:28px;flex-shrink:0;">' + icon + '</div>' +
+        '<div style="flex:1;">' +
+          '<div style="font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:' + color + ';margin-bottom:4px;">Grade ' + grade + ' — Score ' + r.score + '/100</div>' +
+          '<div style="font-size:13px;color:var(--text);line-height:1.6;">' + verdict + '</div>' +
+        '</div>' +
+        '<button onclick="document.getElementById(\'audit-live-domain\').value=\'' + domain + '\'; setAuditMode(\'live\'); runAuditLive();" ' +
+          'style="margin-left:auto;flex-shrink:0;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:var(--mono);font-size:11px;padding:6px 12px;border-radius:6px;cursor:pointer;white-space:nowrap;">' +
+          'Full Report →' +
+        '</button>' +
+      '</div>';
+
+  } catch (err) {
+    resultEl.innerHTML = '<div class="error-box">Could not check ' + domain + '. Make sure the server is running.</div>';
+  }
 }
