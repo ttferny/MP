@@ -563,6 +563,12 @@ async function evaluateSpf() {
     renderPolicySummary(data);
     renderCommercial(data.commercial || null);
 
+    // Update the active scenario card's border colour based on result
+    const activeCard = document.querySelector('.scenario-card.active');
+    if (activeCard && data.result) {
+      activeCard.dataset.result = (data.result || 'neutral').toLowerCase();
+    }
+
   } catch (err) {
     console.error('SPF Evaluation Error:', err);
     

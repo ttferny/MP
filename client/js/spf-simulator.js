@@ -523,8 +523,12 @@ function renderChipDetail() {
 }
 
 // Highlight the in-page nav link for whichever section is currently on screen.
+// Only affects links with href="#..." (in-page anchors), not the top nav links.
 function initNavHighlight() {
-  const links = Array.from(document.querySelectorAll('.nav-link'));
+  const inPageLinks = Array.from(document.querySelectorAll('.site-nav ~ * .nav-link, .sub-nav .nav-link, [href^="#"].nav-link'));
+  const allNavLinks = Array.from(document.querySelectorAll('.nav-link'));
+  // Only target in-page anchor links, not top bar nav links (which have file hrefs)
+  const links = allNavLinks.filter(link => link.getAttribute('href') && link.getAttribute('href').startsWith('#'));
   const sections = Array.from(document.querySelectorAll('section[id]'));
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
