@@ -37,17 +37,6 @@ function loadScenario(key) {
   document.getElementById("dmarc-policy").value        = s.defaultPolicy;
   document.getElementById("from-domain").value = s.fromDomain;
 
-  // Enable run button now that a scenario is selected
-  const runBtn = document.getElementById("run-dmarc-btn");
-  if (runBtn) {
-    runBtn.disabled = false;
-    runBtn.style.opacity = "1";
-    runBtn.style.cursor = "pointer";
-    runBtn.title = "";
-  }
-  const runHint = document.getElementById("run-hint");
-  if (runHint) runHint.style.display = "none";
-
   // Show detail card, hide result
   const detailCard = document.getElementById("scenario-detail");
   detailCard.style.display = "block";
@@ -56,8 +45,6 @@ function loadScenario(key) {
   detailCard.style.animation = "fadeUp 0.4s ease both";
 
   document.getElementById("result").style.display = "none";
-  document.getElementById("verdict-summary").style.display = "none";
-  document.getElementById("try-next").style.display = "none";
 }
 
 // Call backend: POST /api/dmarc/scenarios/:key
@@ -146,57 +133,15 @@ function renderResult(r) {
   // Explanation — comes from scenarioService.js on the backend
   document.getElementById("explain-box").textContent = r.explanation || "";
 
-  // Risk score bar — visual colour bar under the number
-  const riskBar   = document.getElementById("res-risk-bar");
-  const riskLabel = document.getElementById("res-risk-label");
-  if (riskBar && r.riskScore !== undefined) {
-    const pct   = r.riskScore;
-    const color = pct <= 20 ? "var(--pass)" : pct <= 60 ? "var(--warn)" : "var(--fail)";
-    const level = pct <= 20 ? "LOW" : pct <= 60 ? "MODERATE" : "HIGH";
-    riskBar.style.width      = pct + "%";
-    riskBar.style.background = color;
-    if (riskLabel) { riskLabel.textContent = level; riskLabel.style.color = color; }
-  }
-
-  // Plain English verdict summary
-  const summaryEl = document.getElementById("verdict-summary");
-  if (summaryEl) {
-    summaryEl.style.display = "block";
-    const policy = (r.policy || "none").toLowerCase();
-    if (r.status === "pass") {
-      summaryEl.innerHTML = "✅ <strong>This email is genuine.</strong> The sending server is authorised to send on behalf of this domain and the authentication checks passed. The email reaches the inbox normally.";
-    } else if (r.action === "reject") {
-      summaryEl.innerHTML = "🚫 <strong>This email was blocked and never reached the inbox.</strong> DMARC detected that the sender is not authorised to send on behalf of this domain. The receiving mail server rejected it entirely.";
-    } else if (r.action === "quarantine") {
-      summaryEl.innerHTML = "⚠️ <strong>This email was flagged as suspicious and sent to the spam or junk folder.</strong> DMARC detected a problem with the sender. The recipient may still see it if they check their spam folder — which is why p=reject offers stronger protection than p=quarantine.";
-    } else if (r.action === "deliver" && r.status === "fail") {
-      summaryEl.innerHTML = "👀 <strong>This spoofed email still reached the inbox because the DMARC policy is set to p=none (monitor only).</strong> The attack succeeded. This is the danger of leaving DMARC in monitoring mode — it detects the problem but takes no action.";
-    } else {
-      summaryEl.innerHTML = r.reason || "";
-    }
-  }
-
-  // Try this next suggestion
-  const tryNextEl   = document.getElementById("try-next");
-  const tryNextText = document.getElementById("try-next-text");
-  if (tryNextEl && tryNextText && currentScenario) {
-    tryNextEl.style.display = "block";
-    const suggestions = {
-      "legitimate":       "Now try Basic Spoof to see what happens when someone fakes this sender address.",
-      "basic-spoof":      "Try changing the policy dropdown above to p=none to see why weak policies are dangerous.",
-      "ceo-fraud":        "Try the Before/After tab to see this exact attack across all four policy levels at once.",
-      "banking-phish":    "Try SPF Pass, Misaligned ★ to see an even trickier attack that bypasses basic SPF checks.",
-      "monitor-only":     "Try changing the policy dropdown above to p=reject to see how enforcement stops this attack.",
-      "spf-misalign":     "This is the most important scenario. Try the Before/After tab to see it across all four policies.",
-      "strict-fail":      "Try Relaxed Alignment Pass next to see how changing aspf=r fixes this for legitimate emails.",
-      "relaxed-pass":     "Try Strict Alignment Fail above and compare — same email, different alignment setting, different result.",
-      "forwarded-email":  "Try Legitimate Email to see the same domain when the email is not forwarded.",
-      "subdomain-spoof":  "Try Basic Spoof to compare — both fail, but for different reasons.",
-      "pct-50-pass":      "Try Partial Enforcement (Fail) to see what happens to a spoofed email with the same pct=50 setting.",
-      "pct-50-fail":      "Change pct to 100 in the dropdown above to see full enforcement block this attack completely.",
-      "subdomain-policy": "Try Basic Spoof on the Before/After tab to compare a simple attack against a fully protected domain.",
-    };
-    tryNextText.textContent = suggestions[currentScenario] || "Try another scenario to explore different authentication outcomes.";
+  // Show the "compare across 4 policies" button now that we have a result
+  const triggerEl = document.getElementById("inline-comparison-trigger");
+  if (triggerEl) {
+    triggerEl.style.display = "block";
+    // Hide previous comparison when a new scenario is run
+    document.getElementById("inline-comparison").style.display = "none";
+    document.getElementById("inline-comparison-grid").style.display = "none";
+    document.getElementById("inline-takeaway-card").style.display = "none";
+    document.getElementById("compare-btn").textContent = "📊   See this scenario across all 4 DMARC policies";
   }
 }
 
@@ -392,29 +337,68 @@ const comparisonScenarios = {
   }
 };
 
+// toggleInlineComparison — shows/hides the inline comparison grid
+// Called by the "See across 4 policies" button after a scenario result
+function toggleInlineComparison() {
+  const ic = document.getElementById("inline-comparison");
+  const btn = document.getElementById("compare-btn");
+  if (ic.style.display === "block") {
+    ic.style.display = "none";
+    btn.textContent = "📊   See this scenario across all 4 DMARC policies";
+    return;
+  }
+  ic.style.display = "block";
+  btn.textContent = "▲   Hide comparison";
+
+  // Run comparison for the current scenario
+  if (currentScenario) {
+    loadComparison(currentScenario, true);
+  }
+}
+
 // Run all four policy columns for the selected attack
-async function loadComparison(key) {
+// inline=true means it was triggered from the Scenarios tab, not the old comparison tab
+async function loadComparison(key, inline) {
   const s = comparisonScenarios[key];
   if (!s) return;
 
-  // Highlight selected button
-  document.querySelectorAll('#tab-comparison .scenario-btn').forEach(b => {
-    b.style.borderColor = '';
-    b.style.color = '';
-  });
-  event.currentTarget.style.borderColor = 'var(--accent)';
-  event.currentTarget.style.color = 'var(--accent)';
+  // Highlight selected button (only when called from standalone comparison, not inline)
+  if (!inline && event && event.currentTarget) {
+    document.querySelectorAll('#tab-comparison .scenario-btn').forEach(b => {
+      b.style.borderColor = '';
+      b.style.color = '';
+    });
+    event.currentTarget.style.borderColor = 'var(--accent)';
+    event.currentTarget.style.color = 'var(--accent)';
+  }
 
-  // Show attack description
-  document.getElementById("comparison-attack-box").style.display = "block";
-  document.getElementById("comparison-attack-text").textContent = s.attack;
+  // Show attack description — in inline mode use the dedicated attack box
+  const attackBoxId = "inline-attack-box";
+  const attackEl = document.getElementById(attackBoxId);
+  if (attackEl) {
+    attackEl.style.display = "block";
+    attackEl.innerHTML = "<strong style='color:var(--fail); font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:0.08em;'>What happens in this scenario</strong><br>" + s.attack;
+  }
 
-  // Show loading state
+  // Show loading bar
+  const loadingBar  = document.getElementById("inline-loading-bar");
+  const loadingText = document.getElementById("inline-loading-text");
+  const gridEl      = document.getElementById("inline-comparison-grid");
+  const takeawayCard = document.getElementById("inline-takeaway-card");
+  if (loadingBar)  { loadingBar.style.width = "60%"; }
+  if (loadingText) { loadingText.textContent = "Running all four policy evaluations..."; }
+  if (gridEl)      { gridEl.style.display = "none"; }
+  if (takeawayCard){ takeawayCard.style.display = "none"; }
+
+  // Also support old standalone comparison-result div if it still exists
   const resultEl = document.getElementById("comparison-result");
-  resultEl.style.display = "block";
-  ['nodmarc','none','quarantine','reject'].forEach(id => {
-    document.getElementById(`comp-col-${id}`).innerHTML = `<div style="color:var(--muted); font-family:var(--mono); font-size:12px; text-align:center; padding:20px;">Loading...</div>`;
-  });
+  if (resultEl) {
+    resultEl.style.display = "block";
+    ['nodmarc','none','quarantine','reject'].forEach(id => {
+      const col = document.getElementById(`comp-col-${id}`);
+      if (col) col.innerHTML = `<div style="color:var(--muted); font-family:var(--mono); font-size:12px; text-align:center; padding:20px;">Loading...</div>`;
+    });
+  }
 
   // Fire all four evaluations in parallel
   try {
@@ -453,10 +437,18 @@ async function loadComparison(key) {
 
     document.getElementById("comparison-takeaway").textContent = s.takeaway;
 
-    // Animate in
-    resultEl.style.animation = "none";
-    void resultEl.offsetWidth;
-    resultEl.style.animation = "fadeUp 0.4s ease both";
+    // Show inline grid and takeaway
+    if (loadingBar)   { loadingBar.style.width = "100%"; }
+    if (loadingText)  { loadingText.textContent = "Done."; setTimeout(() => { if (loadingText) loadingText.textContent = ""; }, 800); }
+    if (gridEl)       { gridEl.style.display = "grid"; gridEl.style.animation = "none"; void gridEl.offsetWidth; gridEl.style.animation = "fadeUp 0.4s ease both"; }
+    if (takeawayCard) { takeawayCard.style.display = "block"; }
+
+    // Animate in old standalone div too if present
+    if (resultEl) {
+      resultEl.style.animation = "none";
+      void resultEl.offsetWidth;
+      resultEl.style.animation = "fadeUp 0.4s ease both";
+    }
 
   } catch (err) {
     ['nodmarc','none','quarantine','reject'].forEach(id => {
