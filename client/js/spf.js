@@ -75,6 +75,7 @@ const TOOLTIPS = {
   'domain-input': {
     title: 'Domain',
     body: 'The domain being tested — this is the owner of the email policy. SPF checks whether the sending server is authorised to send mail on behalf of this domain.',
+    
   },
   'ip-input': {
     title: 'Sender IP',

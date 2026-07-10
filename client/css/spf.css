@@ -1671,24 +1671,54 @@ textarea { resize: vertical; }
 }
 .error-banner.hidden { display: none; }
 
-/* ── Tooltip fix — dark background, correct z-index ── */
+/* ── Tooltip fix — text stays inside the box ── */
+.spf-tooltip-wrap,
+.parsed-tooltip-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.spf-tooltip-icon,
+.parsed-tooltip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: help;
+  flex-shrink: 0;
+}
+
 .spf-tooltip-bubble,
 .parsed-tooltip-bubble {
   position: absolute;
   bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  transform: none;
   background: var(--surface) !important;
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 10px 14px;
-  min-width: 200px;
-  max-width: 280px;
+  width: 260px;
+  min-width: 0;
+  max-width: 260px;
   font-size: 13px;
-  color: var(--text);
-  line-height: 1.5;
+  color: var(--text) !important;
+  line-height: 1.6;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
   box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-  z-index: 999;
+  z-index: 9999;
   pointer-events: none;
 }
 
@@ -1699,7 +1729,8 @@ textarea { resize: vertical; }
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--accent);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  display: block;
 }
 
 /* ── Demo / testcase buttons (script.js) ── */
