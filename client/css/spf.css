@@ -1757,6 +1757,8 @@ textarea { resize: vertical; }
 .status-pill.softfail { background: rgba(245,158,11,0.15); border-color: rgba(245,158,11,0.3); color: var(--warn); }
 .status-pill.neutral  { background: rgba(100,116,139,0.15); border-color: rgba(100,116,139,0.3); color: var(--muted); }
 .status-pill.none     { background: rgba(100,116,139,0.12); border-color: rgba(100,116,139,0.25); color: var(--muted); }
+.status-pill.warn     { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.35); color: var(--warn); }
+
 
 /* Detail rows */
 .detail-row { display: grid; grid-template-columns: 130px 1fr; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; align-items: baseline; }

@@ -82,7 +82,7 @@ app.get('/api/health', (req, res) => {
 // For any unknown URL, serve the main index.html
 // (lets the frontend handle its own routing)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/index.html'));
+  res.sendFile(path.join(__dirname, '../client/html/index.html'));
 });
 
 // ── Global Error Handler ──────────────────────
