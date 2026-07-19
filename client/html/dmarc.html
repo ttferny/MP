@@ -32,18 +32,18 @@
 
   <section class="hero">
     <h1>DMARC Lab</h1>
-    <p class="hero-sub">Explore DMARC, SPF, DKIM alignment and policy enforcement</p>
+    <p class="hero-sub">Everything you need to test, monitor, and audit DMARC enforcement</p>
   </section>
 
   <div class="container">
 
     <!-- Tab Navigation -->
     <div class="tab-nav">
-      <button class="tab-btn active" onclick="switchTab('scenarios')">🎯 Try an Attack</button>
-      <button class="tab-btn" onclick="switchTab('audit')">🔍 Check a Domain</button>
-      <button class="tab-btn" onclick="switchTab('monitor')">📡 Watch it Live</button>
-      <button class="tab-btn" onclick="switchTab('reports')">📋 Reports</button>
-      <button class="tab-btn" onclick="switchTab('analyzer')">📊 Analyse Reports</button>
+      <button class="tab-btn active" onclick="switchTab('scenarios')">Try an Attack</button>
+      <button class="tab-btn" onclick="switchTab('audit')">Check a Domain</button>
+      <button class="tab-btn" onclick="switchTab('monitor')">Watch it Live</button>
+      <button class="tab-btn" onclick="switchTab('reports')">Reports</button>
+      <button class="tab-btn" onclick="switchTab('analyzer')">Analyse Reports</button>
     </div>
 
     <!-- ===================== SCENARIOS TAB ===================== -->
@@ -51,9 +51,7 @@
 
       <!-- Welcome card -->
       <div class="card" style="background:linear-gradient(135deg,rgba(0,212,255,0.06),rgba(124,58,237,0.06)); border-color:rgba(0,212,255,0.2);">
-        <div style="display:flex; align-items:flex-start; gap:16px;">
-          <div style="font-size:36px; flex-shrink:0;">🛡️</div>
-          <div>
+        <div>
             <div style="font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">What is DMARC?</div>
             <p style="font-size:14px; color:var(--text); line-height:1.7; margin-bottom:8px;">
               <strong style="color:#fff;">DMARC</strong> is a security rule that tells email servers what to do when someone tries to fake your email address — like a hacker pretending to be your bank or your boss.
@@ -61,7 +59,6 @@
             <p style="font-size:13px; color:var(--muted); line-height:1.6;">
               Pick a scenario below to see a real attack in action, then watch your DMARC engine decide whether to <span style="color:var(--pass); font-weight:600;">deliver</span>, <span style="color:var(--warn); font-weight:600;">send to spam</span>, or <span style="color:var(--fail); font-weight:600;">block</span> the email.
             </p>
-          </div>
         </div>
       </div>
 
@@ -70,79 +67,66 @@
         <div class="scenario-grid">
 
           <button class="scenario-card" onclick="loadScenario('legitimate')">
-            <span class="scenario-icon">✅</span>
             <span class="scenario-name">Legitimate Email</span>
             <span class="scenario-tag tag-pass">DELIVER</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('basic-spoof')">
-            <span class="scenario-icon">❌</span>
             <span class="scenario-name">Basic Spoofed Sender</span>
             <span class="scenario-tag tag-reject">REJECT</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('ceo-fraud')">
-            <span class="scenario-icon">🎭</span>
             <span class="scenario-name">CEO Fraud</span>
             <span class="scenario-tag tag-quarantine">QUARANTINE</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('banking-phish')">
-            <span class="scenario-icon">🏦</span>
             <span class="scenario-name">Banking Phishing</span>
             <span class="scenario-tag tag-reject">REJECT</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('monitor-only')">
-            <span class="scenario-icon">👀</span>
             <span class="scenario-name">Weak DMARC Policy</span>
             <span class="scenario-tag tag-warn">MONITOR ONLY</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('spf-misalign')">
-            <span class="scenario-icon">🔀</span>
             <span class="scenario-name">SPF Pass, Misaligned</span>
             <span class="scenario-tag tag-reject">REJECT</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('strict-fail')">
-            <span class="scenario-icon">🔒</span>
             <span class="scenario-name">Strict Alignment Fail</span>
             <span class="scenario-tag tag-warn">EDGE CASE</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('relaxed-pass')">
-            <span class="scenario-icon">🔓</span>
             <span class="scenario-name">Relaxed Alignment Pass</span>
             <span class="scenario-tag tag-pass">DELIVER</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('forwarded-email')">
-            <span class="scenario-icon">📧</span>
             <span class="scenario-name">Forwarded Email</span>
             <span class="scenario-tag tag-warn">EDGE CASE</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('subdomain-spoof')">
-            <span class="scenario-icon">🚨</span>
             <span class="scenario-name">Subdomain Spoof Attack</span>
             <span class="scenario-tag tag-reject">REJECT</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('pct-50-pass')">
-            <span class="scenario-icon">50️⃣</span>
             <span class="scenario-name">Partial Enforcement (Pass)</span>
             <span class="scenario-tag tag-pass">DELIVER</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('pct-50-fail')">
-            <span class="scenario-icon">⚠️</span>
             <span class="scenario-name">Partial Enforcement (Fail)</span>
             <span class="scenario-tag tag-warn">RISKY</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('subdomain-policy')">
-            <span class="scenario-icon">🔗</span>
             <span class="scenario-name">Subdomain Policy (sp=)</span>
             <span class="scenario-tag tag-warn">ADVANCED</span>
           </button>
@@ -218,7 +202,7 @@
         </div>
 
         <button class="btn-evaluate" onclick="runDMARC()">
-          ⚡ &nbsp; Run DMARC Policy Engine
+          Run DMARC Policy Engine
         </button>
       </div>
 
@@ -267,7 +251,7 @@
 
         <!-- Real world cost callout — shown only for failed/attack scenarios -->
         <div id="cost-callout" style="display:none; margin-top:12px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.2); border-radius:8px; padding:14px 16px;">
-          <div style="font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--fail); margin-bottom:6px;">💸 Real World Impact</div>
+          <div style="font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--fail); margin-bottom:6px;">Real World Impact</div>
           <div id="cost-callout-text" style="font-size:13px; color:var(--text); line-height:1.6;"></div>
         </div>
       </div>
@@ -276,7 +260,7 @@
       <div id="inline-comparison-trigger" style="display:none; text-align:center; margin-bottom:8px;">
         <button class="btn-secondary" onclick="toggleInlineComparison()" id="compare-btn"
           style="background:rgba(124,58,237,0.1); border-color:rgba(124,58,237,0.3); color:var(--accent2); font-size:13px; padding:12px 24px; width:100%;">
-          📊 &nbsp; See this scenario across all 4 DMARC policies
+          See this scenario across all 4 DMARC policies
         </button>
       </div>
 
@@ -341,7 +325,7 @@
 
       <!-- Health Check card -->
       <div class="card" style="background:linear-gradient(135deg,rgba(0,212,255,0.06),rgba(124,58,237,0.06)); border-color:rgba(0,212,255,0.2);">
-        <div style="font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px;">🏥 Quick Domain Health Check</div>
+        <div style="font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px;">Quick Domain Health Check</div>
         <p style="font-size:14px; color:var(--text); line-height:1.6; margin-bottom:16px;">
           Type any domain below to instantly check if it can be spoofed. (e.g., your company domain, email domain, or any domain you want to verify.)
         </p>
@@ -367,9 +351,9 @@
           <div class="scenarios" style="margin-top:8px;">
             <button class="scenario-btn" id="mode-btn-live"
               style="border-color:var(--accent); color:var(--accent);"
-              onclick="setAuditMode('live')">🌐 Live DNS Lookup</button>
+              onclick="setAuditMode('live')">Live DNS Lookup</button>
             <button class="scenario-btn" id="mode-btn-manual"
-              onclick="setAuditMode('manual')">✍️ Paste Record</button>
+              onclick="setAuditMode('manual')">Paste Record</button>
           </div>
         </div>
 
@@ -384,23 +368,23 @@
           <div class="form-group" style="margin-bottom:20px;">
             <label>Quick Load — Real Domains</label>
             <div class="scenarios" style="margin-top:8px;">
-              <button class="scenario-btn" onclick="loadLiveDomain('google.com')">🔍 google.com</button>
-              <button class="scenario-btn" onclick="loadLiveDomain('dbs.com.sg')">🏦 dbs.com.sg</button>
-              <button class="scenario-btn" onclick="loadLiveDomain('tp.edu.sg')">🏫 tp.edu.sg</button>
-              <button class="scenario-btn" onclick="loadLiveDomain('nodmarc-test.com')">❓ nodmarc-test.com</button>
+              <button class="scenario-btn" onclick="loadLiveDomain('google.com')">google.com</button>
+              <button class="scenario-btn" onclick="loadLiveDomain('dbs.com.sg')">dbs.com.sg</button>
+              <button class="scenario-btn" onclick="loadLiveDomain('tp.edu.sg')">tp.edu.sg</button>
+              <button class="scenario-btn" onclick="loadLiveDomain('nodmarc-test.com')">nodmarc-test.com</button>
             </div>
           </div>
-          <button class="btn-evaluate" onclick="runAuditLive()">🌐 &nbsp; Fetch DNS &amp; Audit</button>
+          <button class="btn-evaluate" onclick="runAuditLive()">Fetch DNS &amp; Audit</button>
         </div>
 
         <div id="audit-manual-section" style="display:none">
           <div class="form-group" style="margin-bottom:16px;">
             <label>Quick Load — Sample Records</label>
             <div class="scenarios" style="margin-top:8px;">
-              <button class="scenario-btn" onclick="loadSampleRecord('strong')">✅ Strong (Grade A)</button>
-              <button class="scenario-btn" onclick="loadSampleRecord('moderate')">⚠️ Moderate (Grade C)</button>
-              <button class="scenario-btn" onclick="loadSampleRecord('weak')">❌ Weak (Grade D)</button>
-              <button class="scenario-btn" onclick="loadSampleRecord('none')">🚫 No Record (Grade F)</button>
+              <button class="scenario-btn" onclick="loadSampleRecord('strong')">Strong (Grade A)</button>
+              <button class="scenario-btn" onclick="loadSampleRecord('moderate')">Moderate (Grade C)</button>
+              <button class="scenario-btn" onclick="loadSampleRecord('weak')">Weak (Grade D)</button>
+              <button class="scenario-btn" onclick="loadSampleRecord('none')">No Record (Grade F)</button>
             </div>
           </div>
           <div class="form-group" style="margin-bottom:16px;">
@@ -413,7 +397,7 @@
             <textarea id="audit-record" rows="3" placeholder="v=DMARC1; p=reject; rua=mailto:dmarc@example.com; pct=100" style="width:100%; resize:vertical;"></textarea>
             <span class="field-hint">Paste the full DMARC TXT record. Leave blank to simulate no record.</span>
           </div>
-          <button class="btn-evaluate" onclick="runAudit()">🔍 &nbsp; Audit DMARC Record</button>
+          <button class="btn-evaluate" onclick="runAudit()">Audit DMARC Record</button>
         </div>
       </div>
 
@@ -462,9 +446,9 @@
           <div id="monitor-dot" style="width:10px; height:10px; border-radius:50%; background:var(--muted); transition:background 0.3s;"></div>
           <span id="monitor-status-text" style="font-family:var(--mono); font-size:12px; color:var(--muted);">Not monitoring</span>
           <button class="btn-secondary" style="margin:0 0 0 auto;" onclick="toggleMonitor()">
-            <span id="monitor-btn-text">▶ Start Monitor</span>
+            <span id="monitor-btn-text">Start Monitor</span>
           </button>
-          <button class="btn-secondary" style="margin:0;" onclick="clearMonitor()">🗑 Clear</button>
+          <button class="btn-secondary" style="margin:0;" onclick="clearMonitor()">Clear</button>
         </div>
 
         <div class="divider"></div>
@@ -476,10 +460,10 @@
             Start the monitor first, then click a button to send a test email. The result appears within a few seconds.
           </p>
           <div class="scenarios">
-            <button class="scenario-btn" onclick="sendTestEmail('legitimate')">✅ Legitimate</button>
-            <button class="scenario-btn" onclick="sendTestEmail('spoof')">❌ Basic Spoof</button>
-            <button class="scenario-btn" onclick="sendTestEmail('ceo-fraud')">🎭 CEO Fraud</button>
-            <button class="scenario-btn" onclick="sendTestEmail('spf-misalign')">🔀 SPF Misaligned</button>
+            <button class="scenario-btn" onclick="sendTestEmail('legitimate')">Legitimate</button>
+            <button class="scenario-btn" onclick="sendTestEmail('spoof')">Basic Spoof</button>
+            <button class="scenario-btn" onclick="sendTestEmail('ceo-fraud')">CEO Fraud</button>
+            <button class="scenario-btn" onclick="sendTestEmail('spf-misalign')">SPF Misaligned</button>
           </div>
         </div>
       </div>
@@ -552,7 +536,7 @@
       <div class="analyzer-container">
         <!-- Header -->
         <div class="analyzer-header">
-          <h2>📊 DMARC Report Analyzer</h2>
+          <h2>DMARC Report Analyzer</h2>
           <p class="subtitle">Upload your DMARC XML aggregate report to analyze authentication, detect threats, and get actionable insights</p>
         </div>
 
@@ -581,7 +565,6 @@
 
         <!-- Error Display -->
         <div id="errorContainer" class="error-container" style="display: none;">
-          <div class="error-icon">⚠️</div>
           <p id="errorText"></p>
           <button type="button" class="close-btn" onclick="document.getElementById('errorContainer').style.display='none';">×</button>
         </div>
@@ -592,7 +575,7 @@
           <!-- Summary Card -->
           <div class="result-card">
             <div class="card-header">
-              <h3>📋 Report Summary</h3>
+              <h3>Report Summary</h3>
             </div>
             <div class="summary-grid">
               <div class="stat-box">
@@ -625,7 +608,7 @@
           <!-- Authentication Stats -->
           <div class="result-card">
             <div class="card-header">
-              <h3>✅ Authentication Statistics</h3>
+              <h3>Authentication Statistics</h3>
             </div>
             <div class="stats-container">
               <div class="stat-chart">
@@ -669,7 +652,7 @@
           <!-- Mail Servers -->
           <div class="result-card">
             <div class="card-header">
-              <h3>🖥️ Mail Servers Sending on Your Behalf</h3>
+              <h3>Mail Servers Sending on Your Behalf</h3>
               <span class="count-badge" id="serverCount">0</span>
             </div>
             <div class="servers-list" id="serversList"></div>
@@ -678,7 +661,7 @@
           <!-- Suspicious Activity -->
           <div class="result-card" id="suspiciousCard" style="border-left: 4px solid #ff6b6b;">
             <div class="card-header">
-              <h3>🚨 Suspicious Activity</h3>
+              <h3>Suspicious Activity</h3>
               <span class="count-badge alert" id="suspiciousCount">0</span>
             </div>
             <div id="suspiciousContainer"></div>
@@ -687,7 +670,7 @@
           <!-- Spoofing Detection -->
           <div class="result-card" id="spoofingCard" style="border-left: 4px solid #ff6b6b;">
             <div class="card-header">
-              <h3>⚠️ Spoofing Detection</h3>
+              <h3>Spoofing Detection</h3>
             </div>
             <div id="spoofingContainer"></div>
           </div>
@@ -695,7 +678,7 @@
           <!-- Risk Assessment -->
           <div class="result-card risk-card" id="riskCard">
             <div class="card-header">
-              <h3>📈 Risk Assessment</h3>
+              <h3>Risk Assessment</h3>
             </div>
             <div class="risk-container">
               <div class="risk-score">
@@ -709,7 +692,7 @@
           <!-- Recommendations -->
           <div class="result-card recommendations-card">
             <div class="card-header">
-              <h3>💡 Recommendations</h3>
+              <h3>Recommendations</h3>
             </div>
             <div class="recommendations-list" id="recommendationsList"></div>
           </div>
@@ -729,14 +712,14 @@
   // Remove active class from all tab divs AND hide them
   document.querySelectorAll('.tab-content').forEach(t => {
     t.style.display = 'none';
-    t.classList.remove('active');  // ← this line was missing
+    t.classList.remove('active');
   });
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
 
   // Show selected tab and add active class
   const activeTab = document.getElementById('tab-' + tabName);
   activeTab.style.display = 'block';
-  activeTab.classList.add('active');  // ← add active to the correct tab div
+  activeTab.classList.add('active');
   event.currentTarget.classList.add('active');
 
   if (tabName === 'reports') loadReportSummary();

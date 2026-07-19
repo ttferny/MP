@@ -38,6 +38,7 @@ const { startSMTPServer } = require('./services/smtpReceiver');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+let server;
 
 // ── Middleware ────────────────────────────────
 // cors()           — allows the frontend (different port) to call this backend
@@ -47,8 +48,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ── Static Files ──────────────────────────────
-// Serve the HTML/CSS/JS frontend files from the /client folder
-app.use(express.static(path.join(__dirname, '../client')));
+// Serve the HTML/CSS/JS frontend files from their matching client subfolders
+const clientRoot = path.join(__dirname, '../client');
+const htmlRoot = path.join(clientRoot, 'html');
+const cssRoot = path.join(clientRoot, 'css');
+const jsRoot = path.join(clientRoot, 'js');
+
+app.use(express.static(htmlRoot));          // serves /index.html, /spf.html, etc.
+app.use('/html', express.static(htmlRoot)); // allows /html/index.html and /html/spf.html
+app.use('/css', express.static(cssRoot));   // serves /css/*.css
+app.use('/js', express.static(jsRoot));     // serves /js/*.js
 
 const smtp = startSMTPServer(); // Start the SMTP server to receive test emails (Zircon)
 
@@ -79,10 +88,14 @@ app.get('/api/health', (req, res) => {
 });
 
 // ── Fallback ──────────────────────────────────
-// For any unknown URL, serve the main index.html
+// For any unknown non-API URL, serve the main index.html
 // (lets the frontend handle its own routing)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/html/index.html'));
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'API endpoint not found' });
+  }
+
+  res.sendFile(path.join(htmlRoot, 'index.html'));
 });
 
 // ── Global Error Handler ──────────────────────
@@ -93,8 +106,11 @@ app.use((err, req, res, next) => {
 });
 
 // ── Start Server ──────────────────────────────
-app.listen(PORT, () => {
-  logger.info(`Server running on http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  server = app.listen(PORT, () => {
+    logger.info(`Server running on http://localhost:${PORT}`);
+  });
+}
 
 module.exports = app;
+module.exports.server = server;
