@@ -30,6 +30,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SPF Live Auditor - Email Authentication Studio</title>
   <link rel="stylesheet" href="../css/spf.css">
+  
 </head>
 <body>
   <header class="site-header">
@@ -201,15 +202,15 @@
               <div id="howworks-panel" class="accordion-panel hidden">
                 <ol class="steps">
                   <!-- Step 1: envelope domain (Return-Path), not From: header -->
-                  <li>Mail server extracts the envelope domain from Return-Path.</li>
+                  <li>Mail server extracts the <strong>envelope domain</strong> from <strong>Return-Path</strong>.</li>
                   <!-- Step 2: TXT lookup at domain root -->
-                  <li>It fetches the SPF record from DNS (TXT record).</li>
+                  <li>It fetches the <strong>SPF record</strong> from <strong>DNS</strong> (<strong>TXT record</strong>).</li>
                   <!-- Step 3: first-match-wins mechanism walk -->
-                  <li>Each mechanism is tested in order until one matches.</li>
+                  <li>Each <strong>mechanism</strong> is tested in order until one matches.</li>
                   <!-- Step 4: qualifier on matched mechanism (+ - ~ ?) -->
-                  <li>The matching qualifier decides the result (pass, fail, softfail, neutral).</li>
+                  <li>The matching <strong>qualifier</strong> decides the result (<strong>pass</strong>, <strong>fail</strong>, <strong>softfail</strong>, <strong>neutral</strong>).</li>
                   <!-- Step 5: implicit neutral if no mechanism matches -->
-                  <li>If nothing matches, the result is neutral.</li>
+                  <li>If nothing matches, the result is <strong>neutral</strong>.</li>
                 </ol>
               </div>
             </div>

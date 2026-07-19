@@ -176,10 +176,10 @@ function applyTooltips() {
       position: absolute;
       left: 0;
       top: calc(100% + 6px);
-      z-index: 9999;
+      z-index: 999999 !important;
       width: 260px;
-      background: var(--ink);
-      color: #f3efe8;
+      background: #0f172a !important;
+      color: #f1f5f9 !important;
       /* Prevent inherited uppercase/letter-spacing from parent titles */
       text-transform: none !important;
       letter-spacing: normal !important;
@@ -191,7 +191,9 @@ function applyTooltips() {
       line-height: 1.5;
       font-family: 'Sora', sans-serif;
       pointer-events: none;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.9);
+      border: 1px solid #334155;
+      opacity: 1 !important;
     }
     .spf-tooltip-bubble::before {
       content: '';
@@ -200,7 +202,7 @@ function applyTooltips() {
       left: 14px;
       width: 10px;
       height: 10px;
-      background: var(--ink);
+      background: #0f172a !important;
       transform: rotate(45deg);
       border-radius: 2px;
     }
@@ -318,6 +320,7 @@ function buildTooltipIcon(tip) {
 
   const bubble = document.createElement('div');
   bubble.className = 'spf-tooltip-bubble';
+  bubble.style.cssText = 'background: #0f172a !important; border: 1px solid #334155; z-index: 999999 !important; color: #f1f5f9 !important; opacity: 1 !important;';
   bubble.innerHTML = `<div class="tip-title">${escapeHtml(tip.title)}</div>${escapeHtml(tip.body)}`;
 
   return { icon, bubble };
@@ -682,7 +685,7 @@ function renderTrace(steps, finalResult) {
   const remainingCount = total - 4;
   const collapsed = document.createElement('div');
   collapsed.className = 'trace-collapsed';
-  collapsed.style.cssText = 'padding: 8px 12px; margin-bottom:8px; color: var(--muted); background: rgba(243, 239, 232, 0.95); border-radius: 8px;';
+  collapsed.style.cssText = 'padding: 8px 12px; margin-bottom:8px; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;';
   collapsed.innerHTML = `<button class="btn-secondary" id="show-full-trace" data-result="neutral" aria-expanded="false">Show ${remainingCount} more steps</button>`;
   traceList.appendChild(collapsed);
 
@@ -951,6 +954,47 @@ function setLoading(isLoading) {
   evaluateBtn.disabled  = isLoading;
   evaluateBtn.textContent = isLoading ? 'Evaluating...' : 'Evaluate SPF';
 }
+
+function initTooltips() {
+  document.querySelectorAll('.spf-tooltip-wrap, .parsed-tooltip-wrap').forEach(wrap => {
+    const icon = wrap.querySelector('.spf-tooltip-icon, .parsed-tooltip-icon');
+    const bubble = wrap.querySelector('.spf-tooltip-bubble, .parsed-tooltip-bubble');
+    if (!icon || !bubble) return;
+
+    function position() {
+      const r = icon.getBoundingClientRect();
+      const margin = 8;
+
+      // vertical: prefer below, flip above if no room
+      let top = r.bottom + margin;
+      let below = true;
+      if (top + bubble.offsetHeight > window.innerHeight) {
+        top = r.top - bubble.offsetHeight - margin;
+        below = false;
+      }
+
+      // horizontal: center on icon, then clamp to viewport
+      let left = r.left + r.width / 2 - bubble.offsetWidth / 2;
+      left = Math.max(margin, Math.min(left, window.innerWidth - bubble.offsetWidth - margin));
+
+      bubble.style.top = top + 'px';
+      bubble.style.left = left + 'px';
+      bubble.style.setProperty('--arrow-left', (r.left + r.width / 2 - left) + 'px');
+      bubble.classList.toggle('arrow-top', !below);
+      bubble.classList.toggle('arrow-bottom', below);
+    }
+
+    function show() { position(); bubble.classList.add('visible'); }
+    function hide() { bubble.classList.remove('visible'); }
+
+    icon.addEventListener('mouseenter', show);
+    icon.addEventListener('mouseleave', hide);
+    icon.addEventListener('focus', show);
+    icon.addEventListener('blur', hide);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', initTooltips);
 
 // ── Init ─────────────────────────────────────────────────────
 // Bootstrap once the DOM is ready: build scenarios, wire buttons + tooltips, and

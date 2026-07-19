@@ -671,10 +671,10 @@ function injectParsedTooltipStyles() {
       position: absolute;
       left: 0;
       top: calc(100% + 6px);
-      z-index: 9999;
+      z-index: 100000 !important;
       width: 260px;
-      background: var(--ink);
-      color: #f3efe8;
+      background: #1a2235 !important;
+      color: #f3efe8 !important;
       text-transform: none !important;
       letter-spacing: normal !important;
       font-weight: 400 !important;
@@ -684,7 +684,8 @@ function injectParsedTooltipStyles() {
       line-height: 1.5;
       font-family: 'Sora', sans-serif;
       pointer-events: none;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+      border: 1px solid rgba(255,255,255,0.1);
     }
     .parsed-tooltip-bubble::before {
       content: '';
@@ -693,7 +694,7 @@ function injectParsedTooltipStyles() {
       left: 14px;
       width: 10px;
       height: 10px;
-      background: var(--ink);
+      background: #1a2235 !important;
       transform: rotate(45deg);
       border-radius: 2px;
     }

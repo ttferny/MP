@@ -22,6 +22,20 @@ PITCH NOTE: This is the persuasion tool. It makes the case for STRICT
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SPF Policy Simulator — Email Authentication Studio</title>
   <link rel="stylesheet" href="../css/spf.css">
+  <style>
+    .spf-tooltip-bubble,
+    .parsed-tooltip-bubble {
+      background: #0f172a !important;
+      border: 1px solid #334155 !important;
+      z-index: 999999 !important;
+      color: #f1f5f9 !important;
+      opacity: 1 !important;
+    }
+    .spf-tooltip-bubble::before,
+    .parsed-tooltip-bubble::before {
+      background: #0f172a !important;
+    }
+  </style>
 </head>
 <body>
 
@@ -168,22 +182,18 @@ PITCH NOTE: This is the persuasion tool. It makes the case for STRICT
             <div class="mechanism-card">
               <div class="mechanism-head">ip4 / ip6</div>
               <p>Allows a specific IP address or range to send mail.</p>
-              <span class="badge-pill">Example: ip4:203.0.113.5</span>
             </div>
             <div class="mechanism-card">
               <div class="mechanism-head">include</div>
-              <p>Trusts another organisation’s SPF rules for third-party senders.</p>
-              <span class="badge-pill">Example: include:_spf.google.com</span>
+              <p>Trusts another organisation's SPF rules for third-party senders.</p>
             </div>
             <div class="mechanism-card">
               <div class="mechanism-head">mx / a</div>
               <p>Uses known mail servers or hostnames linked to the domain.</p>
-              <span class="badge-pill">Useful for simple setups</span>
             </div>
             <div class="mechanism-card">
               <div class="mechanism-head">Qualifiers</div>
               <p>+ passes, - fails, ~ softfails, ? stays neutral.</p>
-              <span class="badge-pill">Example: -all</span>
             </div>
           </div>
         </div>
