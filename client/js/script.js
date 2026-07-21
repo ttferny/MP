@@ -5,15 +5,11 @@
  */
 
 // ── DOM refs ───────────────────────────────────────────────
-const headerInput   = document.getElementById('header-input');
-const contentInput  = document.getElementById('content-input');
 const analyseBtn    = document.getElementById('analyse-btn');
 const clearBtn      = document.getElementById('clear-btn');
 const inputError    = document.getElementById('input-error');
 const emailFileInput = document.getElementById('email-file-input');
 const uploadStatus = document.getElementById('upload-status');
-
-const parsedSection = document.getElementById('parsed-section');
 const parsedFields  = document.getElementById('parsed-fields');
 const spoofWarning  = document.getElementById('spoof-warning');
 
@@ -192,12 +188,11 @@ function loadTestCases() {
     btn.textContent  = tc.label;
 
     btn.addEventListener('click', () => {
-      headerInput.value = tc.header;
-      if (contentInput) contentInput.value = tc.content || '';
       testcaseNote.textContent = tc.note;
       testcaseNote.classList.remove('hidden');
       document.querySelectorAll('.demo-btn').forEach(b => b.classList.remove('active-case'));
       btn.classList.add('active-case');
+      analyseHeader(tc.header);
     });
 
     testcaseContainer.appendChild(btn);
@@ -208,17 +203,24 @@ function loadTestCases() {
 // ANALYSE HEADER
 // Calls POST /api/analyse/header → pipeline + AI
 // ══════════════════════════════════════════════════════════
-analyseBtn.addEventListener('click', analyseHeader);
+let currentRawHeader = null;
+
+analyseBtn.addEventListener('click', () => {
+  if (!currentRawHeader) {
+    showError(inputError, 'Please select a demo example or upload a file first.');
+    return;
+  }
+  analyseHeader(currentRawHeader);
+});
+
 clearBtn.addEventListener('click', () => {
-  headerInput.value = '';
-  if (contentInput) contentInput.value = '';
+  currentRawHeader = null;
   if (emailFileInput) emailFileInput.value = '';
   if (uploadStatus) uploadStatus.textContent = 'No file selected.';
   hideError(inputError);
   clearResults();
-});
-headerInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && e.ctrlKey) analyseHeader();
+  testcaseNote.classList.add('hidden');
+  document.querySelectorAll('.demo-btn').forEach(b => b.classList.remove('active-case'));
 });
 
 if (emailFileInput) {
@@ -228,6 +230,18 @@ if (emailFileInput) {
 function handleEmailFileUpload(event) {
   const file = event.target.files && event.target.files[0];
   if (!file) {
+    if (uploadStatus) uploadStatus.textContent = 'No file selected.';
+    return;
+  }
+
+  // Validate file type
+  const allowedTypes = ['text/plain', 'message/rfc822', 'application/octet-stream'];
+  const fileName = file.name.toLowerCase();
+  const allowedExtensions = ['.eml', '.txt'];
+
+  if (!allowedExtensions.some(ext => fileName.endsWith(ext))) {
+    showError(inputError, 'Invalid file type. Please upload .eml or .txt files only.');
+    event.target.value = '';
     if (uploadStatus) uploadStatus.textContent = 'No file selected.';
     return;
   }
@@ -242,17 +256,22 @@ function handleEmailFileUpload(event) {
 
   const reader = new FileReader();
   reader.onload = () => {
-    const text = String(reader.result || '');
-    const parts = text.split(/\r?\n\r?\n/);
-    if (parts.length > 1) {
-      headerInput.value = parts.shift().trim();
-      if (contentInput) contentInput.value = parts.join('\n\n').trim();
-    } else {
-      headerInput.value = text.trim();
-      if (contentInput) contentInput.value = '';
+    try {
+      const text = String(reader.result || '');
+      const parts = text.split(/\r?\n\r?\n/);
+      if (parts.length > 1) {
+        currentRawHeader = parts.shift().trim();
+      } else {
+        currentRawHeader = text.trim();
+      }
+      if (uploadStatus) uploadStatus.textContent = `Loaded: ${file.name}`;
+      hideError(inputError);
+      analyseHeader(currentRawHeader);
+    } catch (err) {
+      showError(inputError, 'Error processing file. Please try another file.');
+      event.target.value = '';
+      if (uploadStatus) uploadStatus.textContent = 'No file selected.';
     }
-    if (uploadStatus) uploadStatus.textContent = `Loaded: ${file.name}`;
-    hideError(inputError);
   };
 
   reader.onerror = () => {
@@ -264,25 +283,39 @@ function handleEmailFileUpload(event) {
   reader.readAsText(file);
 }
 
-async function analyseHeader() {
-  const rawHeader = headerInput.value.trim();
-  const content = contentInput ? contentInput.value.trim() : '';
+async function analyseHeader(rawHeader = null) {
+  const content = '';
   clearResults();
-  hideError(inputError);
 
   if (!rawHeader) {
-    showError(inputError, 'Please paste an email header first, or click a demo button.');
     return;
   }
 
-  setLoading(analyseBtn, true, 'Analysing...');
+  // Sanitize input - limit length and remove potentially harmful content
+  if (typeof rawHeader !== 'string') {
+    showError(inputError, 'Invalid input format.');
+    return;
+  }
+
+  if (rawHeader.length > 500000) {
+    showError(inputError, 'Input too large. Please use a smaller email header.');
+    return;
+  }
+
+  currentRawHeader = rawHeader;
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
     const res = await fetch('/api/analyse/header', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ rawHeader, content }),
+      signal:  controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     let data;
     try {
@@ -300,6 +333,12 @@ async function analyseHeader() {
       return;
     }
 
+    // Validate response structure
+    if (!data || typeof data !== 'object') {
+      showError(inputError, 'Invalid response format from server.');
+      return;
+    }
+
     // Render all sections including AI
     renderParsed(data.parsed     || {});
     renderSpf(data.results?.spf  || null);
@@ -308,9 +347,11 @@ async function analyseHeader() {
     renderAI(data.ai || null);  // ← AI card
 
   } catch (err) {
-    showError(inputError, `Could not reach server: ${err.message}`);
-  } finally {
-    setLoading(analyseBtn, false);
+    if (err.name === 'AbortError') {
+      showError(inputError, 'Request timed out. Please try again.');
+    } else {
+      showError(inputError, `Could not reach server: ${err.message}`);
+    }
   }
 }
 
@@ -358,9 +399,42 @@ function renderParsed(parsed) {
   }
 
   spoofWarning.classList.toggle('hidden', !domainsMismatch);
-  parsedSection.classList.remove('hidden');
 
   // Apply custom tooltips to parsed fields
+  applyParsedTooltips();
+}
+
+// Initialize parsed fields with placeholder text
+function initParsedFields() {
+  parsedFields.innerHTML = '';
+
+  const fields = [
+    { key: 'fromEmail',      label: 'From (visible sender)',       tip: 'What the recipient sees' },
+    { key: 'fromDomain',     label: 'From Domain',                tip: 'DMARC checks alignment against this' },
+    { key: 'envelopeFrom',   label: 'Envelope From (Return-Path)', tip: 'Actual delivery address' },
+    { key: 'envelopeDomain', label: 'Envelope Domain',            tip: 'SPF checks this domain' },
+    { key: 'senderIP',       label: 'Sender IP Address',          tip: 'SPF checks if this IP is authorised' },
+    { key: 'subject',        label: 'Subject',                    tip: '' },
+    { key: 'date',           label: 'Date',                       tip: '' },
+    { key: 'messageId',      label: 'Message-ID',                 tip: '' },
+  ];
+
+  for (const { key, label, tip } of fields) {
+    const el = document.createElement('div');
+    el.className = 'parsed-field';
+    el.id = key;
+    el.innerHTML = `
+      <div class="parsed-field-key">
+        ${label}
+      </div>
+      <div class="parsed-field-value empty">
+        (waiting for analysis)
+      </div>
+    `;
+    parsedFields.appendChild(el);
+  }
+
+  spoofWarning.classList.add('hidden');
   applyParsedTooltips();
 }
 
@@ -668,13 +742,13 @@ function injectParsedTooltipStyles() {
     }
     .parsed-tooltip-bubble {
       display: none;
-      position: absolute;
+      position: fixed;
       left: 0;
       top: calc(100% + 6px);
-      z-index: 100000 !important;
+      z-index: 9999999 !important;
       width: 260px;
-      background: #1a2235 !important;
-      color: #f3efe8 !important;
+      background: #0f172a !important;
+      color: #f1f5f9 !important;
       text-transform: none !important;
       letter-spacing: normal !important;
       font-weight: 400 !important;
@@ -684,8 +758,9 @@ function injectParsedTooltipStyles() {
       line-height: 1.5;
       font-family: 'Sora', sans-serif;
       pointer-events: none;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.8);
-      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.9);
+      border: 1px solid #334155;
+      opacity: 1 !important;
     }
     .parsed-tooltip-bubble::before {
       content: '';
@@ -694,7 +769,7 @@ function injectParsedTooltipStyles() {
       left: 14px;
       width: 10px;
       height: 10px;
-      background: #1a2235 !important;
+      background: #0f172a !important;
       transform: rotate(45deg);
       border-radius: 2px;
     }
@@ -757,10 +832,18 @@ function attachParsedTooltip(fieldEl, tip) {
   wrap.appendChild(bubble);
   keyEl.appendChild(wrap);
 
+  // Position tooltip dynamically on hover
+  icon.addEventListener('mouseenter', () => {
+    const rect = icon.getBoundingClientRect();
+    bubble.style.left = `${rect.left}px`;
+    bubble.style.top = `${rect.bottom + 6}px`;
+  });
+
   // Remove old native tooltip if present
   const oldTip = keyEl.querySelector('.parsed-tip');
   if (oldTip) oldTip.remove();
 }
 
 // ── Init ───────────────────────────────────────────────────
+initParsedFields();
 loadTestCases();
