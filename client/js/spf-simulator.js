@@ -39,7 +39,7 @@ const scenarios = [
   {
     key: 'approved',
     label: 'Approved email server',
-    tag: '✅ Pass',
+    tag: 'Pass',
     domain: 'company.com',
     attackerIP: '203.0.113.10',
     description: 'An authorised mail server that should pass SPF cleanly.',
@@ -63,7 +63,7 @@ const scenarios = [
   {
     key: 'unauthorised',
     label: 'Unauthorised server',
-    tag: '❌ Fail',
+    tag: 'Fail',
     domain: 'company.com',
     attackerIP: '198.51.100.22',
     description: 'An unknown server that should fail SPF.',
@@ -87,7 +87,7 @@ const scenarios = [
   {
     key: 'spoofed',
     label: 'Spoofed sender',
-    tag: '🎭 Spoof',
+    tag: 'Spoof',
     domain: 'company.com',
     attackerIP: '185.220.101.5',
     description: 'A fake executive message that looks convincing.',
@@ -111,7 +111,7 @@ const scenarios = [
   {
     key: 'third-party',
     label: 'Third-party email service',
-    tag: '📨 Trusted partner',
+    tag: 'Trusted partner',
     domain: 'company.com',
     attackerIP: '209.85.220.41',
     description: 'A legitimate message from Google Workspace through a third-party service.',
@@ -135,7 +135,7 @@ const scenarios = [
   {
     key: 'missing',
     label: 'Missing SPF record',
-    tag: '⚠ No policy',
+    tag: 'No policy',
     domain: 'company.com',
     attackerIP: '104.16.0.5',
     description: 'A domain with no SPF record published in DNS.',
@@ -159,7 +159,7 @@ const scenarios = [
   {
     key: 'multiple',
     label: 'Multiple SPF records',
-    tag: '⚠ Configuration issue',
+    tag: 'Configuration issue',
     domain: 'company.com',
     attackerIP: '203.0.113.11',
     description: 'A domain with more than one SPF TXT record, which causes confusion.',
@@ -183,7 +183,7 @@ const scenarios = [
   {
     key: 'forwarded',
     label: 'Forwarded email',
-    tag: '📤 Forwarded',
+    tag: 'Forwarded',
     domain: 'company.com',
     attackerIP: '172.16.0.10',
     description: 'A message that has been forwarded and changes the visible path.',
@@ -207,7 +207,7 @@ const scenarios = [
   {
     key: 'softfail',
     label: 'SoftFail (~all)',
-    tag: '⚪ Soft fail',
+    tag: 'Soft fail',
     domain: 'company.com',
     attackerIP: '198.51.100.77',
     description: 'A message that fails SPF but is only marked suspicious.',
@@ -231,7 +231,7 @@ const scenarios = [
   {
     key: 'hardfail',
     label: 'HardFail (-all)',
-    tag: '🔒 Strict',
+    tag: 'Strict',
     domain: 'company.com',
     attackerIP: '198.51.100.77',
     description: 'A message that fails SPF under a strict hard-fail policy.',
@@ -255,7 +255,7 @@ const scenarios = [
   {
     key: 'neutral',
     label: 'Neutral (?all)',
-    tag: '⚪ Neutral',
+    tag: 'Neutral',
     domain: 'company.com',
     attackerIP: '198.51.100.77',
     description: 'A policy that takes no action for unknown senders.',
@@ -337,11 +337,28 @@ function escapeHtml(value) {
 
 // Build the row of scenario tabs and wire each one to switch the active story.
 /** Render scenario tab buttons; active tab drives populateInputs(). */
+function getBadgeClass(tag) {
+  const tagUpper = tag.toUpperCase();
+  if (['FAIL', 'CONFIGURATION ISSUE', 'STRICT'].includes(tagUpper)) {
+    return 'badge-danger';
+  }
+  if (['PASS', 'TRUSTED PARTNER', 'FORWARDED'].includes(tagUpper)) {
+    return 'badge-success';
+  }
+  if (['SOFT FAIL', 'SPOOF'].includes(tagUpper)) {
+    return 'badge-warning';
+  }
+  if (['NEUTRAL', 'NO POLICY'].includes(tagUpper)) {
+    return 'badge-muted';
+  }
+  return '';
+}
+
 function renderScenarioTabs() {
   nodes.scenarioTabs.innerHTML = scenarios.map((scenario, index) => `
     <button class="scenario-tab ${index === activeScenario ? 'active' : ''}" data-index="${index}">
       <span class="scenario-name">${scenario.label}</span>
-      <span class="scenario-tag">${scenario.tag}</span>
+      <span class="scenario-tag ${getBadgeClass(scenario.tag)}">${scenario.tag}</span>
     </button>
   `).join('');
 

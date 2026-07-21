@@ -178,7 +178,7 @@ function applyTooltips() {
       top: calc(100% + 6px);
       z-index: 999999 !important;
       width: 260px;
-      background: #0f172a !important;
+      background:  #0f172a !important;
       color: #f1f5f9 !important;
       /* Prevent inherited uppercase/letter-spacing from parent titles */
       text-transform: none !important;
@@ -202,7 +202,7 @@ function applyTooltips() {
       left: 14px;
       width: 10px;
       height: 10px;
-      background: #0f172a !important;
+      background:  #0f172a !important;
       transform: rotate(45deg);
       border-radius: 2px;
     }
@@ -298,9 +298,10 @@ function attachTooltipInline(el, tip) {
   const icon = buildTooltipIcon(tip);
   
   // Add small-icon class for commercial labels (Status, Risk Score, Recommendation, Business Impact)
-  if (el.classList.contains('commercial-label')) {
+  if (el.classList.contains('commercial-label') || el.classList.contains('card-title')) {
     icon.icon.classList.add('small-icon');
   }
+  
 
   wrap.appendChild(textSpan);
   wrap.appendChild(icon.icon);
@@ -481,17 +482,32 @@ function getApiTargets() {
 // Call POST /api/spf/check, trying each candidate backend until one responds.
 // Returns the parsed JSON verdict, or throws the last error if all targets fail.
 async function fetchSpfEvaluation(domain, ip) {
+  // Sanitize inputs
+  if (typeof domain !== 'string' || typeof ip !== 'string') {
+    throw new Error('Invalid input format.');
+  }
+
+  if (domain.length > 253 || ip.length > 45) {
+    throw new Error('Input too large.');
+  }
+
   const payload = JSON.stringify({ domain, ip });
   console.debug('[SPF POC] Sending payload to /api/spf/check:', { domain, ip });
   let lastError = null;
 
   for (const apiBaseUrl of getApiTargets()) {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
       const response = await fetch(`${apiBaseUrl}/api/spf/check`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: payload,
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       const data = await response.json();
       console.debug('[SPF POC] Received response from', apiBaseUrl, data);
@@ -502,9 +518,18 @@ async function fetchSpfEvaluation(domain, ip) {
         throw error;
       }
 
+      // Validate response structure
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid response format from server.');
+      }
+
       return data;
     } catch (err) {
-      lastError = err;
+      if (err.name === 'AbortError') {
+        lastError = new Error('Request timed out.');
+      } else {
+        lastError = err;
+      }
     }
   }
 
@@ -868,6 +893,7 @@ function renderCommercial(summary) {
     commercialRecommendation.textContent = 'Run the auditor to see guidance.';
     commercialImpact.textContent = '—';
     commercialHighlights.innerHTML = '';
+    commercialHighlights.classList.remove('visible');
     return;
   }
 
@@ -882,8 +908,10 @@ function renderCommercial(summary) {
 
   if (Array.isArray(summary.highlights) && summary.highlights.length) {
     commercialHighlights.innerHTML = `<ul>${summary.highlights.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+    commercialHighlights.classList.add('visible');
   } else {
     commercialHighlights.innerHTML = '<p style="color: var(--muted); margin: 0;">No highlight details available.</p>';
+    commercialHighlights.classList.remove('visible');
   }
 }
 

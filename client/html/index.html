@@ -3,8 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' http://localhost:3000;">
   <title>Email Authentication Studio</title>
   <link rel="stylesheet" href="../css/spf.css">
+  <style>
+    .parsed-tooltip-bubble {
+      background: #0f172a !important;
+      border: 1px solid #334155 !important;
+      z-index: 9999999 !important;
+      color: #f1f5f9 !important;
+      opacity: 1 !important;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.9) !important;
+    }
+    .parsed-tooltip-bubble::before {
+      background: #0f172a !important;
+    }
+  </style>
 
 </head>
 <body>
@@ -39,13 +53,11 @@
 
       <!-- ── TOP ROW ── -->
       <div class="top-row">
-        <!-- Left: Paste Raw Email Header -->
+        <!-- Left: Parsed Header Fields -->
         <section class="stack left-panel">
-          <div class="card input-card">
-            <h2 class="card-title">Paste Raw Email Header</h2>
-            <p class="card-hint">
-              Open an email and view the full header. Copy everything above the blank line.
-            </p>
+          <div class="card">
+            <h2 class="card-title">Parsed Header Fields</h2>
+            <p class="card-hint">Key values extracted by the parser.</p>
 
             <div class="demo-buttons">
               <span class="demo-label">Guided examples:</span>
@@ -53,22 +65,7 @@
             </div>
             <div id="testcase-note" class="testcase-note hidden"></div>
 
-            <textarea
-              id="header-input"
-              class="header-textarea"
-              rows="14"
-              placeholder="From: alerts@company.com&#10;Return-Path: &lt;alerts@company.com&gt;&#10;Received: from mail.company.com ([203.0.113.10])&#10;Subject: Quarterly report&#10;Date: Tue, 21 May 2026 10:12:00 +0800&#10;Message-ID: &lt;abc123@company.com&gt;"
-              spellcheck="false"
-            ></textarea>
-
-            <div class="content-label">Email content for AI analysis</div>
-            <textarea
-              id="content-input"
-              class="header-textarea content-textarea"
-              rows="6"
-              placeholder="Paste the email body here so the AI can assess language and intent..."
-              spellcheck="true"
-            ></textarea>
+            <div id="parsed-fields" class="parsed-grid"></div>
 
             <div class="upload-panel">
               <div class="upload-label">Upload saved email file</div>
@@ -158,18 +155,6 @@
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-      </div>
-
-      <!-- ── BOTTOM ROW ── -->
-      <div class="bottom-row">
-        <!-- Parsed Header Fields (Full Width) -->
-        <section class="stack full-width">
-          <div id="parsed-section" class="card">
-            <h2 class="card-title">Parsed Header Fields</h2>
-            <p class="card-hint">Key values extracted by the parser.</p>
-            <div id="parsed-fields" class="parsed-grid"></div>
             <div id="spoof-warning" class="spoof-warning hidden">
               Spoofing signal detected: the visible From domain and the envelope domain do not match. This can happen when mail is sent via a third-party or subdomain (common for marketing emails).
             </div>

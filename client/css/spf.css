@@ -402,7 +402,7 @@ textarea { resize: vertical; }
 .accordion-item {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .accordion-trigger {
@@ -610,10 +610,27 @@ textarea { resize: vertical; }
 }
 
 .commercial-highlights {
-  display: flex;
+  display: none;
   flex-direction: column;
-  gap: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
   font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.commercial-highlights ul {
+    margin-top: -15px;
+    padding-top: -15px;
+    margin-bottom: -15px;
+    padding-bottom: -15px;
+}
+
+.commercial-highlights.visible {
+  display: flex;
 }
 
 /* ── AI / How it works card ──────────────────────────────────── */
@@ -680,7 +697,7 @@ textarea { resize: vertical; }
 /* ── Animations ──────────────────────────────────────────────── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: none; }
 }
 
 @keyframes fadeDown {
@@ -748,9 +765,6 @@ textarea { resize: vertical; }
 .trace-icon { flex-shrink: 0; font-size: 14px; }
 .trace-text { color: var(--text); flex: 1; }
 .trace-sub  { color: var(--muted); font-size: 11px; margin-top: 2px; }
-
-/* Result card panel */
-.result-card-panel { }
 
 /* Commercial card highlights */
 .highlight-item {
@@ -1747,7 +1761,7 @@ textarea { resize: vertical; }
   padding: 8px 12px;
   font-size: 13px;
   color: var(--fail);
-  margin-top: 16px;
+  margin-top: 20px;
   line-height: 1.5;
 }
 .spoof-warning.hidden { display: none; }
@@ -1778,6 +1792,8 @@ textarea { resize: vertical; }
   color: var(--muted);
   cursor: help;
   flex-shrink: 0;
+  text-transform: lowercase;   /* ← add this line */
+
 }
 
 .spf-tooltip-bubble,
@@ -1812,7 +1828,7 @@ textarea { resize: vertical; }
 .spf-tooltip-bubble::before,
 .parsed-tooltip-bubble::before {
   content: '';
-  position: absolute;
+  position: fixed;
   left: var(--arrow-left, 50%);
   transform: translateX(-50%);
   border: 6px solid transparent;
@@ -1857,9 +1873,8 @@ textarea { resize: vertical; }
   font-size: 13px;
 }
 .parsed-field:last-child { border-bottom: none; }
-.parsed-field.mismatch-field { background: rgba(239,68,68,0.04); border-radius: 6px; padding: 7px 8px; margin: -7px -8px; }
+.parsed-field.mismatch-field { background: rgba(239,68,68,0.04); border-radius: 6px; padding: 7px 8px; margin: 0 -8px; }
 .parsed-field-key { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
-.parsed-field.mismatch-field { background: rgba(248,113,113,0.04); border-radius: 6px; padding: 7px 8px; }
 .parsed-field-key { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
 .parsed-field-value { font-family: var(--mono); font-size: 12px; color: var(--text); word-break: break-all; line-height: 1.4; }
 .parsed-field-value.empty { color: var(--muted); font-style: italic; }
@@ -1962,7 +1977,12 @@ textarea { resize: vertical; }
 
 /* Scenario tabs */
 .scenario-name { font-size: 13px; font-weight: 600; color: var(--text); display: block; }
-.scenario-tag  { display: inline-block; font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; background: rgba(56,189,248,0.1); color: var(--accent); margin-top: 3px; }
+.scenario-tag  { display: inline-block; font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; margin-top: 3px; }
+
+.scenario-tag.badge-danger { background: rgba(248,113,113,0.15); color: var(--fail); }
+.scenario-tag.badge-success { background: rgba(52,211,153,0.15); color: var(--pass); }
+.scenario-tag.badge-warning { background: rgba(251,191,36,0.15); color: var(--warn); }
+.scenario-tag.badge-muted { background: rgba(148,163,184,0.15); color: var(--muted); }
 
 /* Layout helpers */
 .stack  { display: flex; flex-direction: column; gap: 16px; }
