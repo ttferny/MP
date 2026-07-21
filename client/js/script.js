@@ -832,11 +832,29 @@ function attachParsedTooltip(fieldEl, tip) {
   wrap.appendChild(bubble);
   keyEl.appendChild(wrap);
 
-  // Position tooltip dynamically on hover
+  // Position tooltip above the icon using getBoundingClientRect
   icon.addEventListener('mouseenter', () => {
-    const rect = icon.getBoundingClientRect();
-    bubble.style.left = `${rect.left}px`;
-    bubble.style.top = `${rect.bottom + 6}px`;
+    // Show first so offsetHeight is measurable
+    bubble.classList.add('visible');
+    const rect   = icon.getBoundingClientRect();
+    const bh     = bubble.offsetHeight || 120;
+    const bw     = bubble.offsetWidth  || 260;
+    const margin = 10;
+
+    // Prefer above; flip below if not enough room
+    let top = rect.top - bh - margin;
+    if (top < margin) top = rect.bottom + margin;
+
+    // Center on icon, clamp to viewport
+    let left = rect.left + rect.width / 2 - bw / 2;
+    left = Math.max(margin, Math.min(left, window.innerWidth - bw - margin));
+
+    bubble.style.top  = top  + 'px';
+    bubble.style.left = left + 'px';
+  });
+
+  icon.addEventListener('mouseleave', () => {
+    bubble.classList.remove('visible');
   });
 
   // Remove old native tooltip if present

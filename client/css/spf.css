@@ -1987,3 +1987,56 @@ textarea { resize: vertical; }
 /* Layout helpers */
 .stack  { display: flex; flex-direction: column; gap: 16px; }
 .hidden { display: none !important; }
+/* ================================================================
+   EXTRACTED FROM HTML FILES
+   Originally in <style> blocks — moved here for centralisation
+================================================================ */
+
+/* Tooltip dark theme — spf-builder.html, spf-simulator.html */
+.spf-tooltip-bubble,
+.parsed-tooltip-bubble {
+  background: #111827 !important;
+  border: 1px solid #1e2d45 !important;
+  z-index: 999999 !important;
+  color: #e2e8f0 !important;
+  opacity: 1 !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6), 0 0 0 1px #1e2d45 !important;
+}
+
+.spf-tooltip-bubble::before,
+.parsed-tooltip-bubble::before {
+  background: #111827 !important;
+}
+
+/* explain-panel spacing — spf-builder.html */
+#explain-panel {
+  padding-bottom: 0px !important;
+}
+
+/* Services header with Clear All button — spf-builder.html */
+.services-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.clear-btn {
+  background-color: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.clear-btn:hover {
+  border-color: var(--fail);
+  color: var(--fail);
+  background-color: rgba(239,68,68,0.06);
+}
