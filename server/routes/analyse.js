@@ -2,11 +2,31 @@
  * ============================================================
  * routes/analyse.js — Main API Route Handler
  * ============================================================
+ *
+ * WHAT THIS FILE DOES (simple version for pitching):
+ * ---------------------------------------------------
+ * The "traffic controller" of the backend.
+ * The frontend sends an email header here, and this file passes
+ * it through the full authentication pipeline in order:
+ *
+ *   Step 1 → parser.js      : Extract key fields from raw header
+ *   Step 2 → validate.js    : Check parsed data is complete & correct
+ *   Step 3 → spf.js         : Check if sending IP is authorised
+ *   Step 4 → validate.js    : Check SPF result is well-formed
+ *   Step 5 → dkim.js        : Verify email signature (Ashton)
+ *   Step 6 → dmarc.js       : Apply policy, give final verdict (Zircon)
+ *   Step 7 → validate.js    : Check full response before sending
+ *   Step 8 → aiChecker.js   : AI classifies email as safe/phishing/spoofing ← NEW
+ *
+ * ENDPOINTS:
+ * ----------
+ *   POST /api/analyse/header   — full email authentication pipeline
+ *   POST /api/analyse/domain   — DNS record lookup for a domain
+ *   POST /api/analyse/scenario — run a pre-built demo scenario
  */
 
 const express = require('express');
 const router  = express.Router();
-const scanHistory = require('../utils/store');
 
 const { parseEmailHeader }  = require('../services/parser');
 const { checkSPF }          = require('../services/spf');
@@ -14,7 +34,7 @@ const { verifyDKIM }        = require('../services/dkim');
 const { evaluateDMARC }     = require('../services/dmarc');
 const { lookupDMARCRecord } = require('../services/dns');
 const { parseDMARCRecord }  = require('../services/dmarcAuditor');
-const { checkEmailWithAI }  = require('../services/aiChecker');     
+const { checkEmailWithAI }  = require('../services/aiChecker');     // ← NEW
 const { getScenario, getAllScenarios } = require('../services/scenarioService');
 const {
   validateParsedHeader,
@@ -59,10 +79,10 @@ router.post('/header', async (req, res) => {
       });
     }
 
-    // Step 5 — DKIM Check 
+    // Step 5 — DKIM Check (Ashton)
     const dkimResult = await verifyDKIM(parsed);
 
-    // Step 6 — DMARC Evaluation 
+    // Step 6 — DMARC Evaluation (Zircon)
     const dmarcRecord = await lookupDMARCRecord(parsed.fromDomain);
     const dmarcTags   = dmarcRecord ? parseDMARCRecord(dmarcRecord) : null;
     const dmarcParsed = dmarcTags
@@ -87,50 +107,11 @@ router.post('/header', async (req, res) => {
       });
     }
 
-    // Step 8 — AI phishing/spoofing analysis 
-    // Step 8 — AI phishing/spoofing analysis 
-    let aiResult = null;
-    try {
-        // We wrap this in a try-catch so if the AI crashes, the whole scan doesn't die!
-        aiResult = await checkEmailWithAI(parsed, spfResult, dkimResult, dmarcResult, content);
-    } catch (aiError) {
-        logger.error(`AI Check bypassed: ${aiError.message}`);
-    }
-    
-    // Ensure responseObj always gets something, even if AI failed
-    responseObj.ai = aiResult || { error: 'AI unavailable' };
-
-    // --- NEW DASHBOARD SAVING LOGIC WITH FALLBACK ---
-    try {
-        let threat = 'safe';
-        let score = 0;
-
-        // Check if Gemini succeeded
-        if (aiResult && (aiResult.threatType || aiResult.classification || aiResult.type)) {
-            threat = (aiResult.threatType || aiResult.classification || aiResult.type || 'safe').toLowerCase();
-            score = Number(aiResult.riskScore) || 0;
-        } else {
-            // Fallback rule-based logic if API key is missing
-            const dmarcPassed = (dmarcResult.verdict === 'deliver' || dmarcResult.result === 'pass');
-            if (!dmarcPassed) {
-                threat = 'spoofing';
-                score = 75;
-            }
-        }
-
-        const dashboardData = {
-            spf: (spfResult.result === 'pass') ? 'pass' : 'fail',
-            dkim: (dkimResult.result === 'pass') ? 'pass' : 'fail',
-            dmarc: (dmarcResult.verdict === 'deliver' || dmarcResult.result === 'pass') ? 'pass' : 'fail',
-            aiThreat: threat,
-            riskScore: score,
-            timestamp: new Date()
-        };
-        scanHistory.push(dashboardData);
-    } catch (storeErr) {
-        logger.error(`Dashboard Save Error: ${storeErr.message}`);
-    }
-    // ------------------------------------------------
+    // Step 8 — AI phishing/spoofing analysis ← NEW
+    // Runs after all protocol checks so the AI has full context.
+    // Falls back gracefully if API key is missing or call fails.
+    const aiResult = await checkEmailWithAI(parsed, spfResult, dkimResult, dmarcResult, content);
+    responseObj.ai = aiResult;
 
     return res.json(responseObj);
 
@@ -176,6 +157,7 @@ router.post('/domain', async (req, res) => {
 
 // ──────────────────────────────────────────────────────────────
 // ENDPOINT 3: POST /api/analyse/scenario
+// Uses Zircon's scenarioService + runs real DMARC alignment logic
 // ──────────────────────────────────────────────────────────────
 router.post('/scenario', async (req, res) => {
   try {
@@ -190,6 +172,7 @@ router.post('/scenario', async (req, res) => {
       return res.status(404).json({ error: `Unknown scenario "${scenario}". Available: ${all}` });
     }
 
+    // Build parsed object from scenario data
     const parsed = {
       from:           `sender@${s.fromDomain}`,
       fromEmail:      `sender@${s.fromDomain}`,
@@ -205,6 +188,7 @@ router.post('/scenario', async (req, res) => {
       raw:            {},
     };
 
+    // Build SPF result
     const spfResult = {
       result:           s.spf.status,
       reason:           s.spf.status === 'pass'
@@ -216,6 +200,7 @@ router.post('/scenario', async (req, res) => {
       matchedMechanism: s.spf.status === 'pass' ? 'ip4:203.0.113.0/24' : '-all',
     };
 
+    // Build DKIM result
     const dkimResult = {
       result:    s.dkim.status,
       reason:    s.dkim.status === 'pass'
@@ -229,6 +214,7 @@ router.post('/scenario', async (req, res) => {
       dnsRecord: s.dkim.status === 'pass' ? 'v=DKIM1; k=rsa; p=mockkey' : null,
     };
 
+    // Run DMARC alignment
     const aspfMode  = s.aspf  || 'r';
     const adkimMode = s.adkim || 'r';
     const spfAligned  = spfResult.result  === 'pass' && checkAlignment(s.fromDomain, spfResult.domain,  aspfMode);
@@ -266,37 +252,8 @@ router.post('/scenario', async (req, res) => {
       attackDescription: s.attack,
     };
 
+    // AI analysis on scenario data ← NEW
     const aiResult = await checkEmailWithAI(parsed, spfResult, dkimResult, dmarcResult);
-
-    // --- NEW DASHBOARD SAVING LOGIC FOR SCENARIOS WITH FALLBACK ---
-    try {
-        let threat = 'safe';
-        let score = 0;
-
-        if (aiResult && (aiResult.threatType || aiResult.classification || aiResult.type)) {
-            threat = (aiResult.threatType || aiResult.classification || aiResult.type || 'safe').toLowerCase();
-            score = Number(aiResult.riskScore) || 0;
-        } else {
-            const dmarcPassed = (dmarcResult.verdict === 'deliver' || dmarcResult.result === 'pass');
-            if (!dmarcPassed) {
-                threat = 'spoofing';
-                score = 75;
-            }
-        }
-
-        const dashboardData = {
-            spf: (spfResult.result === 'pass') ? 'pass' : 'fail',
-            dkim: (dkimResult.result === 'pass') ? 'pass' : 'fail',
-            dmarc: (dmarcResult.verdict === 'deliver' || dmarcResult.result === 'pass') ? 'pass' : 'fail',
-            aiThreat: threat,
-            riskScore: score,
-            timestamp: new Date()
-        };
-        scanHistory.push(dashboardData);
-    } catch (storeErr) {
-        logger.error(`Dashboard Save Error: ${storeErr.message}`);
-    }
-    // --------------------------------------------------------------
 
     return res.json({
       success: true,

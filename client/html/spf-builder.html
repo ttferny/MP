@@ -29,18 +29,6 @@
   <title>SPF Record Builder — Email Authentication Studio</title>
   <!-- style.css = shared studio theme; spf-builder.css = builder-specific styles. -->
   <link rel="stylesheet" href="../css/spf.css">
-  <style>
-    .spf-tooltip-bubble {
-      background: #0f172a !important;
-      border: 1px solid #334155 !important;
-      z-index: 999999 !important;
-      color: #f1f5f9 !important;
-      opacity: 1 !important;
-    }
-    .spf-tooltip-bubble::before {
-      background: #0f172a !important;
-    }
-  </style>
 </head>
 <body>
 
@@ -124,38 +112,6 @@
           </div>
           <div class="svc-grid" id="svc-grid"></div>
         </div>
-
-        <style>
-          /* Only overrides the spacing for this specific explanation panel */
-          #explain-panel {
-            padding-bottom: 0px !important;
-          }
-          
-          /* Styles for the new Clear All button layout */
-          .services-header-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 16px;
-            margin-bottom: 12px;
-          }
-          .clear-btn {
-            background-color: transparent;
-            border: 1px solid #e6dfd5;
-            color: #666;
-            padding: 6px 14px;
-            font-size: 13px;
-            font-weight: 500;
-            border-radius: 6px;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s ease;
-          }
-          .clear-btn:hover {
-            background-color: #f5efe6;
-            color: #111;
-          }
-        </style>
 
 
         <!-- Policy: how receivers should treat mail that fails SPF (the enforcement dial). Terminal qualifier: -all (reject), ~all (softfail), ?all (neutral) -->
@@ -246,14 +202,6 @@
             </div>
           </div>
         </div>
-
-        <style>
-          /* Only overrides the spacing for this specific explanation panel */
-          #explain-panel {
-            padding-bottom: 0px !important;
-          }
-          
-        </style>
 
         <!-- DNS instructions Registrar walkthrough — one SPF TXT per domain (RFC rule) 
          the last-mile guide to actually publish the record at a registrar — closes the gap between "generated" and "live". -->
