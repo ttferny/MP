@@ -190,6 +190,13 @@ a:hover { color: var(--accent-dark); }
   padding: 28px;
   margin-bottom: 20px;
   animation: fadeUp 0.5s ease both;
+  position: relative;
+  z-index: 1;
+}
+
+.card:hover,
+.card:focus-within {
+  z-index: 10;
 }
 
 .card-title {
@@ -1776,6 +1783,13 @@ textarea { resize: vertical; }
   gap: 4px;
 }
 
+.spf-tooltip-wrap,
+.parsed-tooltip-wrap,
+.info-icon-wrapper {
+  position: relative;
+  z-index: 20;
+}
+
 .spf-tooltip-icon,
 .parsed-tooltip-icon {
   display: inline-flex;
@@ -1819,6 +1833,12 @@ textarea { resize: vertical; }
   transition: opacity 0.15s ease;
 }
 
+.spf-tooltip-bubble,
+.parsed-tooltip-bubble,
+.tooltip-popup {
+  z-index: 99999 !important;
+}
+
 .spf-tooltip-bubble.visible,
 .parsed-tooltip-bubble.visible {
   opacity: 1;
@@ -1832,6 +1852,30 @@ textarea { resize: vertical; }
   left: var(--arrow-left, 50%);
   transform: translateX(-50%);
   border: 6px solid transparent;
+}
+
+/* 1. Ensure the small card containers have a relative base position */
+.commercial-item,
+.spf-tooltip-wrap,
+.parsed-tooltip-wrap {
+  position: relative;
+  z-index: 1;
+}
+
+/* 2. When hovering the icon/card, lift ITS ENTIRE CONTAINER above subsequent cards */
+.commercial-item:hover,
+.commercial-item:focus-within,
+.spf-tooltip-wrap:hover,
+.parsed-tooltip-wrap:hover {
+  z-index: 100 !important;
+}
+
+/* 3. Keep the popup bubble background 100% solid and fully opaque */
+.spf-tooltip-bubble,
+.parsed-tooltip-bubble {
+  background: #0f172a !important;
+  opacity: 1 !important;
+  z-index: 99999 !important;
 }
 
 .spf-tooltip-bubble.arrow-bottom::before,
