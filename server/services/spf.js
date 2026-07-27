@@ -98,14 +98,28 @@ function parseSPFRecord(record = '') {
     }
 
     const colonIdx = mech.indexOf(':');
+    const equalIdx = mech.indexOf('=');
     const slashIdx = mech.indexOf('/');
-    const mechName = colonIdx !== -1
+
+    // redirect uses = as separator, other mechanisms use :
+    // First determine the mechanism name to check if it's redirect
+    const tempMechName = colonIdx !== -1
       ? mech.slice(0, colonIdx).toLowerCase()
+      : equalIdx !== -1
+      ? mech.slice(0, equalIdx).toLowerCase()
       : slashIdx !== -1
       ? mech.slice(0, slashIdx).toLowerCase()
       : mech.toLowerCase();
 
-    const mechValue = colonIdx !== -1 ? mech.slice(colonIdx + 1) : '';
+    const sepIdx = tempMechName === 'redirect' ? equalIdx : colonIdx;
+
+    const mechName = sepIdx !== -1
+      ? mech.slice(0, sepIdx).toLowerCase()
+      : slashIdx !== -1
+      ? mech.slice(0, slashIdx).toLowerCase()
+      : mech.toLowerCase();
+
+    const mechValue = sepIdx !== -1 ? mech.slice(sepIdx + 1) : '';
 
     mechanisms.push({ qualifier, mechName, mechValue, raw: token });
   }

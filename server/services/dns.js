@@ -12,6 +12,14 @@ const dnsCallback = require('dns');
 const { promisify } = require('util');
 const logger = require('../utils/logger');
 
+// Try to set DNS servers, but fall back to system defaults if they fail
+try {
+  dnsCallback.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1', '1.0.0.1']);
+  dnsPromises.setDefaultResultOrder('verbatim');
+} catch (err) {
+  logger.warn(`Could not set custom DNS servers, using system defaults: ${err.message}`);
+}
+
 const resolveA = dnsPromises.resolveA
   || dnsPromises.resolve4
   || (typeof dnsCallback.resolve4 === 'function' ? promisify(dnsCallback.resolve4) : null);
@@ -55,11 +63,19 @@ const isDkimTxtRecord = (record) => {
 
 const lookupTxtRecords = async (name) => {
   try {
-    const records = await dnsPromises.resolveTxt(name);
+    // Add timeout wrapper - 30 seconds with retry logic
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('DNS lookup timeout')), 30000)
+    );
+
+    const records = await Promise.race([
+      dnsPromises.resolveTxt(name),
+      timeoutPromise
+    ]);
     return normalizeTxtRecords(records);
   } catch (err) {
-    if (['ENOTFOUND', 'ENODATA', 'ENOTIMP', 'ESERVFAIL', 'ETIMEOUT', 'SERVFAIL', 'ECONNREFUSED', 'EAI_AGAIN'].includes(err.code)) {
-      logger.info(`DNS TXT lookup for ${name} returned no data (${err.code})`);
+    if (['ENOTFOUND', 'ENODATA', 'ENOTIMP', 'ESERVFAIL', 'ETIMEOUT', 'SERVFAIL', 'ECONNREFUSED', 'EAI_AGAIN'].includes(err.code) || err.message === 'DNS lookup timeout') {
+      logger.info(`DNS TXT lookup for ${name} returned no data (${err.code || 'timeout'})`);
       return [];
     }
     logger.error(`DNS TXT lookup failed for ${name}: ${err.message}`);

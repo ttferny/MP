@@ -291,31 +291,14 @@ async function analyseHeader(rawHeader = null) {
     return;
   }
 
-  // Sanitize input - limit length and remove potentially harmful content
-  if (typeof rawHeader !== 'string') {
-    showError(inputError, 'Invalid input format.');
-    return;
-  }
-
-  if (rawHeader.length > 500000) {
-    showError(inputError, 'Input too large. Please use a smaller email header.');
-    return;
-  }
-
   currentRawHeader = rawHeader;
 
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
     const res = await fetch('/api/analyse/header', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ rawHeader, content }),
-      signal:  controller.signal,
     });
-
-    clearTimeout(timeoutId);
 
     let data;
     try {
@@ -333,11 +316,8 @@ async function analyseHeader(rawHeader = null) {
       return;
     }
 
-    // Validate response structure
-    if (!data || typeof data !== 'object') {
-      showError(inputError, 'Invalid response format from server.');
-      return;
-    }
+    console.log('Full response from server:', data);
+    console.log('AI data in response:', data.ai);
 
     // Render all sections including AI
     renderParsed(data.parsed     || {});
@@ -347,11 +327,7 @@ async function analyseHeader(rawHeader = null) {
     renderAI(data.ai || null);  // ← AI card
 
   } catch (err) {
-    if (err.name === 'AbortError') {
-      showError(inputError, 'Request timed out. Please try again.');
-    } else {
-      showError(inputError, `Could not reach server: ${err.message}`);
-    }
+    showError(inputError, `Could not reach server: ${err.message}`);
   }
 }
 
@@ -718,9 +694,9 @@ function injectParsedTooltipStyles() {
   tooltipStyle.id = 'parsed-tooltip-styles';
   tooltipStyle.textContent = `
     .parsed-tooltip-wrap {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
+      position: relative !important;
+      display: inline-flex !important;
+      align-items: center !important;
     }
     .parsed-tooltip-icon {
       display: inline-flex;
@@ -735,56 +711,65 @@ function injectParsedTooltipStyles() {
       font-weight: 700;
       font-family: 'JetBrains Mono', monospace;
       cursor: help;
-      margin-left: 5px;
+      margin-left: 6px;
       flex-shrink: 0;
       transition: background 0.15s ease;
       user-select: none;
     }
+
+    /* TOOLTIP BUBBLE: Aligns left edge with the start of the title header */
     .parsed-tooltip-bubble {
       display: none;
-      position: fixed;
-      left: 0;
-      top: calc(100% + 6px);
+      position: absolute !important;
+      top: calc(100% + 10px) !important;
+      left: 0 !important;
       z-index: 9999999 !important;
-      width: 260px;
-      background: #0f172a !important;
+      width: 280px;
+      background: #0d1527 !important;
       color: #f1f5f9 !important;
       text-transform: none !important;
       letter-spacing: normal !important;
       font-weight: 400 !important;
-      border-radius: 10px;
-      padding: 10px 13px;
-      font-size: 0.78rem;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 0.82rem;
       line-height: 1.5;
       font-family: 'Sora', sans-serif;
       pointer-events: none;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.9);
-      border: 1px solid #334155;
-      opacity: 1 !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      border: 1px solid #1e293b;
     }
+
+    /* ARROW: Positioned exactly 20px from the left edge */
     .parsed-tooltip-bubble::before {
-      content: '';
-      position: absolute;
-      top: -5px;
-      left: 14px;
-      width: 10px;
-      height: 10px;
-      background: #0f172a !important;
-      transform: rotate(45deg);
-      border-radius: 2px;
+      content: '' !important;
+      position: absolute !important;
+      top: -6px !important;
+      left: 20px !important;
+      width: 10px !important;
+      height: 10px !important;
+      background: #0d1527 !important;
+      transform: rotate(45deg) !important;
+      border-left: 1px solid #1e293b !important;
+      border-top: 1px solid #1e293b !important;
+      border-right: none !important;
+      border-bottom: none !important;
+      border-radius: 2px !important;
     }
+
     .parsed-tooltip-bubble .tip-title {
-      font-weight: 700;
-      font-size: 0.8rem;
-      margin-bottom: 4px;
-      color: #fff;
+      font-weight: 800;
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-family: 'JetBrains Mono', monospace;
     }
-    .parsed-tooltip-icon:hover + .parsed-tooltip-bubble,
+
+    .parsed-tooltip-wrap:hover .parsed-tooltip-bubble,
     .parsed-tooltip-icon:focus + .parsed-tooltip-bubble {
-      display: block;
-    }
-    .parsed-tooltip-wrap:hover .parsed-tooltip-bubble {
-      display: block;
+      display: block !important;
     }
   `;
   document.head.appendChild(tooltipStyle);
@@ -804,62 +789,60 @@ function attachParsedTooltip(fieldEl, tip) {
   const keyEl = fieldEl.querySelector('.parsed-field-key');
   if (!keyEl) return;
 
-  // Remove existing tooltip if present to avoid duplicates
-  const existingIcon = keyEl.querySelector('.parsed-tooltip-icon');
-  if (existingIcon) {
-    const existingWrap = existingIcon.closest('.parsed-tooltip-wrap');
-    if (existingWrap) existingWrap.remove();
+  // Clean up any old tooltips or native tips
+  const oldTip = keyEl.querySelector('.parsed-tip');
+  if (oldTip) oldTip.remove();
+
+  // If already wrapped, extract the original text content to reset
+  let titleText = '';
+  const existingWrap = keyEl.querySelector('.parsed-tooltip-wrap');
+  if (existingWrap) {
+    const labelSpan = existingWrap.querySelector('.parsed-tooltip-label');
+    titleText = labelSpan ? labelSpan.textContent.trim() : keyEl.textContent.trim();
+    existingWrap.remove();
+  } else {
+    titleText = keyEl.textContent.trim();
   }
 
+  // 1. Create outer wrapper that holds BOTH the text label and the icon
   const wrap = document.createElement('span');
   wrap.className = 'parsed-tooltip-wrap';
-  wrap.style.display = 'inline-flex';
-  wrap.style.alignItems = 'center';
 
+  // 2. Wrap the header text label
+  const labelSpan = document.createElement('span');
+  labelSpan.className = 'parsed-tooltip-label';
+  labelSpan.textContent = titleText;
+
+  // 3. Create the (i) icon
   const icon = document.createElement('span');
   icon.className = 'parsed-tooltip-icon';
   icon.setAttribute('aria-label', `What is ${tip.title}?`);
   icon.setAttribute('role', 'tooltip');
   icon.setAttribute('tabindex', '0');
   icon.textContent = 'i';
-  icon.style.textTransform = 'lowercase';
 
+  // 4. Create the bubble
   const bubble = document.createElement('div');
   bubble.className = 'parsed-tooltip-bubble';
   bubble.innerHTML = `<div class="tip-title">${escHtml(tip.title)}</div>${escHtml(tip.body)}`;
 
+  // Assemble wrap DOM: [Label Text] [Icon] [Bubble]
+  wrap.appendChild(labelSpan);
   wrap.appendChild(icon);
   wrap.appendChild(bubble);
+
+  // Replace keyEl content with our wrap structure
+  keyEl.textContent = '';
   keyEl.appendChild(wrap);
 
-  // Position tooltip above the icon using getBoundingClientRect
+  // Simplified hover listeners (CSS controls position via top/left now)
   icon.addEventListener('mouseenter', () => {
-    // Show first so offsetHeight is measurable
     bubble.classList.add('visible');
-    const rect   = icon.getBoundingClientRect();
-    const bh     = bubble.offsetHeight || 120;
-    const bw     = bubble.offsetWidth  || 260;
-    const margin = 10;
-
-    // Prefer above; flip below if not enough room
-    let top = rect.top - bh - margin;
-    if (top < margin) top = rect.bottom + margin;
-
-    // Center on icon, clamp to viewport
-    let left = rect.left + rect.width / 2 - bw / 2;
-    left = Math.max(margin, Math.min(left, window.innerWidth - bw - margin));
-
-    bubble.style.top  = top  + 'px';
-    bubble.style.left = left + 'px';
   });
 
   icon.addEventListener('mouseleave', () => {
     bubble.classList.remove('visible');
   });
-
-  // Remove old native tooltip if present
-  const oldTip = keyEl.querySelector('.parsed-tip');
-  if (oldTip) oldTip.remove();
 }
 
 // ── Init ───────────────────────────────────────────────────

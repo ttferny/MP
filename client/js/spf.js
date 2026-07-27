@@ -402,30 +402,31 @@ function updateSpeedometer(lookups) {
 }
 
 // ── Scenarios Dataset ────────────────────────────────────────
+// Real-world SPF scenarios using live DNS lookups
 const scenarios = [
   {
-    key: 'google',
-    title: 'Major Provider',
-    note: 'Live DNS example. Result depends on the chosen IP.',
-    data: { domain: 'google.com', ip: '64.233.160.0' }
+    key: 'pass',
+    title: 'Legitimate Sender',
+    note: 'Authorized mail server passes SPF check.',
+    data: { domain: 'gmail.com', ip: '74.125.130.17' }
   },
   {
-    key: 'strict',
-    title: 'Strict -all Policy',
-    note: 'Domains like example.com publish -all for testing.',
+    key: 'softfail',
+    title: 'Softfail Policy',
+    note: '~all allows delivery but flags suspicious senders.',
+    data: { domain: 'google.com', ip: '1.2.3.4' }
+  },
+  {
+    key: 'fail1',
+    title: 'Hard Fail Policy',
+    note: '-all rejects unauthorized senders.',
     data: { domain: 'example.com', ip: '203.0.113.55' }
   },
   {
-    key: 'marketing',
-    title: 'Marketing Sender',
-    note: 'Try an ESP domain to see include chains.',
-    data: { domain: 'sendgrid.net', ip: '167.89.0.0' }
-  },
-  {
-    key: 'custom',
-    title: 'Your Own Domain',
-    note: 'Replace with any domain you want to test.',
-    data: { domain: 'example.org', ip: '203.0.113.99' }
+    key: 'fail2',
+    title: 'Include Chain Fail',
+    note: 'Complex SPF with include chain, unauthorized IP fails.',
+    data: { domain: 'outlook.com', ip: '1.2.3.4' }
   }
 ];
 

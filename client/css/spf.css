@@ -1810,28 +1810,7 @@ textarea { resize: vertical; }
 
 }
 
-.spf-tooltip-bubble,
-.parsed-tooltip-bubble {
-  position: fixed;
-  background: #0f172a;
-  border: 1px solid var(--border-strong);
-  border-radius: 10px;
-  padding: 12px 14px;
-  width: max-content;      /* hug the content... */
-  max-width: 240px;        /* ...but never grow past this */
-  font-size: 12.5px;
-  color: #f1f5f9;
-  line-height: 1.6;
-  white-space: normal;     /* force wrapping instead of one long line */
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  box-shadow: 0 12px 28px rgba(0,0,0,0.5);
-  z-index: 9999;
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.15s ease;
-}
+
 
 .spf-tooltip-bubble,
 .parsed-tooltip-bubble,
@@ -1847,12 +1826,25 @@ textarea { resize: vertical; }
 
 .spf-tooltip-bubble::before,
 .parsed-tooltip-bubble::before {
-  content: '';
-  position: fixed;
-  left: var(--arrow-left, 50%);
-  transform: translateX(-50%);
-  border: 6px solid transparent;
+  content: "" !important;
+  position: absolute !important;
+  bottom: 100% !important;
+  left: 20px !important;
+  /* Reset size and clip-path */
+  width: 0 !important;
+  height: -2px !important;
+  clip-path: none !important;
+  background-color: #0d1527 !important;
+  border-radius: 0 !important;
+
+  /* Draw Upward Triangle */
+  border-left: 6px solid transparent !important;
+  border-right: 6px solid transparent !important;
+  border-bottom: 8px solid #0d1527 !important; /* Color points UP from base */
+  border-top: 0 !important;
 }
+
+
 
 /* 1. Ensure the small card containers have a relative base position */
 .commercial-item,
@@ -1878,6 +1870,8 @@ textarea { resize: vertical; }
   z-index: 99999 !important;
 }
 
+
+
 .spf-tooltip-bubble.arrow-bottom::before,
 .parsed-tooltip-bubble.arrow-bottom::before {
   bottom: 100%;
@@ -1893,6 +1887,104 @@ textarea { resize: vertical; }
 .parsed-tooltip-wrap:hover .parsed-tooltip-bubble {
   opacity: 1;
   visibility: visible;
+}
+
+/* ── Tooltips — Anchored under field label ── */
+.parsed-field {
+  position: relative; /* Base anchor for rows */
+}
+
+.spf-tooltip-wrap,
+.parsed-tooltip-wrap {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.parsed-tooltip-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.parsed-tooltip-icon:hover {
+  z-index: 100 !important;
+}
+
+.spf-tooltip-icon,
+.parsed-tooltip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: help;
+  flex-shrink: 0;
+  text-transform: lowercase;
+}
+
+/* Tooltip Popup Box */
+.spf-tooltip-bubble,
+.parsed-tooltip-bubble {
+  position: absolute !important;
+  top: calc(100% + 8px) !important; /* Positions right under the element */
+  left: 0px !important;               /* Aligns with the left side */
+  transform: none !important;
+
+  background: #0d1527 !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 8px;
+  padding: 12px 14px;
+  width: max-content;
+  max-width: 280px;
+  font-size: 13px;
+  color: #f1f5f9 !important;
+  line-height: 1.5;
+  white-space: normal;
+  word-wrap: break-word;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  z-index: 99999 !important;
+  pointer-events: none;
+
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+
+/* Hover trigger */
+.spf-tooltip-wrap:hover .spf-tooltip-bubble,
+.parsed-tooltip-wrap:hover .parsed-tooltip-bubble,
+.spf-tooltip-bubble.visible,
+.parsed-tooltip-bubble.visible {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+
+
+/* Show tooltip when hovering over the ICON */
+.parsed-tooltip-icon:hover .parsed-tooltip-bubble {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+
+
+/* Row z-index lifting on hover so popups don't clip under sibling rows */
+.parsed-field:hover,
+.spf-tooltip-wrap:hover,
+.parsed-tooltip-wrap:hover {
+  z-index: 100;
 }
 
 .tip-title {
@@ -2037,20 +2129,10 @@ textarea { resize: vertical; }
 ================================================================ */
 
 /* Tooltip dark theme — spf-builder.html, spf-simulator.html */
-.spf-tooltip-bubble,
-.parsed-tooltip-bubble {
-  background: #111827 !important;
-  border: 1px solid #1e2d45 !important;
-  z-index: 999999 !important;
-  color: #e2e8f0 !important;
-  opacity: 1 !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.6), 0 0 0 1px #1e2d45 !important;
-}
+/* ── Tooltip Bubble Popup ── */
 
-.spf-tooltip-bubble::before,
-.parsed-tooltip-bubble::before {
-  background: #111827 !important;
-}
+
+
 
 /* explain-panel spacing — spf-builder.html */
 #explain-panel {
