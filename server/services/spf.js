@@ -250,19 +250,28 @@ async function evaluateMechanism(mech, senderIP, domain, dns, depth = 0, stats =
 
     // include — recursively evaluate another domain's SPF record
     // e.g. include:_spf.google.com means "also trust Google's approved servers"
+    // include — recursively evaluate another domain's SPF record
+    // e.g. include:_spf.google.com means "also trust Google's approved servers"
     case 'include': {
       if (!mechValue) return { matched: false, detail: 'Include missing domain' };
       logger.info(`SPF: following include → ${mechValue}`);
-      // Include is delegated trust: one domain can rely on another provider's
-      // SPF record without duplicating every allowed sender.
+      
       const includeResult = await evaluateSPFRecord(mechValue, senderIP, dns, depth + 1, stats, lookupRecordFn);
-      const matched = includeResult.result === SPF_RESULTS.PASS;
+      
+      // RFC 7208 §5.2: An include mechanism ONLY matches if the target domain evaluates to PASS.
+      // If it returns softfail/fail/neutral/none, the include mechanism is considered a NO-MATCH,
+      // and evaluation MUST continue to the next mechanism in the parent record.
+      if (includeResult.result === SPF_RESULTS.PASS) {
+        return {
+          matched: true,
+          result: qualifierToResult(qualifier), // Usually '+' -> PASS
+          detail: `Include ${mechValue} returned pass`,
+        };
+      }
+
       return {
-        matched,
-        result: qualifierToResult(qualifier),
-        detail: matched
-          ? `Include ${mechValue} returned pass`
-          : `Include ${mechValue} returned ${includeResult.result}`,
+        matched: false,
+        detail: `Include ${mechValue} returned ${includeResult.result} (no match)`,
       };
     }
 
@@ -353,6 +362,20 @@ async function evaluateSPFRecord(domain, senderIP, dns, depth = 0, stats = null,
       });
     }
     if (matched) {
+      // RFC 7208 §5.2: If we are inside an include (depth > 0) and we hit an 'all' mechanism,
+      // it means the IP was NOT explicitly matched in this included domain.
+      // Do NOT treat 'all' inside an include as an overall match!
+      if (depth > 0 && mech.mechName === 'all') {
+        return {
+          result: SPF_RESULTS.NEUTRAL,
+          reason: 'No explicit match in included domain',
+          record: spfRecord,
+          matchedMechanism: null,
+          trace: localStats.trace,
+          lookupCount: localStats.lookupCount,
+        };
+      }
+
       if (mech.mechName === 'redirect' && redirectResult) {
         logger.info(`SPF result: ${redirectResult.result} (redirect '${mech.raw}')`);
         return {
@@ -400,7 +423,18 @@ async function evaluateSPFRecord(domain, senderIP, dns, depth = 0, stats = null,
 //   { result, reason, record, matchedMechanism, domain, ip }
 // ─────────────────────────────────────────────
 async function checkSPF(parsed) {
-  const { envelopeDomain, senderIP } = parsed;
+  let { envelopeDomain, senderIP } = parsed;
+
+  // Dynamic fallback: If senderIP is a local/private IP or empty, 
+  // attempt to extract the external sending IP from raw auth results
+  if ((!senderIP || senderIP.startsWith('127.') || senderIP.startsWith('10.') || senderIP.startsWith('192.168.')) && parsed.authResultsRaw) {
+    const ipMatch = parsed.authResultsRaw.match(/designator\/ip\s*=\s*(\d{1,3}(?:\.\d{1,3}){3})/i) ||
+                    parsed.authResultsRaw.match(/client-ip=(\d{1,3}(?:\.\d{1,3}){3})/i);
+    if (ipMatch) {
+      senderIP = ipMatch[1];
+      logger.info(`[Dynamic SPF] Fallback to client-ip from auth headers: ${senderIP}`);
+    }
+  }
 
   // The route layer hands this function parsed headers so the story stays
   // simple: identify the sender, check policy, explain the result.

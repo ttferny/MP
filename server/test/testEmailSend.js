@@ -77,6 +77,14 @@ async function sendEmail(from, subject, authResults, returnPath) {
     'bounce@evil.com'
   );
 
+  // ✅ Test 6 — Legitimate TP Staff Email (Passing Alignment)
+  await sendEmail(
+    'staff@tp.edu.sg',
+    'Test 6: Legitimate TP Staff Email',
+    'spf=pass smtp.mailfrom=tp.edu.sg; dkim=pass header.d=tp.edu.sg',
+    'staff@tp.edu.sg'
+  );
+
   console.log('\nAll test emails sent.');
   console.log('Check GET http://localhost:3000/api/dmarc/smtp/latest for the last result.');
   console.log('Check the Reports tab on the website to see all logged results.');

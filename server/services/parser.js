@@ -149,6 +149,10 @@ function parseEmailHeader(rawHeader) {
   const returnPath = Array.isArray(headers['return-path'])
     ? headers['return-path'][0]
     : (headers['return-path'] || '');
+// Check Received-SPF or Authentication-Results if Return-Path is empty
+  const authResults = headers['authentication-results'] || '';
+  const spfHeaderMatch = authResults.match(/smtp\.mailfrom=([^\s;]+)/i);
+
   const envelopeFrom = extractEmail(returnPath);
   const envelopeDomain = extractDomain(envelopeFrom) || fromDomain;
   // Example: "Return-Path: <bounce@attacker.com>" → envelopeDomain = "attacker.com"
@@ -161,23 +165,56 @@ function parseEmailHeader(rawHeader) {
     ? headers['received']
     : headers['received'] ? [headers['received']] : [];
 
-  // Extract sender IP by scanning Received headers first, then fall back
-  // to Received-SPF or Authentication-Results if needed.
+  // ── Extract Sender IP dynamically ─────────────────────────
   const senderIP = (() => {
-    const extractIPv4 = (text = '') => {
-      const match = text.match(/\b(\d{1,3}(?:\.\d{1,3}){3})\b/);
-      return match ? match[1] : '';
+    const extractAllIPv4 = (text = '') => {
+      const matches = text.match(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g);
+      return matches || [];
     };
 
-    for (const line of receivedChain) {
-      const ip = extractIPv4(line);
-      if (ip) return ip;
+    const isPublicIP = (ip) => {
+      if (!ip) return false;
+      // Exclude loopback (127.x.x.x), private ranges (10.x, 172.16-31.x, 192.168.x), and 0.0.0.0
+      if (ip.startsWith('127.') || ip.startsWith('10.') || ip.startsWith('0.')) return false;
+      if (ip.startsWith('192.168.')) return false;
+      if (ip.startsWith('172.')) {
+        const parts = ip.split('.').map(Number);
+        if (parts[1] >= 16 && parts[1] <= 31) return false;
+      }
+      return true;
+    };
+
+    // 1. Check Authentication-Results or Received-SPF for explicit client-ip/designator IP
+    const authResults = Array.isArray(headers['authentication-results']) 
+      ? headers['authentication-results'].join(' ') 
+      : (headers['authentication-results'] || '');
+    const receivedSpf = Array.isArray(headers['received-spf']) 
+      ? headers['received-spf'].join(' ') 
+      : (headers['received-spf'] || '');
+
+    const explicitIpMatch = (authResults + ' ' + receivedSpf).match(/(?:client-ip|designator\/ip)=([0-9.]+)/i);
+    if (explicitIpMatch && isPublicIP(explicitIpMatch[1])) {
+      return explicitIpMatch[1];
     }
 
-    const receivedSpf = headers['received-spf'] || '';
-    const authResults = headers['authentication-results'] || '';
+    // 2. Extract IP from Received headers chain (bottom-to-top / oldest-to-newest hop)
+    const reversedChain = [...receivedChain].reverse();
+    for (const line of reversedChain) {
+      const ips = extractAllIPv4(line);
+      for (const ip of ips) {
+        if (isPublicIP(ip)) {
+          return ip;
+        }
+      }
+    }
 
-    return extractIPv4(receivedSpf) || extractIPv4(authResults) || '';
+    // 3. Fallback to any public IP found in auth headers
+    const fallbackIps = extractAllIPv4(authResults + ' ' + receivedSpf);
+    for (const ip of fallbackIps) {
+      if (isPublicIP(ip)) return ip;
+    }
+
+    return '';
   })();
   // This IP is what SPF will check against the domain's authorised server list.
 
@@ -216,6 +253,8 @@ function parseEmailHeader(rawHeader) {
     // Full raw headers (available for debugging or display in the UI)
     raw: headers,
   };
+
+  
 
   logger.info(`Header parsed — fromDomain: ${fromDomain}, envelopeDomain: ${envelopeDomain}, senderIP: ${senderIP}`);
   return parsed;
