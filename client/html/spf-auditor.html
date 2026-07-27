@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  spf.html — Live SPF Auditor (Presentation UI)
+  ============================================================
+
+  BUSINESS PITCH:
+  Demonstrates real-time SPF enforcement for any domain + sender IP.
+  Left panel = technical inputs and evaluation trace.
+  Right panel = business summary (risk, recommendation) and demo scenarios.
+  The production tool of the SPF suite. Enter a real domain +
+  sender IP (or upload an .eml) and it performs a LIVE SPF audit against DNS,
+  returning both a technical trace and a business risk summary.
+
+  TECHNICAL FLOW:
+  User enters domain/IP → spf.js POSTs /api/spf/check → spfRoutes.js → spf.js
+  → live DNS evaluation → trace + commercial summary rendered on page.
+
+  PITCH NOTE: This page deliberately speaks two languages at once — the left
+  panel is the engineer's evidence (record, includes, evaluation trace), the
+  right panel is the stakeholder's dashboard (status, risk score, next action).
+  All behaviour lives in spf.js, which calls the backend at /api/spf/check.
+
+  HANDOFF:
+  spf-builder.html links here with ?domain= for post-build verification.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' http://localhost:3000;">
+  <title>SPF Live Auditor - Email Authentication Studio</title>
+  <link rel="stylesheet" href="../css/spf.css">
+
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <!-- Branding and navigation: keeps the SPF auditor aligned with the rest of the studio. -->
+      <div class="logo">
+        <span class="logo-text">Email Authentication Studio</span>
+      </div>
+      <nav class="site-nav">
+        <a class="nav-link" href="spf.html">SPF Lab</a>
+        <a class="nav-link active" href="spf.html">SPF Lab</a>
+        <a class="nav-link" href="dmarc.html">DMARC Lab</a>
+        <a class="nav-link" href="dns-studio.html">DNS Automation</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <!-- PITCH: One-line value prop for slides — "live SPF check in seconds." -->
+    <h1>Live SPF Auditor</h1>
+    <p class="hero-sub">
+      Type a domain and sender IP to fetch the live SPF record, and review the evaluation trace.
+    </p>
+    
+  </section>
+
+  <main class="main-content">
+    <div class="layout-grid">
+      <!-- LEFT PANEL — Technical evaluation workspace
+           PITCH: "Here is exactly how the mail server decided pass or fail."
+           TECH: Inputs mirror MAIL FROM domain + connecting IP (RFC 7208). -->
+      <section class="stack left-panel">
+        <div class="card">
+          <!-- Policy Inputs: minimum fields to reproduce an SPF check -->
+          <div class="card-title">Policy Inputs</div>
+          <div class="form-grid">
+            <!-- Domain = envelope / Return-Path owner (not visible From:) -->
+            <label>
+              Domain
+              <input id="domain-input" type="text" placeholder="example.com" />
+            </label>
+            <!-- Sender IP = connecting MTA address from Received chain -->
+            <label>
+              Sender IP
+              <input id="ip-input" type="text" placeholder="203.0.113.55" />
+            </label>
+            <!-- Read-only: live v=spf1 TXT fetched from public DNS -->
+            <label class="full">
+              SPF Record
+              <textarea id="record-input" rows="3" placeholder="Live SPF record will appear here" readonly></textarea>
+            </label>
+            <!-- Read-only: resolved include:/redirect: child records (lookup budget) -->
+            <label class="full">
+              Include Records (resolved)
+              <textarea id="include-input" rows="3" placeholder="Include lookups appear here" readonly></textarea>
+            </label>
+          </div>
+
+          <!-- Optional: upload .eml/.txt to auto-fill domain + IP from headers -->
+          <div class="upload-panel">
+            <div class="upload-label">Upload saved email file</div>
+            <div class="upload-hint">Accepts .eml or .txt with headers and body.</div>
+            <label class="upload-drop" for="email-file-input">
+              <span>Choose file</span>
+              <input id="email-file-input" type="file" accept=".eml,.txt,message/rfc822,text/plain" />
+            </label>
+            <div id="upload-status" class="upload-status">No file selected.</div>
+          </div>
+
+          <div class="actions">
+            <!-- Triggers evaluateSpf() in spf.js → POST /api/spf/check -->
+            <button id="evaluate-btn" class="btn-primary">Evaluate SPF</button>
+            <button id="reset-btn" class="btn-secondary">Clear</button>
+          </div>
+          <div class="helper-text"></div>
+        </div>
+
+        <div class="card result-card-panel">
+          <!-- SPF verdict badge + expandable mechanism trace (presentation centerpiece) -->
+          <div class="section-header">
+            <div>
+              <div class="card-title">SPF Result</div>
+              <div class="card-hint">Technical step-by-step trace mechanism.</div>
+            </div>
+            <span id="result-badge" class="result-badge neutral">NEUTRAL</span>
+          </div>
+
+          <div class="auth-accordion">
+            <div class="accordion-item">
+              <button type="button" class="accordion-trigger" data-target="spf-panel">
+                <span>Evaluation Trace</span>
+                <span class="accordion-meta">
+                  <span class="accordion-icon">▾</span>
+                </span>
+              </button>
+              <div id="spf-panel" class="accordion-panel hidden">
+                <div class="result-row">
+                  
+                  <div id="result-summary" class="result-summary">Run an evaluation to see the decision.</div>
+                </div>
+                <div id="trace-list" class="trace"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT PANEL — Business narrative + guided learning
+           PITCH: Risk score and recommendation for non-technical stakeholders. -->
+      <section class="stack right-panel">
+        <div class="card scenario-card-panel">
+          <!-- One-click demo presets (Google, example.com, SendGrid, custom) -->
+          <div class="card-title">Quick Scenarios</div>
+          <div class="card-hint">Pick a preset to preload the auditor with a real-world sender and domain.</div>
+          <div class="scenario-grid" id="scenario-grid"></div>
+          <div class="scenario-note" id="scenario-note">Select a scenario to preload data.</div>
+        </div>
+
+        <div class="card commercial-card">
+          <!-- Maps technical SPF result → Authorised / Suspicious / Not Authorised -->
+          <div class="card-title">Live Policy Summary</div>
+          <div class="commercial-grid">
+            <div class="commercial-item">
+              <span class="commercial-label">Status</span>
+              <span id="commercial-status" class="commercial-value">Awaiting evaluation</span>
+            </div>
+            <div class="commercial-item">
+              <span class="commercial-label">Risk score</span>
+              <span id="commercial-risk" class="commercial-value">—</span>
+            </div>
+            <div class="commercial-item">
+              <span class="commercial-label">Recommendation</span>
+              <span id="commercial-recommendation" class="commercial-value">Run the auditor to see guidance.</span>
+            </div>
+            <div class="commercial-item">
+              <span class="commercial-label">Business impact</span>
+              <span id="commercial-impact" class="commercial-value">—</span>
+            </div>
+          </div>
+
+          <div class="commercial-policy">
+            <div class="commercial-policy-title"></div>
+            <div id="policy-summary-text" class="policy-summary-text"></div>
+          </div>
+
+          <div class="commercial-highlights" id="commercial-highlights"></div>
+        </div>
+
+        <div class="card auth-dropdown how-works-card">
+          <!-- Slide-ready 5-step SPF narrative; links to DMARC as next layer -->
+          <div class="ai-header">
+            <div>
+              <div class="ai-title">How SPF Works</div>
+              <div class="ai-subtitle"></div>
+            </div>
+          </div>
+
+          <div class="auth-accordion">
+            <div class="accordion-item">
+              <button type="button" class="accordion-trigger" data-target="howworks-panel">
+                <span>Open Steps</span>
+                <span class="accordion-meta">
+                  <span class="accordion-icon">▾</span>
+                </span>
+              </button>
+              <div id="howworks-panel" class="accordion-panel hidden">
+                <ol class="steps">
+                  <!-- Step 1: envelope domain (Return-Path), not From: header -->
+                  <li>Mail server extracts the <strong>envelope domain</strong> from <strong>Return-Path</strong>.</li>
+                  <!-- Step 2: TXT lookup at domain root -->
+                  <li>It fetches the <strong>SPF record</strong> from <strong>DNS</strong> (<strong>TXT record</strong>).</li>
+                  <!-- Step 3: first-match-wins mechanism walk -->
+                  <li>Each <strong>mechanism</strong> is tested in order until one matches.</li>
+                  <!-- Step 4: qualifier on matched mechanism (+ - ~ ?) -->
+                  <li>The matching <strong>qualifier</strong> decides the result (<strong>pass</strong>, <strong>fail</strong>, <strong>softfail</strong>, <strong>neutral</strong>).</li>
+                  <!-- Step 5: implicit neutral if no mechanism matches -->
+                  <li>If nothing matches, the result is <strong>neutral</strong>.</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div>Email Authentication Studio — SPF Live Auditor</div>
+    <div>Temasek Polytechnic · Diploma in Cybersecurity and Digital Forensics · AY26/27</div>
+  </footer>
+
+  <script src="../js/spf.js"></script>
+</body>
+</html>
