@@ -35,7 +35,7 @@
 //   *Banner                   — what the recipient's inbox would show
 // TECH: softSteps/hardSteps mirror buildTimelineSteps() in spfRoutes.js.
 // ─────────────────────────────────────────────
-const scenarios = [
+const simulatorScenarios = [
   {
     key: 'approved',
     label: 'Approved email server',
@@ -322,6 +322,28 @@ const nodes = {
   insight: document.getElementById('insight-text')
 };
 
+function getNode(id) {
+  return document.getElementById(id) || document.querySelector(`[id="${id}"]`);
+}
+
+function refreshNodeRefs() {
+  nodes.scenarioTabs = getNode('scenario-tabs');
+  nodes.targetDomain = getNode('target-domain');
+  nodes.attackerIP = getNode('attacker-ip');
+  nodes.runButton = getNode('run-simulation');
+  nodes.resetButton = getNode('reset-simulation');
+  nodes.summary = getNode('simulation-summary');
+  nodes.emailPreview = getNode('email-preview');
+  nodes.spfResultBar = getNode('spf-result-bar');
+  nodes.softSteps = getNode('steps-soft');
+  nodes.hardSteps = getNode('steps-hard');
+  nodes.softView = getNode('view-soft');
+  nodes.hardView = getNode('view-hard');
+  nodes.softVerdict = getNode('verdict-soft');
+  nodes.hardVerdict = getNode('verdict-hard');
+  nodes.insight = getNode('insight-text');
+}
+
 // UI state: which scenario tab and which glossary chip are currently selected.
 let activeScenario = 0;
 let activeChip = recordChips[0].token;
@@ -355,7 +377,7 @@ function getBadgeClass(tag) {
 }
 
 function renderScenarioTabs() {
-  nodes.scenarioTabs.innerHTML = scenarios.map((scenario, index) => `
+  nodes.scenarioTabs.innerHTML = simulatorScenarios.map((scenario, index) => `
     <button class="scenario-tab ${index === activeScenario ? 'active' : ''}" data-index="${index}">
       <span class="scenario-name">${scenario.label}</span>
       <span class="scenario-tag ${getBadgeClass(scenario.tag)}">${scenario.tag}</span>
@@ -366,7 +388,7 @@ function renderScenarioTabs() {
     button.addEventListener('click', () => {
       activeScenario = Number(button.dataset.index);
       renderScenarioTabs();
-      populateInputs(scenarios[activeScenario]);
+      populateInputs(simulatorScenarios[activeScenario]);
     });
   });
 }
@@ -413,7 +435,7 @@ function row(label, value) {
 // the inbox/terminal views, and the closing "key insight" — the money shot
 // that contrasts the two enforcement levels for the audience.
 function renderSimulation() {
-  const scenario = scenarios[activeScenario];
+  const scenario = simulatorScenarios[activeScenario];
 
   nodes.summary.textContent = scenario.description;
   nodes.spfResultBar.innerHTML = `
@@ -580,18 +602,45 @@ function initQuiz() {
 // ─────────────────────────────────────────────────────────────
 // EVENT WIRING + INITIAL RENDER (runs on page load)
 // ─────────────────────────────────────────────────────────────
-// "Run simulation" re-paints the current scenario; "Reset" restores its defaults.
-nodes.runButton.addEventListener('click', () => {
-  renderSimulation();
-});
+function initSimulatorUI() {
+  refreshNodeRefs();
 
-nodes.resetButton.addEventListener('click', () => {
-  populateInputs(scenarios[activeScenario]);
-});
+  if (!nodes.scenarioTabs || !nodes.summary || !nodes.emailPreview || !nodes.spfResultBar) {
+    window.setTimeout(initSimulatorUI, 100);
+    return;
+  }
 
-// Bootstrap the page: tabs → load first scenario → glossary → scroll-spy nav.
-renderScenarioTabs();
-populateInputs(scenarios[activeScenario]);
-renderChips();
-renderChipDetail();
-initNavHighlight();
+  if (nodes.runButton) {
+    nodes.runButton.addEventListener('click', () => {
+      renderSimulation();
+    });
+  }
+
+  if (nodes.resetButton) {
+    nodes.resetButton.addEventListener('click', () => {
+      populateInputs(simulatorScenarios[activeScenario]);
+    });
+  }
+
+  renderScenarioTabs();
+  populateInputs(simulatorScenarios[activeScenario]);
+  renderChips();
+  renderChipDetail();
+  initNavHighlight();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initSimulatorUI);
+} else {
+  initSimulatorUI();
+}
+
+window.addEventListener('load', () => {
+  refreshNodeRefs();
+  if (nodes.scenarioTabs && nodes.summary && nodes.emailPreview && nodes.spfResultBar) {
+    renderScenarioTabs();
+    populateInputs(simulatorScenarios[activeScenario]);
+    renderChips();
+    renderChipDetail();
+  }
+});

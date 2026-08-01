@@ -41,7 +41,9 @@ const spfStatusBadge         = document.getElementById('spf-status-badge');
 const scenarioGrid = document.getElementById('scenario-grid');
 const scenarioNote = document.getElementById('scenario-note');
 
-const accordionTriggers = document.querySelectorAll('.accordion-trigger');
+const accordionTriggers = (document.getElementById('tab-auditor')
+  ? document.querySelectorAll('#tab-auditor .accordion-trigger')
+  : document.querySelectorAll('.accordion-trigger'));
 
 accordionTriggers.forEach((trigger) => {
   const panelId = trigger.dataset.target;
@@ -343,32 +345,24 @@ document.head.appendChild(style);
 
 // ── Dynamic Speedometer Component ───────────────────────────
 function injectSpeedometerDOM() {
-  const resultCard = document.querySelector('.result-card');
-  if (!resultCard) return;
   if (document.getElementById('spf-speedometer')) return;
+
+  const resultCard = document.querySelector('.result-card-panel') || document.querySelector('.result-card') || document.querySelector('.card');
+  if (!resultCard) return;
 
   const speedoWrapper = document.createElement('div');
   speedoWrapper.id = 'spf-speedometer';
-  speedoWrapper.style.cssText = 'margin: 16px 0; padding: 12px; background: var(--bg-strong); border: 1px solid var(--border); border-radius: 12px;';
 
-  speedoWrapper.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; margin-bottom: 6px;">
-      <span id="speedo-label-wrap" style="color: var(--muted); font-weight: 600;">10 DNS Lookup Speedometer</span>
-      <span id="speedo-count" style="font-weight: 700; color: var(--ink);">0 / 10</span>
-    </div>
-    <div style="background: var(--border); height: 10px; border-radius: 999px; overflow: hidden; position: relative; width: 100%;">
-      <div id="speedo-fill" style="height: 100%; width: 0%; background: var(--success); transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;"></div>
-    </div>
-    <div id="speedo-alert" style="display: none; margin-top: 10px; padding: 8px 12px; background: rgba(185,28,28,0.08); border: 1px solid rgba(185,28,28,0.3); color: var(--danger); border-radius: 8px; font-size: 0.78rem; font-weight: 600; text-align: center; font-family: 'JetBrains Mono', monospace;">
-      ⚠️ SPF PermError: Too many DNS lookups
-    </div>
-  `;
+  
 
-  resultCard.insertBefore(speedoWrapper, traceList);
+  const insertTarget = resultCard.querySelector('.section-header') || resultCard.firstElementChild;
+  if (insertTarget) {
+    resultCard.insertBefore(speedoWrapper, insertTarget);
+  } else {
+    resultCard.appendChild(speedoWrapper);
+  }
 
-  // Attach tooltip to the speedometer label after injecting into DOM
   const labelEl = document.getElementById('speedo-label-wrap');
-  const countEl = document.getElementById('speedo-count');
   if (labelEl && TOOLTIPS['speedo-count']) {
     attachTooltipInline(labelEl, TOOLTIPS['speedo-count']);
   }

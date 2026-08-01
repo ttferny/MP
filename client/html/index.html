@@ -17,10 +17,7 @@
         <span class="logo-text">Email Authentication Studio</span>
       </div>
       <nav class="site-nav">
-        <a class="nav-link active" href="index.html">Authenticator</a>
-        <a class="nav-link" href="spf.html">SPF Auditor</a>
-        <a class="nav-link" href="spf-builder.html">SPF Builder</a>
-        <a class="nav-link" href="spf-simulator.html">SPF Simulator</a>
+        <a class="nav-link active" href="index.html">SPF Lab</a>
         <a class="nav-link" href="dmarc.html">DMARC Lab</a>
         <a class="nav-link" href="dns-studio.html">DNS Automation</a>
         <a class="nav-link" href="dns-manager.html" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 4px; padding: 6px 12px;">🌐 DNS Manager</a>
@@ -29,13 +26,19 @@
   </header>
 
   <section class="hero">
-    <h1>Header Parser + SPF, DKIM, and DMARC</h1>
+    <h1>SPF Lab</h1>
     <p class="hero-sub">
-      Paste a raw email header to extract key fields and evaluate authentication.
-      Results are powered by live DNS and policy checks.
+      Everything you need to check, validate, enforce, and learn SPF policy
     </p>
   </section>
 
+<div class="container">
+  <div class="tab-nav" role="tablist" aria-label="SPF tools">
+    <button class="tab-btn active" type="button" onclick="window.location.href='index.html'">Authenticator</button>
+    <button class="tab-btn" data-tab="auditor" onclick="window.location.href='spf.html'">SPF Auditor</button>
+    <button class="tab-btn" data-tab="builder" onclick="window.location.href='spf-builder.html'">SPF Builder</button>
+    <button class="tab-btn" data-tab="simulator" onclick="window.location.href='spf-simulator.html'">SPF Simulator</button>
+  </div>
   <main class="main-content">
     <div class="layout-grid-new">
 
@@ -45,7 +48,7 @@
         <section class="stack left-panel">
           <div class="card">
             <h2 class="card-title">Parsed Header Fields</h2>
-            <p class="card-hint">Key values extracted by the parser.</p>
+            <p class="card-hint"></p>
 
             <div class="demo-buttons">
               <span class="demo-label">Guided examples:</span>
@@ -161,6 +164,7 @@
     <p>Temasek Polytechnic · Diploma in Cybersecurity and Digital Forensics · AY26/27</p>
     <p>Email Authentication Studio - Academic POC</p>
   </footer>
+</div>
 
   <script src="../js/script.js"></script>
 </body>

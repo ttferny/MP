@@ -32,7 +32,12 @@ const SERVICES = [
   { id: 'sparkpost',  name: 'SparkPost',        include: 'sparkpostmail.com',          lookups: 2 },
 ];
 
-document.querySelectorAll('.accordion-trigger').forEach((trigger) => {
+const builderAccordionRoot = document.getElementById('tab-builder');
+const builderAccordionTriggers = builderAccordionRoot
+  ? builderAccordionRoot.querySelectorAll('.accordion-trigger')
+  : document.querySelectorAll('.accordion-trigger');
+
+builderAccordionTriggers.forEach((trigger) => {
   const panelId = trigger.dataset.target;
   const panel = document.getElementById(panelId);
   const item = trigger.closest('.accordion-item');
