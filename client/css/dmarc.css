@@ -131,6 +131,32 @@ header:not(.site-header) { margin-bottom: 0; }
   box-shadow: 0 0 0 1px var(--accent);
 }
 
+/* First-time-visitor starting point — makes one card stand out among
+   13 equally-weighted options instead of leaving the choice flat. */
+.scenario-card.recommended {
+  border-color: var(--accent);
+  border-left-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 24px rgba(56,189,248,0.12);
+}
+.scenario-card.recommended:hover {
+  box-shadow: 0 0 0 1px var(--accent), 0 0 28px rgba(56,189,248,0.18);
+}
+
+.start-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(56,189,248,0.12);
+  border: 1px solid rgba(56,189,248,0.3);
+  border-radius: 4px;
+  padding: 2px 8px;
+  margin-top: 6px;
+}
+
 .scenario-icon { font-size: 24px; }
 .scenario-name { font-family: var(--sans); font-size: 15px; font-weight: 600; color: var(--text); }
 
@@ -294,6 +320,21 @@ select:focus, input:focus {
 .tab-nav {
   display: flex; gap: 8px; margin-bottom: 20px;
   border-bottom: 2px solid var(--border);
+  position: relative;
+}
+
+/* Fade hint that more tabs are scrollable off the right edge —
+   only relevant once .tab-nav scrolls horizontally (see mobile query below).
+   Pinned to the scrollport rather than the content, so it stays visible
+   as the user scrolls the tab strip. */
+.tab-nav::after {
+  content: '';
+  display: none;
+  position: absolute;
+  top: 0; right: 0; bottom: 2px;
+  width: 32px;
+  background: linear-gradient(to right, transparent, var(--bg) 80%);
+  pointer-events: none;
 }
 
 .tab-btn {
@@ -310,6 +351,7 @@ select:focus, input:focus {
   margin-bottom: -2px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .tab-btn:hover {
@@ -558,6 +600,15 @@ textarea:focus {
   
   .tab-nav {
     overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .tab-btn {
+    flex-shrink: 0;
+  }
+
+  .tab-nav::after {
+    display: block;
   }
 }
 
@@ -816,7 +867,7 @@ textarea:focus {
   max-width: 1600px;
   margin: 0 auto;
   padding: 0 20px;
-  height: 60px;
+  min-height: 60px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -829,6 +880,7 @@ textarea:focus {
   font-weight: 700;
   letter-spacing: 0.05em;
   color: var(--accent);
+  white-space: nowrap;
 }
 
 .site-nav {
@@ -836,6 +888,24 @@ textarea:focus {
   align-items: center;
   gap: 4px;
   flex-wrap: wrap;
+}
+
+/* Below this width the logo + full nav no longer fit on one row —
+   let the header grow in height and wrap onto two rows instead of
+   letting the logo text wrap and collide with the nav links. */
+@media (max-width: 640px) {
+  .header-inner {
+    flex-wrap: wrap;
+    padding: 10px 16px;
+    gap: 6px 10px;
+  }
+  .logo-text {
+    font-size: 11px;
+  }
+  .site-nav {
+    width: 100%;
+    gap: 6px;
+  }
 }
 
 .nav-link {
@@ -865,11 +935,16 @@ textarea:focus {
   background: rgba(56,189,248,0.08);
 }
 
+/* Same visual weight as any other nav link — a different tool doesn't
+   need to out-compete the page's own primary action for attention. */
 .nav-link.featured {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 4px;
-  padding: 6px 12px;
+  color: var(--accent2);
+  border-color: rgba(167,139,250,0.25);
+}
+.nav-link.featured:hover {
+  color: var(--accent2);
+  border-color: rgba(167,139,250,0.4);
+  background: rgba(167,139,250,0.06);
 }
 
 /* ===================== PLAIN-ENGLISH TOOLTIPS ===================== */
