@@ -61,6 +61,28 @@ function updateUploadUI(file) {
   analyzeBtn.disabled = false;
 }
 
+// Fetches the bundled example report from the server and runs it through
+// the same analyze flow, for anyone who doesn't have a real report yet.
+async function loadSampleReport() {
+  hideError();
+  try {
+    const response = await fetch('/api/dmarc/sample-report');
+    if (!response.ok) throw new Error('Could not load sample report');
+
+    const xmlText = await response.blob();
+    const sampleFile = new File([xmlText], 'sample_dmarc_report.xml', { type: 'application/xml' });
+
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(sampleFile);
+    fileInput.files = dataTransfer.files;
+
+    updateUploadUI(sampleFile);
+    analyzeReport();
+  } catch (err) {
+    showError('Could not load sample report: ' + err.message);
+  }
+}
+
 async function analyzeReport() {
   if (!fileInput.files.length) {
     showError('No file selected');

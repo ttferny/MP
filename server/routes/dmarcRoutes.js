@@ -10,7 +10,8 @@ const multer = require('multer');
 
 const { evaluateDMARC }                = require('../services/dmarc');
 const { getAllScenarios, getScenario } = require('../services/scenarioService');
-const { auditDMARC }                   = require('../services/dmarcAuditor');
+const { auditDMARC, parseDMARCRecord } = require('../services/dmarcAuditor');
+const { parseEmailHeader }             = require('../services/parser');
 const {
   logDMARCResult,
   getReports,
@@ -272,6 +273,151 @@ router.post('/smtp/send-test', async (req, res) => {
 // SECTION 5 — DMARC XML REPORT ANALYZER (NEW)
 // Uploads and analyzes DMARC XML aggregate reports
 // ─────────────────────────────────────────────────────────────
+
+// GET /api/dmarc/sample-report
+// Returns the bundled example DMARC aggregate report (sample_dmarc_report.xml
+// at the project root) so users have something real to test the Analyzer
+// with before they have an actual report from their own domain.
+router.get('/sample-report', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  const samplePath = path.join(__dirname, '../../sample_dmarc_report.xml');
+  fs.readFile(samplePath, 'utf-8', (err, data) => {
+    if (err) return res.status(404).json({ error: 'Sample report not found' });
+    res.set('Content-Type', 'application/xml');
+    res.send(data);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 6 — TEST YOUR OWN EMAIL
+// Lets a user paste a suspicious email they found (or just the
+// sender details, if that's all they have) and see how DMARC
+// would treat it. Uses the same "structural heuristic" SPF/DKIM
+// approach as the live SMTP monitor (smtpReceiver.js) — matching
+// envelope-vs-From domain for SPF, presence of a DKIM-Signature
+// for DKIM — since real cryptographic verification of an email
+// found elsewhere isn't possible from pasted text alone.
+// ─────────────────────────────────────────────────────────────
+
+// Small edit-distance helper — used to flag lookalike domains
+// e.g. "paypa1.com" vs "paypal.com" → distance 1
+function levenshteinDistance(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]);
+    }
+  }
+  return dp[m][n];
+}
+
+// POST /api/dmarc/test-email
+// Body: { mode: 'raw', rawSource } — full pasted email source (headers + body)
+//    or { mode: 'simple', fromAddress, claimedDomain? } — just the visible sender
+router.post('/test-email', async (req, res) => {
+  const { mode } = req.body;
+
+  try {
+    if (mode === 'raw') {
+      const rawSource = (req.body.rawSource || '').trim();
+      if (!rawSource) {
+        return res.status(400).json({ error: 'Paste the raw email source first.' });
+      }
+
+      let parsed;
+      try {
+        parsed = parseEmailHeader(rawSource);
+      } catch (e) {
+        return res.status(400).json({ error: "Couldn't read that as an email. Make sure you've pasted the header lines (From:, Received:, etc.), not just the message text." });
+      }
+
+      if (!parsed.fromDomain) {
+        return res.status(400).json({ error: "Couldn't find a From: address in what you pasted." });
+      }
+
+      const dmarcRaw = await lookupDMARCRecord(parsed.fromDomain);
+      const dmarcParsed = parseDMARCRecord(dmarcRaw) || {
+        policy: null, fromDomain: parsed.fromDomain, pct: 100, aspf: 'r', adkim: 'r', sp: null
+      };
+      dmarcParsed.fromDomain = parsed.fromDomain;
+
+      // Same structural heuristic used by the live SMTP monitor —
+      // we can't cryptographically verify an email found elsewhere,
+      // so we check whether the visible identity lines up structurally.
+      const spfDomain  = parsed.envelopeDomain || parsed.fromDomain;
+      const spf        = { status: spfDomain === parsed.fromDomain ? 'pass' : 'fail', domain: spfDomain };
+      const dkimDomain = parsed.dkimSignature?.d || '';
+      const dkim        = { status: dkimDomain ? 'pass' : 'fail', domain: dkimDomain };
+
+      const result = evaluateDMARC(spf, dkim, dmarcParsed);
+
+      logDMARCResult(result, 'test-your-own-email');
+
+      return res.json({
+        ...result,
+        fromDomain: parsed.fromDomain,
+        heuristic: true,
+        email: {
+          from:           parsed.fromEmail,
+          subject:        parsed.subject || '(no subject)',
+          fromDomain:     parsed.fromDomain,
+          envelopeDomain: parsed.envelopeDomain,
+          spfDomain,
+          dkimDomain,
+          hasDKIM:        !!dkimDomain,
+          receivedAt:     new Date().toISOString()
+        }
+      });
+    }
+
+    if (mode === 'simple') {
+      const fromAddress   = (req.body.fromAddress || '').trim();
+      const claimedDomain = (req.body.claimedDomain || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+
+      if (!fromAddress || !fromAddress.includes('@')) {
+        return res.status(400).json({ error: "Enter the sender's email address, e.g. security@paypal.com" });
+      }
+
+      const fromDomain = fromAddress.split('@')[1].toLowerCase();
+      let lookalikeWarning = false;
+      let editDistance = null;
+      let domainsMatch = null;
+
+      if (claimedDomain) {
+        domainsMatch = fromDomain === claimedDomain;
+        if (!domainsMatch) {
+          editDistance = levenshteinDistance(fromDomain, claimedDomain);
+          lookalikeWarning = editDistance > 0 && editDistance <= 3;
+        }
+      }
+
+      const targetDomain = claimedDomain || fromDomain;
+      const dmarcRaw = await lookupDMARCRecord(targetDomain);
+      const officialDomainAudit = auditDMARC(dmarcRaw, targetDomain);
+
+      return res.json({
+        mode: 'simple',
+        fromAddress,
+        fromDomain,
+        claimedDomain: claimedDomain || null,
+        domainsMatch,
+        lookalikeWarning,
+        editDistance,
+        officialDomainAudit
+      });
+    }
+
+    return res.status(400).json({ error: "mode must be 'raw' or 'simple'" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // POST /api/dmarc/upload
 // Uploads a DMARC XML report and parses it

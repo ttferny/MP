@@ -37,11 +37,11 @@
 
     <!-- Tab Navigation -->
     <div class="tab-nav">
-      <button class="tab-btn active" onclick="switchTab('scenarios')">Try an Attack</button>
-      <button class="tab-btn" onclick="switchTab('audit')">Check a Domain</button>
-      <button class="tab-btn" onclick="switchTab('monitor')">Watch it Live</button>
-      <button class="tab-btn" onclick="switchTab('reports')">Reports</button>
-      <button class="tab-btn" onclick="switchTab('analyzer')">Analyse Reports</button>
+      <button class="tab-btn active" data-tab="scenarios" onclick="switchTab('scenarios')">Try an Attack</button>
+      <button class="tab-btn" data-tab="audit" onclick="switchTab('audit')">Check a Domain</button>
+      <button class="tab-btn" data-tab="monitor" onclick="switchTab('monitor')">Watch it Live</button>
+      <button class="tab-btn" data-tab="reports" onclick="switchTab('reports')">Reports</button>
+      <button class="tab-btn" data-tab="analyzer" onclick="switchTab('analyzer')">Analyse Reports</button>
     </div>
 
     <!-- ===================== SCENARIOS TAB ===================== -->
@@ -519,50 +519,48 @@
         </div>
       </div>
 
-      <!-- Live result card — updated by pollMonitor() every 3 seconds -->
-      <div class="card" id="monitor-result" style="display:none">
-        <div class="card-title">Latest Email Result</div>
+      <!-- Live result card — content is fully rendered by renderMonitorResult() in dmarc_ui.js,
+           including the verdict banner, detail chips, and step-by-step pipeline. -->
+      <div class="card" id="monitor-result" style="display:none"></div>
 
-        <div id="monitor-email-info" style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:16px; font-family:var(--mono); font-size:13px; line-height:1.8;"></div>
+      <!-- Test Your Own Email — paste a suspicious email found online, or just its sender details -->
+      <div class="card">
+        <div class="card-title">Test Your Own Email</div>
+        <p style="color:var(--muted); font-size:14px; margin-bottom:16px;">
+          Found a suspicious email online or in your own inbox? Paste it in below to see how DMARC would treat it.
+        </p>
 
-        <div class="verdict-badge" id="monitor-verdict-badge">
-          <span class="verdict-icon" id="monitor-verdict-icon"></span>
-          <span id="monitor-verdict-text"></span>
+        <div class="scenarios" style="margin-bottom:16px;">
+          <button class="scenario-btn" id="test-mode-btn-raw" style="border-color:var(--accent); color:var(--accent);" onclick="setTestEmailMode('raw')">Paste Raw Email</button>
+          <button class="scenario-btn" id="test-mode-btn-simple" onclick="setTestEmailMode('simple')">I Only Have the Basic Details</button>
         </div>
 
-        <div class="result-details">
-          <div class="detail-chip">
-            <div class="chip-label">Status</div>
-            <div class="chip-value" id="monitor-status-chip"></div>
+        <div id="test-email-raw-section">
+          <div class="form-group" style="margin-bottom:12px;">
+            <label>Raw Email Source<span class="info-tip" tabindex="0" data-tip="In Gmail: open the email, click the ⋮ menu, choose 'Show original', then copy everything. In Outlook: File → Properties → Internet headers. Paste the whole thing, headers included."></span></label>
+            <textarea id="test-email-raw" rows="8" placeholder="Paste the full raw email here — including the headers (From:, Received:, DKIM-Signature:, etc.), not just the visible message text." style="width:100%; resize:vertical; font-size:12px;"></textarea>
+            <span class="field-hint">We need the headers, not just the visible message, to check SPF/DKIM/DMARC</span>
           </div>
-          <div class="detail-chip">
-            <div class="chip-label">Action</div>
-            <div class="chip-value" id="monitor-action-chip"></div>
-          </div>
-          <div class="detail-chip">
-            <div class="chip-label">Policy</div>
-            <div class="chip-value" id="monitor-policy-chip"></div>
-          </div>
-          <div class="detail-chip">
-            <div class="chip-label">Risk Score<span class="info-tip" tabindex="0" data-tip="A 0-100 score estimating how dangerous this email is. Higher means more suspicious."></span></div>
-            <div class="chip-value" id="monitor-risk-chip"></div>
-          </div>
+          <button class="btn-evaluate" onclick="testRawEmail()">Test This Email</button>
         </div>
 
-        <div class="reason-box" id="monitor-reason"></div>
-
-        <div class="alignment-row">
-          <div class="align-chip">
-            <div class="align-dot" id="monitor-spf-dot"></div>
-            <span id="monitor-spf-text">SPF Alignment</span>
-            <span class="info-tip" tabindex="0" data-tip="SPF checks whether the email came from a server the domain owner approved. Aligned means yes, this is a trusted server."></span>
+        <div id="test-email-simple-section" style="display:none">
+          <div class="policy-row" style="margin-bottom:12px;">
+            <div class="form-group">
+              <label>Sender Address Shown</label>
+              <input id="test-email-from" type="text" placeholder="e.g. security@paypa1-secure.com">
+              <span class="field-hint">The From: address as it appeared to you</span>
+            </div>
+            <div class="form-group">
+              <label>Real Company Domain — optional<span class="info-tip" tabindex="0" data-tip="The company's actual, official domain, e.g. paypal.com. We'll compare it against the sender address and check the real company's DMARC protection."></span></label>
+              <input id="test-email-claimed-domain" type="text" placeholder="e.g. paypal.com">
+              <span class="field-hint">Without headers we can't verify SPF/DKIM — this gives a best-effort check instead</span>
+            </div>
           </div>
-          <div class="align-chip">
-            <div class="align-dot" id="monitor-dkim-dot"></div>
-            <span id="monitor-dkim-text">DKIM Alignment</span>
-            <span class="info-tip" tabindex="0" data-tip="DKIM is a digital signature on the email proving it wasn't altered and really came from who it claims. Aligned means the signature checks out."></span>
-          </div>
+          <button class="btn-evaluate" onclick="testSimpleEmail()">Check This Sender</button>
         </div>
+
+        <div id="test-email-result" style="margin-top:20px;"></div>
       </div>
     </div><!-- end tab-monitor -->
 
@@ -602,7 +600,10 @@
             <p>or <button type="button" class="link-btn" id="fileSelectBtn">click to browse</button></p>
             <input type="file" id="fileInput" accept=".xml" style="display: none;">
           </div>
-          <button id="analyzeBtn" class="analyze-btn" disabled>Analyze Report</button>
+          <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+            <button id="analyzeBtn" class="analyze-btn" disabled>Analyze Report</button>
+            <button type="button" class="btn-secondary" id="loadSampleBtn" onclick="loadSampleReport()" style="margin:0;">Don't have one? Load a Sample Report</button>
+          </div>
         </div>
 
         <!-- Progress Indicator -->
@@ -757,23 +758,60 @@
   <script src="../js/dmarc_ui.js"></script>
   <script src="../js/dmarc_analyzer.js"></script>
   <script>
-    function switchTab(tabName) {
-  // Remove active class from all tab divs AND hide them
-  document.querySelectorAll('.tab-content').forEach(t => {
-    t.style.display = 'none';
-    t.classList.remove('active');
-  });
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    // Maps internal tab keys to the readable ?tab= name shown in the URL
+    const tabUrlNames = {
+      scenarios: 'try_an_attack',
+      audit:     'check_a_domain',
+      monitor:   'watch_it_live',
+      reports:   'reports',
+      analyzer:  'analyse_reports'
+    };
+    const urlNameToTab = Object.fromEntries(Object.entries(tabUrlNames).map(([k, v]) => [v, k]));
 
-  // Show selected tab and add active class
-  const activeTab = document.getElementById('tab-' + tabName);
-  activeTab.style.display = 'block';
-  activeTab.classList.add('active');
-  event.currentTarget.classList.add('active');
+    function switchTab(tabName, opts) {
+      opts = opts || {};
 
-  if (tabName === 'reports') loadReportSummary();
-  if (tabName !== 'monitor') stopMonitor();
-}
+      // Remove active class from all tab divs AND hide them
+      document.querySelectorAll('.tab-content').forEach(t => {
+        t.style.display = 'none';
+        t.classList.remove('active');
+      });
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+      // Show selected tab and add active class
+      const activeTab = document.getElementById('tab-' + tabName);
+      activeTab.style.display = 'block';
+      activeTab.classList.add('active');
+
+      const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+      if (btn) btn.classList.add('active');
+
+      if (tabName === 'reports') loadReportSummary();
+      if (tabName !== 'monitor') stopMonitor();
+
+      // Keep the URL in sync so each tab is a shareable, bookmarkable link
+      if (!opts.skipUrlUpdate) {
+        const urlName = tabUrlNames[tabName] || tabName;
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', urlName);
+        history.pushState({ tab: tabName }, '', url);
+      }
+    }
+
+    // Restore the active tab from the URL on page load (deep-link support)
+    function initTabFromUrl() {
+      const urlName = new URLSearchParams(window.location.search).get('tab');
+      const tabName = (urlName && urlNameToTab[urlName]) || 'scenarios';
+      switchTab(tabName, { skipUrlUpdate: true });
+    }
+
+    // Support browser back/forward between tabs
+    window.addEventListener('popstate', (e) => {
+      const tabName = (e.state && e.state.tab) || 'scenarios';
+      switchTab(tabName, { skipUrlUpdate: true });
+    });
+
+    initTabFromUrl();
   </script>
 
 </body>

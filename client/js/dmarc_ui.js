@@ -38,6 +38,53 @@ const actionLabels = {
   none:       "No Action Taken"
 };
 
+// Builds a step-by-step breakdown of how a DMARC result was reached,
+// from the raw evaluateDMARC() result object (r) and the email info (e).
+// Used by both the Live Monitor and the "Test Your Own Email" feature.
+function buildPipelineHTML(r, e) {
+  e = e || {};
+  const spfPass  = !!r.spfAligned;
+  const dkimPass = !!r.dkimAligned;
+  const verdictIcon  = { deliver: '✅', quarantine: '⚠️', reject: '❌', none: '👀' }[r.action] || 'ℹ️';
+  const verdictLabel = (actionLabels[r.action] || r.action || 'Unknown').toString();
+  const verdictStatus = r.action === 'deliver' ? 'pass' : r.action === 'reject' ? 'fail' : 'warn';
+
+  const steps = [
+    {
+      icon: '📨', status: null, title: 'Email Received',
+      desc: `From <strong>${e.from || r.fromDomain || 'unknown sender'}</strong>${e.subject ? `, subject "${e.subject}"` : ''}.`
+    },
+    {
+      icon: '🔍', status: spfPass ? 'pass' : 'fail', title: 'SPF Check',
+      desc: (r.alignmentDetails && r.alignmentDetails.spf) || 'SPF alignment could not be determined.'
+    },
+    {
+      icon: '🔏', status: dkimPass ? 'pass' : 'fail', title: 'DKIM Check',
+      desc: (r.alignmentDetails && r.alignmentDetails.dkim) || 'DKIM alignment could not be determined.'
+    },
+    {
+      icon: '📜', status: null, title: 'DMARC Policy Looked Up',
+      desc: r.policy
+        ? `${e.fromDomain || r.fromDomain || 'This domain'}'s DNS says: <strong>p=${r.policy}</strong>${r.pct !== undefined && r.pct !== 100 ? ` (applies to ${r.pct}% of mail)` : ''}.`
+        : `No DMARC record was found for ${e.fromDomain || r.fromDomain || 'this domain'} — there is no policy to enforce.`
+    },
+    {
+      icon: verdictIcon, status: verdictStatus, title: `Final Verdict: ${verdictLabel}`,
+      desc: r.reason || ''
+    }
+  ];
+
+  return `<div class="pipeline">${steps.map((s, i) => `
+    <div class="pipeline-step ${s.status || ''}">
+      <div class="pipeline-num">${i + 1}</div>
+      <div class="pipeline-body">
+        <div class="pipeline-title">${s.icon} ${s.title}${s.status ? `<span class="pipeline-tag ${s.status}">${s.status === 'pass' ? 'Passed' : s.status === 'fail' ? 'Failed' : 'Note'}</span>` : ''}</div>
+        <div class="pipeline-desc">${s.desc}</div>
+      </div>
+    </div>
+    ${i < steps.length - 1 ? '<div class="pipeline-connector"></div>' : ''}`).join('')}</div>`;
+}
+
 // Load scenario details into Step 2 panel
 function loadScenario(key) {
   const s = scenarioMeta[key];
@@ -770,13 +817,16 @@ function renderMonitorResult(r) {
     <div class="result-details">
       <div class="detail-chip"><div class="chip-label">Status</div><div class="chip-value ${r.status === 'pass' ? 'pass' : 'fail'}">${r.status.toUpperCase()}</div></div>
       <div class="detail-chip"><div class="chip-label">Policy Applied</div><div class="chip-value">${(r.policy || 'N/A').toUpperCase()}</div></div>
-      <div class="detail-chip"><div class="chip-label">Risk Score</div><div class="chip-value ${r.riskScore <= 20 ? 'pass' : r.riskScore <= 50 ? 'warn' : 'fail'}">${r.riskScore} / 100</div></div>
+      <div class="detail-chip"><div class="chip-label">Risk Score<span class="info-tip" tabindex="0" data-tip="A 0-100 score estimating how dangerous this email is. Higher means more suspicious."></span></div><div class="chip-value ${r.riskScore <= 20 ? 'pass' : r.riskScore <= 50 ? 'warn' : 'fail'}">${r.riskScore} / 100</div></div>
     </div>
 
     <div class="alignment-row">
-      <div class="align-chip"><div class="align-dot ${r.spfAligned ? 'pass' : 'fail'}"></div><span>SPF: ${r.spfAligned ? 'Aligned ✓' : 'Not Aligned ✗'}</span></div>
-      <div class="align-chip"><div class="align-dot ${r.dkimAligned ? 'pass' : 'fail'}"></div><span>DKIM: ${r.dkimAligned ? 'Aligned ✓' : 'Not Aligned ✗'}</span></div>
-    </div>`;
+      <div class="align-chip"><div class="align-dot ${r.spfAligned ? 'pass' : 'fail'}"></div><span>SPF: ${r.spfAligned ? 'Aligned ✓' : 'Not Aligned ✗'}</span><span class="info-tip" tabindex="0" data-tip="SPF checks whether the email came from a server the domain owner approved. Aligned means yes, this is a trusted server."></span></div>
+      <div class="align-chip"><div class="align-dot ${r.dkimAligned ? 'pass' : 'fail'}"></div><span>DKIM: ${r.dkimAligned ? 'Aligned ✓' : 'Not Aligned ✗'}</span><span class="info-tip" tabindex="0" data-tip="DKIM is a digital signature on the email proving it wasn't altered and really came from who it claims. Aligned means the signature checks out."></span></div>
+    </div>
+
+    <div class="card-title" style="margin-top:20px;">Step-by-Step: How DMARC Reached This Verdict</div>
+    ${buildPipelineHTML(r, e)}`;
 
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -1015,4 +1065,135 @@ async function runHealthCheck() {
   } catch (err) {
     resultEl.innerHTML = '<div class="error-box">Could not check ' + domain + '. Make sure the server is running.</div>';
   }
+}
+
+
+// =============================================================
+// SECTION 9 — TEST YOUR OWN EMAIL
+// Calls POST /api/dmarc/test-email — either a raw pasted email
+// (mode: 'raw') or just the sender details (mode: 'simple')
+// =============================================================
+
+function setTestEmailMode(mode) {
+  const rawBtn        = document.getElementById('test-mode-btn-raw');
+  const simpleBtn      = document.getElementById('test-mode-btn-simple');
+  const rawSection     = document.getElementById('test-email-raw-section');
+  const simpleSection  = document.getElementById('test-email-simple-section');
+
+  if (mode === 'raw') {
+    rawSection.style.display = 'block'; simpleSection.style.display = 'none';
+    rawBtn.style.borderColor = 'var(--accent)'; rawBtn.style.color = 'var(--accent)';
+    simpleBtn.style.borderColor = ''; simpleBtn.style.color = '';
+  } else {
+    rawSection.style.display = 'none'; simpleSection.style.display = 'block';
+    simpleBtn.style.borderColor = 'var(--accent)'; simpleBtn.style.color = 'var(--accent)';
+    rawBtn.style.borderColor = ''; rawBtn.style.color = '';
+  }
+  document.getElementById('test-email-result').innerHTML = '';
+}
+
+async function testRawEmail() {
+  const raw = document.getElementById('test-email-raw').value.trim();
+  const resultEl = document.getElementById('test-email-result');
+  if (!raw) { alert('Paste the raw email source first.'); return; }
+
+  resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;color:var(--muted);"><div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--accent);animation:spin 0.8s linear infinite;"></div>Checking headers against live DNS...</div>';
+
+  try {
+    const response = await fetch('/api/dmarc/test-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'raw', rawSource: raw })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Could not analyse this email');
+
+    renderTestEmailRawResult(data);
+  } catch (err) {
+    resultEl.innerHTML = `<div class="error-box">${err.message}</div>`;
+  }
+}
+
+function renderTestEmailRawResult(r) {
+  const resultEl = document.getElementById('test-email-result');
+  const e = r.email || {};
+  const icons  = { deliver: '✅', quarantine: '⚠️', reject: '❌' };
+  const labels = { deliver: 'WOULD BE DELIVERED', quarantine: 'WOULD BE SENT TO SPAM', reject: 'WOULD BE BLOCKED' };
+
+  resultEl.innerHTML = `
+    <div class="monitor-banner ${r.action}">
+      <div class="monitor-banner-icon">${icons[r.action] || 'ℹ️'}</div>
+      <div class="monitor-banner-label">${labels[r.action] || (actionLabels[r.action] || r.action || '').toUpperCase()}</div>
+      <div class="monitor-banner-reason">${r.reason || ''}</div>
+    </div>
+
+    <div style="background:rgba(56,189,248,0.05); border:1px solid rgba(56,189,248,0.15); border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:12px; color:var(--muted); line-height:1.5;">
+      Note: without cryptographically re-verifying the signature, this checks whether the email's structure (sender vs. envelope domain, and whether a DKIM signature exists) lines up — the same approach used by the Live Monitor above.
+    </div>
+
+    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:16px; font-family:var(--mono); font-size:13px; line-height:1.8;">
+      <span style="color:var(--muted);">From:</span> ${e.from || 'unknown'}<br>
+      <span style="color:var(--muted);">Subject:</span> ${e.subject || '(no subject)'}<br>
+      <span style="color:var(--muted);">From Domain:</span> ${e.fromDomain || 'unknown'}<br>
+      <span style="color:var(--muted);">Envelope:</span> ${e.envelopeDomain || 'unknown'}<br>
+      <span style="color:var(--muted);">DKIM Signed:</span> ${e.hasDKIM ? 'Yes (' + e.dkimDomain + ')' : 'No'}
+    </div>
+
+    <div class="card-title">Step-by-Step: How We Got This Result</div>
+    ${buildPipelineHTML(r, e)}`;
+
+  resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function testSimpleEmail() {
+  const fromAddress    = document.getElementById('test-email-from').value.trim();
+  const claimedDomain  = document.getElementById('test-email-claimed-domain').value.trim();
+  const resultEl = document.getElementById('test-email-result');
+  if (!fromAddress || !fromAddress.includes('@')) { alert('Enter the sender email address, e.g. security@paypal.com'); return; }
+
+  resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;color:var(--muted);"><div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--accent);animation:spin 0.8s linear infinite;"></div>Checking...</div>';
+
+  try {
+    const response = await fetch('/api/dmarc/test-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'simple', fromAddress, claimedDomain })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Could not check this sender');
+
+    renderTestEmailSimpleResult(data);
+  } catch (err) {
+    resultEl.innerHTML = `<div class="error-box">${err.message}</div>`;
+  }
+}
+
+function renderTestEmailSimpleResult(r) {
+  const resultEl = document.getElementById('test-email-result');
+  const audit = r.officialDomainAudit;
+
+  let matchLine;
+  if (r.claimedDomain === null) {
+    matchLine = `<div class="reason-box">We only have the sender address (<strong>${r.fromDomain}</strong>). Add the real company domain above for a lookalike check.</div>`;
+  } else if (r.domainsMatch) {
+    matchLine = `<div class="reason-box" style="border-left-color:var(--pass);">The sender domain exactly matches <strong>${r.claimedDomain}</strong> — no domain mismatch detected. (This alone doesn't prove the email is genuine — the full headers would be needed for that.)</div>`;
+  } else if (r.lookalikeWarning) {
+    matchLine = `<div class="reason-box" style="border-left-color:var(--fail);">⚠ <strong>${r.fromDomain}</strong> looks very similar to <strong>${r.claimedDomain}</strong> but is not the same domain — a classic lookalike-domain trick.</div>`;
+  } else {
+    matchLine = `<div class="reason-box" style="border-left-color:var(--fail);">⚠ <strong>${r.fromDomain}</strong> does not match ${r.claimedDomain}'s official domain at all — this did not come from the real company's mail system.</div>`;
+  }
+
+  resultEl.innerHTML = `
+    <div style="background:rgba(251,191,36,0.06); border:1px solid rgba(251,191,36,0.2); border-radius:8px; padding:12px 14px; margin-bottom:16px; font-size:13px; color:var(--text);">
+      This is a best-effort check based only on the sender address — without the full email headers we can't verify SPF/DKIM/DMARC directly. For a real verdict, use "Paste Raw Email" instead.
+    </div>
+    ${matchLine}
+    ${audit ? `
+      <div class="card-title" style="margin-top:16px;">${r.claimedDomain || r.fromDomain}'s Real DMARC Protection</div>
+      <div style="display:flex; align-items:center; gap:16px; margin-bottom:12px;">
+        <div class="grade-${audit.grade}" style="width:56px; height:56px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:28px; font-weight:700; flex-shrink:0;">${audit.grade}</div>
+        <div style="font-size:14px; color:var(--text); line-height:1.5;">${audit.gradeDescription || ''}</div>
+      </div>` : ''}`;
+
+  resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
