@@ -78,7 +78,10 @@ function splitHeaders(raw) {
 // ─────────────────────────────────────────────
 function extractEmail(str = '') {
   const match = str.match(/<([^>]+)>/);
-  return match ? match[1].trim() : str.trim();
+  let email = match ? match[1].trim() : str.trim();
+  // Strip any surrounding quotes
+  email = email.replace(/^["']|["']$/g, '');
+  return email;
 }
 
 // ─────────────────────────────────────────────
@@ -89,7 +92,10 @@ function extractEmail(str = '') {
 // ─────────────────────────────────────────────
 function extractDomain(email = '') {
   const parts = email.split('@');
-  return parts.length === 2 ? parts[1].toLowerCase() : '';
+  let domain = parts.length === 2 ? parts[1].toLowerCase() : '';
+  // Strip any surrounding quotes
+  domain = domain.replace(/^["']|["']$/g, '');
+  return domain;
 }
 
 function normalizeHeaderText(value) {
