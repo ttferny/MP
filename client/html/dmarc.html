@@ -23,7 +23,7 @@
         <a class="nav-link" href="spf.html">SPF Lab</a>
         <a class="nav-link active" href="dmarc.html">DMARC Lab</a>
         <a class="nav-link" href="dns-studio.html">DNS Automation</a>
-        <a class="nav-link" href="dns-manager.html" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 4px; padding: 6px 12px;">🌐 DNS Manager</a>
+        <a class="nav-link featured" href="dns-manager.html">🌐 DNS Manager</a>
       </nav>
     </div>
   </header>
@@ -65,67 +65,106 @@
         <div class="scenario-grid">
 
           <button class="scenario-card" onclick="loadScenario('legitimate')">
-            <span class="scenario-name">Legitimate Email</span>
+            <span class="scenario-name-wrap">
+              <span class="scenario-name">Legitimate Email</span>
+              <span class="scenario-sub">A normal email that should go through without issue</span>
+            </span>
             <span class="scenario-tag tag-pass">DELIVER</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('basic-spoof')">
-            <span class="scenario-name">Basic Spoofed Sender</span>
+            <span class="scenario-name-wrap">
+              <span class="scenario-name">Basic Spoofed Sender</span>
+              <span class="scenario-sub">Someone fakes your email address using their own server</span>
+            </span>
             <span class="scenario-tag tag-reject">REJECT</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('ceo-fraud')">
-            <span class="scenario-name">CEO Fraud</span>
+            <span class="scenario-name-wrap">
+              <span class="scenario-name">CEO Fraud</span>
+              <span class="scenario-sub">A scammer pretends to be your boss to trick staff into paying them</span>
+            </span>
             <span class="scenario-tag tag-quarantine">QUARANTINE</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('banking-phish')">
-            <span class="scenario-name">Banking Phishing</span>
+            <span class="scenario-name-wrap">
+              <span class="scenario-name">Banking Phishing</span>
+              <span class="scenario-sub">A fake bank email trying to steal customer login details</span>
+            </span>
             <span class="scenario-tag tag-reject">REJECT</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('monitor-only')">
-            <span class="scenario-name">Weak DMARC Policy</span>
+            <span class="scenario-name-wrap">
+              <span class="scenario-name">Weak DMARC Policy</span>
+              <span class="scenario-sub">Protection is switched on, but set to watch only — not block</span>
+            </span>
             <span class="scenario-tag tag-warn">MONITOR ONLY</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('spf-misalign')">
-            <span class="scenario-name">SPF Pass, Misaligned</span>
+            <span class="scenario-name-wrap">
+              <span class="scenario-name">SPF Pass, Misaligned</span>
+              <span class="scenario-sub">Passes one security check but fails the one that actually matters</span>
+            </span>
             <span class="scenario-tag tag-reject">REJECT</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('strict-fail')">
-            <span class="scenario-name">Strict Alignment Fail</span>
+            <span class="scenario-name-wrap">
+              <span class="scenario-name">Strict Alignment Fail</span>
+              <span class="scenario-sub">A real email wrongly blocked because the rules are too strict</span>
+            </span>
             <span class="scenario-tag tag-warn">EDGE CASE</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('relaxed-pass')">
-            <span class="scenario-name">Relaxed Alignment Pass</span>
+            <span class="scenario-name-wrap">
+              <span class="scenario-name">Relaxed Alignment Pass</span>
+              <span class="scenario-sub">The same real email, correctly allowed through with sensible rules</span>
+            </span>
             <span class="scenario-tag tag-pass">DELIVER</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('forwarded-email')">
-            <span class="scenario-name">Forwarded Email</span>
+            <span class="scenario-name-wrap">
+              <span class="scenario-name">Forwarded Email</span>
+              <span class="scenario-sub">A genuine email that a mail-forwarding service altered along the way</span>
+            </span>
             <span class="scenario-tag tag-warn">EDGE CASE</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('subdomain-spoof')">
-            <span class="scenario-name">Subdomain Spoof Attack</span>
+            <span class="scenario-name-wrap">
+              <span class="scenario-name">Subdomain Spoof Attack</span>
+              <span class="scenario-sub">An attacker hides behind a fake sub-address of your domain</span>
+            </span>
             <span class="scenario-tag tag-reject">REJECT</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('pct-50-pass')">
-            <span class="scenario-name">Partial Enforcement (Pass)</span>
+            <span class="scenario-name-wrap">
+              <span class="scenario-name">Partial Enforcement (Pass)</span>
+              <span class="scenario-sub">Only some emails are checked — this genuine one gets through safely</span>
+            </span>
             <span class="scenario-tag tag-pass">DELIVER</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('pct-50-fail')">
-            <span class="scenario-name">Partial Enforcement (Fail)</span>
+            <span class="scenario-name-wrap">
+              <span class="scenario-name">Partial Enforcement (Fail)</span>
+              <span class="scenario-sub">Only some emails are checked — this fake one slips through the gap</span>
+            </span>
             <span class="scenario-tag tag-warn">RISKY</span>
           </button>
 
           <button class="scenario-card" onclick="loadScenario('subdomain-policy')">
-            <span class="scenario-name">Subdomain Policy (sp=)</span>
+            <span class="scenario-name-wrap">
+              <span class="scenario-name">Subdomain Policy (sp=)</span>
+              <span class="scenario-sub">Sub-addresses like mail.yourcompany.com can have their own separate rules</span>
+            </span>
             <span class="scenario-tag tag-warn">ADVANCED</span>
           </button>
 
@@ -154,42 +193,13 @@
 
         <div class="policy-row">
           <div class="form-group">
-            <label>SPF Alignment (aspf=)</label>
-            <select id="aspf-mode">
-              <option value="r">r — relaxed (default)</option>
-              <option value="s">s — strict</option>
-            </select>
-            <span class="field-hint">Relaxed allows subdomains to align</span>
-          </div>
-
-          <div class="form-group">
-            <label>DKIM Alignment (adkim=)</label>
-            <select id="adkim-mode">
-              <option value="r">r — relaxed (default)</option>
-              <option value="s">s — strict</option>
-            </select>
-            <span class="field-hint">Strict requires exact domain match</span>
-          </div>
-
-          <div class="form-group">
-            <label>DMARC Policy (p=) — try changing this</label>
+            <label>DMARC Policy — try changing this<span class="info-tip" tabindex="0" data-tip="Tells every email provider in the world what to do with mail that fails the checks below: let it through, send it to spam, or block it outright."></span></label>
             <select id="dmarc-policy">
-              <option value="reject">reject</option>
-              <option value="quarantine">quarantine</option>
-              <option value="none">none — monitor only</option>
+              <option value="reject">reject — block it</option>
+              <option value="quarantine">quarantine — send to spam</option>
+              <option value="none">none — just monitor, take no action</option>
             </select>
             <span class="field-hint">This is what the domain owner has published in DNS</span>
-          </div>
-
-          <div class="form-group">
-            <label>Subdomain Policy (sp=) — optional</label>
-            <select id="sp-mode">
-              <option value="">— not set (inherit from p=)</option>
-              <option value="reject">reject</option>
-              <option value="quarantine">quarantine</option>
-              <option value="none">none — monitor only</option>
-            </select>
-            <span class="field-hint">Applies only to subdomains when alignment fails</span>
           </div>
 
           <div class="form-group">
@@ -199,7 +209,47 @@
           </div>
         </div>
 
-        <button class="btn-evaluate" onclick="runDMARC()">
+        <button type="button" class="btn-secondary" id="advanced-toggle-btn" onclick="toggleAdvancedPolicy()" style="font-size:12px; padding:8px 14px;">
+          ⚙ Show Advanced Settings (SPF/DKIM strictness, subdomains)
+        </button>
+
+        <div id="advanced-policy-settings" style="display:none; margin-top:14px;">
+          <p style="font-size:13px; color:var(--muted); margin-bottom:12px; line-height:1.5;">
+            These fine-tune exactly <em>how strict</em> the matching is. Most organisations leave them at the defaults below.
+          </p>
+          <div class="policy-row">
+            <div class="form-group">
+              <label>SPF Alignment (aspf=)<span class="info-tip" tabindex="0" data-tip="Checks whether the email came from a server the domain owner actually approved. 'Relaxed' still allows subdomains like mail.company.com to count as a match."></span></label>
+              <select id="aspf-mode">
+                <option value="r">r — relaxed (default)</option>
+                <option value="s">s — strict</option>
+              </select>
+              <span class="field-hint">Relaxed allows subdomains to align</span>
+            </div>
+
+            <div class="form-group">
+              <label>DKIM Alignment (adkim=)<span class="info-tip" tabindex="0" data-tip="Checks a digital signature attached to the email that proves it wasn't tampered with. 'Strict' means that signature must match the visible sender domain exactly."></span></label>
+              <select id="adkim-mode">
+                <option value="r">r — relaxed (default)</option>
+                <option value="s">s — strict</option>
+              </select>
+              <span class="field-hint">Strict requires exact domain match</span>
+            </div>
+
+            <div class="form-group">
+              <label>Subdomain Policy (sp=) — optional<span class="info-tip" tabindex="0" data-tip="An optional separate rule just for sub-addresses (e.g. mail.company.com), in case they need different handling from the main domain."></span></label>
+              <select id="sp-mode">
+                <option value="">— not set (inherit from policy above)</option>
+                <option value="reject">reject</option>
+                <option value="quarantine">quarantine</option>
+                <option value="none">none — monitor only</option>
+              </select>
+              <span class="field-hint">Applies only to subdomains when alignment fails</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-evaluate" onclick="runDMARC()" style="margin-top:16px;">
           Run DMARC Policy Engine
         </button>
       </div>
@@ -227,7 +277,7 @@
             <div class="chip-value" id="res-policy"></div>
           </div>
           <div class="detail-chip">
-            <div class="chip-label">Risk Score</div>
+            <div class="chip-label">Risk Score<span class="info-tip" tabindex="0" data-tip="A 0-100 score estimating how dangerous this email is. Higher means more suspicious."></span></div>
             <div class="chip-value" id="res-risk">N/A</div>
           </div>
         </div>
@@ -238,10 +288,12 @@
           <div class="align-chip">
             <div class="align-dot" id="spf-dot"></div>
             <span id="spf-align-text">SPF Alignment</span>
+            <span class="info-tip" tabindex="0" data-tip="SPF checks whether the email came from a server the domain owner approved. Aligned means yes, this is a trusted server."></span>
           </div>
           <div class="align-chip">
             <div class="align-dot" id="dkim-dot"></div>
             <span id="dkim-align-text">DKIM Alignment</span>
+            <span class="info-tip" tabindex="0" data-tip="DKIM is a digital signature on the email proving it wasn't altered and really came from who it claims. Aligned means the signature checks out."></span>
           </div>
         </div>
 
@@ -315,7 +367,6 @@
           <div class="explain-box" id="comparison-takeaway"></div>
         </div>
       </div>
-      <br><br>
     </div><!-- end tab-scenarios -->
     
     <!-- ===================== DMARC AUDIT TAB ===================== -->
@@ -415,7 +466,10 @@
             </div>
           </div>
         </div>
-        <div id="audit-tags" style="margin-bottom:16px;"></div>
+        <details style="margin-bottom:16px;">
+          <summary style="cursor:pointer; font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted);">Show technical DNS details</summary>
+          <div id="audit-tags" style="margin-top:12px;"></div>
+        </details>
         <div id="audit-issues-section" style="display:none; margin-bottom:16px;">
           <div style="font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--fail); margin-bottom:10px;">Issues Found</div>
           <div id="audit-issues"></div>
@@ -425,7 +479,6 @@
           <div id="audit-recs"></div>
         </div>
       </div>
-      <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
     </div><!-- end tab-audit -->
 
     <!-- ===================== LIVE MONITOR TAB ===================== -->
@@ -436,7 +489,7 @@
       <div class="card">
         <div class="card-title">Live Email Monitor</div>
         <p style="color:var(--muted); font-size:14px; margin-bottom:20px;">
-          Send a test email to the local SMTP server on port 2525 and watch the DMARC engine evaluate it in real time.
+          Send a test email through our mail server and watch, in real time, whether DMARC delivers it, sends it to spam, or blocks it completely.
         </p>
 
         <!-- Monitor status + controls -->
@@ -453,9 +506,9 @@
 
         <!-- Send test email buttons -->
         <div class="form-group">
-          <label>Send a Test Email to Port 2525</label>
+          <label>Send a Test Email</label>
           <p style="color:var(--muted); font-size:13px; margin-top:4px; margin-bottom:12px;">
-            Start the monitor first, then click a button to send a test email. The result appears within a few seconds.
+            Start the monitor first, then click a button below to send a test email. The result appears within a few seconds.
           </p>
           <div class="scenarios">
             <button class="scenario-btn" onclick="sendTestEmail('legitimate')">Legitimate</button>
@@ -491,7 +544,7 @@
             <div class="chip-value" id="monitor-policy-chip"></div>
           </div>
           <div class="detail-chip">
-            <div class="chip-label">Risk Score</div>
+            <div class="chip-label">Risk Score<span class="info-tip" tabindex="0" data-tip="A 0-100 score estimating how dangerous this email is. Higher means more suspicious."></span></div>
             <div class="chip-value" id="monitor-risk-chip"></div>
           </div>
         </div>
@@ -502,14 +555,15 @@
           <div class="align-chip">
             <div class="align-dot" id="monitor-spf-dot"></div>
             <span id="monitor-spf-text">SPF Alignment</span>
+            <span class="info-tip" tabindex="0" data-tip="SPF checks whether the email came from a server the domain owner approved. Aligned means yes, this is a trusted server."></span>
           </div>
           <div class="align-chip">
             <div class="align-dot" id="monitor-dkim-dot"></div>
             <span id="monitor-dkim-text">DKIM Alignment</span>
+            <span class="info-tip" tabindex="0" data-tip="DKIM is a digital signature on the email proving it wasn't altered and really came from who it claims. Aligned means the signature checks out."></span>
           </div>
         </div>
       </div>
-      <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
     </div><!-- end tab-monitor -->
 
     <!-- ===================== REPORTS TAB ===================== -->
@@ -518,14 +572,11 @@
       <div class="card">
         <div class="card-title">DMARC Evaluation Reports</div>
         <p style="color:var(--muted); font-size:14px; margin-bottom:20px;">
-          Aggregate log of all evaluated scenarios and raw headers. Each evaluation with
-          <code style="font-family:var(--mono); background:var(--surface2); padding:2px 6px; border-radius:4px;">log: true</code>
-          is recorded here automatically.
+          Every scenario and test email you've run gets logged automatically, so you can look back at what happened and export the results.
         </p>
         <button class="btn-secondary" onclick="loadReportSummary()">Load Reports</button>
         <div id="report-summary"></div>
       </div>
-      <br><br><br><br><br><br><br><br><br><br><br><br><br>
     </div><!-- end tab-reports -->
 
     <!-- ===================== DMARC REPORT ANALYZER TAB ===================== -->
@@ -536,6 +587,7 @@
         <div class="analyzer-header">
           <h2>DMARC Report Analyzer</h2>
           <p class="subtitle">Upload your DMARC XML aggregate report to analyze authentication, detect threats, and get actionable insights</p>
+          <p class="subtitle" style="margin-top:6px; font-size:0.85rem;">This is the automated report your mail provider (e.g. Google, Microsoft) emails you — it lists every server that has sent mail using your domain, so you can spot ones you don't recognise.</p>
         </div>
 
         <!-- Upload Section -->
@@ -577,7 +629,7 @@
             </div>
             <div class="summary-grid">
               <div class="stat-box">
-                <div class="stat-label">Organization</div>
+                <div class="stat-label">Organization<span class="info-tip" tabindex="0" data-tip="Which mail provider (e.g. Google, Microsoft) generated this report."></span></div>
                 <div class="stat-value" id="orgName">-</div>
               </div>
               <div class="stat-box">
@@ -593,11 +645,11 @@
                 <div class="stat-value" id="reportPeriod">-</div>
               </div>
               <div class="stat-box">
-                <div class="stat-label">DMARC Policy</div>
+                <div class="stat-label">DMARC Policy<span class="info-tip" tabindex="0" data-tip="What this domain tells email providers to do with suspicious mail: let it through, spam-fold it, or block it."></span></div>
                 <div class="stat-value policy-badge" id="dmarcPolicy">-</div>
               </div>
               <div class="stat-box">
-                <div class="stat-label">Enforcement</div>
+                <div class="stat-label">Enforcement<span class="info-tip" tabindex="0" data-tip="What percentage of mail this policy actually applies to. 100% means every email is checked; lower means some slip through unchecked."></span></div>
                 <div class="stat-value" id="enforcement">-</div>
               </div>
             </div>
@@ -610,7 +662,7 @@
             </div>
             <div class="stats-container">
               <div class="stat-chart">
-                <h4>SPF Results</h4>
+                <h4>SPF Results<span class="info-tip" tabindex="0" data-tip="SPF checks whether emails were sent from a server the domain owner approved."></span></h4>
                 <div class="progress-bar-large">
                   <div class="progress-fill-spf" id="spfPassBar"></div>
                 </div>
@@ -622,7 +674,7 @@
               </div>
 
               <div class="stat-chart">
-                <h4>DKIM Results</h4>
+                <h4>DKIM Results<span class="info-tip" tabindex="0" data-tip="DKIM checks a digital signature on each email that proves it wasn't altered in transit."></span></h4>
                 <div class="progress-bar-large">
                   <div class="progress-fill-dkim" id="dkimPassBar"></div>
                 </div>
@@ -634,7 +686,7 @@
               </div>
 
               <div class="stat-chart">
-                <h4>Alignment</h4>
+                <h4>Alignment<span class="info-tip" tabindex="0" data-tip="Whether the visible From: address matches the domain that actually passed SPF/DKIM. This is the specific gap DMARC exists to close."></span></h4>
                 <div class="progress-bar-large">
                   <div class="progress-fill-aligned" id="alignmentBar"></div>
                 </div>
@@ -697,7 +749,6 @@
 
         </div>
       </div>
-      <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
     </div><!-- end tab-analyzer -->
     
 

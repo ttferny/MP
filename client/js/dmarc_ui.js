@@ -19,6 +19,25 @@ const scenarioMeta = {
 
 let currentScenario = null;
 
+// Toggle the advanced SPF/DKIM strictness + subdomain policy controls
+function toggleAdvancedPolicy() {
+  const el = document.getElementById('advanced-policy-settings');
+  const btn = document.getElementById('advanced-toggle-btn');
+  const isHidden = el.style.display === 'none';
+  el.style.display = isHidden ? 'block' : 'none';
+  btn.textContent = isHidden
+    ? '⚙ Hide Advanced Settings'
+    : '⚙ Show Advanced Settings (SPF/DKIM strictness, subdomains)';
+}
+
+// Plain-English labels for the technical action values (deliver/quarantine/reject/none)
+const actionLabels = {
+  deliver:    "Delivered",
+  quarantine: "Sent to Spam",
+  reject:     "Blocked",
+  none:       "No Action Taken"
+};
+
 // Load scenario details into Step 2 panel
 function loadScenario(key) {
   const s = scenarioMeta[key];
@@ -99,7 +118,7 @@ function renderResult(r) {
 
   const icons = { deliver: "✅", quarantine: "⚠️", reject: "❌", none: "👀" };
   document.getElementById("verdict-icon").textContent = icons[r.action] || "ℹ️";
-  document.getElementById("verdict-text").textContent = r.action.toUpperCase();
+  document.getElementById("verdict-text").textContent = (actionLabels[r.action] || r.action.toUpperCase()).toUpperCase();
 
   // Status chip
   const statusEl = document.getElementById("res-status");
@@ -108,7 +127,7 @@ function renderResult(r) {
 
   // Action chip
   const actionEl = document.getElementById("res-action");
-  actionEl.textContent = r.action.toUpperCase();
+  actionEl.textContent = (actionLabels[r.action] || r.action.toUpperCase()).toUpperCase();
   actionEl.className = "chip-value " + (r.action === "deliver" ? "pass" : r.action === "quarantine" ? "warn" : "fail");
 
   // Policy chip
@@ -194,7 +213,7 @@ function renderReportSummary(s) {
         <div class="summary-value fail">${s.failed}</div>
       </div>
       <div class="summary-card">
-        <div class="summary-label">High Risk (>70)</div>
+        <div class="summary-label">High Risk<span class="info-tip" tabindex="0" data-tip="Emails scoring above 70 out of 100 on the risk scale — the ones most likely to be an attack."></span></div>
         <div class="summary-value fail">${s.highRisk}</div>
       </div>
       <div class="summary-card">
@@ -205,15 +224,15 @@ function renderReportSummary(s) {
 
     <div class="summary-details">
       <div class="detail-section">
-        <strong>By Policy:</strong>
+        <strong>By DMARC Policy:</strong>
         <div class="policy-breakdown">
           ${Object.entries(s.byPolicy).map(([p, c]) => `<div>${p.toUpperCase()}: ${c}</div>`).join("")}
         </div>
       </div>
       <div class="detail-section">
-        <strong>By Action:</strong>
+        <strong>By Outcome:</strong>
         <div class="action-breakdown">
-          ${Object.entries(s.byAction).map(([a, c]) => `<div>${a.toUpperCase()}: ${c}</div>`).join("")}
+          ${Object.entries(s.byAction).map(([a, c]) => `<div>${(actionLabels[a] || a.toUpperCase())}: ${c}</div>`).join("")}
         </div>
       </div>
     </div>
@@ -252,7 +271,7 @@ function renderReportsList(reports) {
       <td>${r.timestamp.substring(0, 19)}</td>
       <td>${r.scenario}</td>
       <td><span class="chip-value ${r.status === 'pass' ? 'pass' : 'fail'}">${r.status}</span></td>
-      <td><span class="chip-value ${r.action === 'deliver' ? 'pass' : r.action === 'quarantine' ? 'warn' : 'fail'}">${r.action}</span></td>
+      <td><span class="chip-value ${r.action === 'deliver' ? 'pass' : r.action === 'quarantine' ? 'warn' : 'fail'}">${actionLabels[r.action] || r.action}</span></td>
       <td>${r.riskScore}</td>
       <td>${r.fromDomain}</td>
     </tr>
@@ -432,7 +451,7 @@ function renderComparisonColumn(colId, r, description) {
   document.getElementById(`comp-col-${colId}`).innerHTML = `
     <div class="comp-verdict ${r.action}">
       <span>${icons[r.action] || "ℹ️"}</span>
-      <span>${r.action.toUpperCase()}</span>
+      <span>${(actionLabels[r.action] || r.action.toUpperCase()).toUpperCase()}</span>
     </div>
 
     <div class="comp-risk">
@@ -549,7 +568,10 @@ async function runAuditLive() {
           </div>
         </div>
       </div>
-      <div id="audit-tags" style="margin-bottom:16px;"></div>
+      <details style="margin-bottom:16px;">
+        <summary style="cursor:pointer; font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted);">Show technical DNS details</summary>
+        <div id="audit-tags" style="margin-top:12px;"></div>
+      </details>
       <div id="audit-issues-section" style="display:none; margin-bottom:16px;">
         <div style="font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--fail); margin-bottom:10px;">Issues Found</div>
         <div id="audit-issues"></div>
@@ -603,12 +625,12 @@ function renderAuditResult(r) {
     const spColor     = d.sp === 'reject' ? 'good' : d.sp === 'quarantine' ? 'warn' : d.sp === 'none' ? 'bad' : 'muted';
     tagsEl.innerHTML = `
       <div class="audit-tag-grid">
-        <div class="audit-tag"><div class="audit-tag-key">p= (policy)</div><div class="audit-tag-value ${policyColor}">${d.policy || "missing"}</div></div>
-        <div class="audit-tag"><div class="audit-tag-key">pct= (enforcement)</div><div class="audit-tag-value ${pctColor}">${d.pct}%</div></div>
-        <div class="audit-tag"><div class="audit-tag-key">sp= (subdomains)</div><div class="audit-tag-value ${spColor}">${d.sp || "not set"}</div></div>
-        <div class="audit-tag"><div class="audit-tag-key">rua= (reports)</div><div class="audit-tag-value ${ruaColor}">${d.rua ? "configured" : "not set"}</div></div>
-        <div class="audit-tag"><div class="audit-tag-key">aspf= (SPF align)</div><div class="audit-tag-value">${d.aspf === 'r' ? 'relaxed' : 'strict'}</div></div>
-        <div class="audit-tag"><div class="audit-tag-key">adkim= (DKIM align)</div><div class="audit-tag-value">${d.adkim === 'r' ? 'relaxed' : 'strict'}</div></div>
+        <div class="audit-tag"><div class="audit-tag-key">p= (policy)<span class="info-tip" tabindex="0" data-tip="What this domain tells email providers to do with suspicious mail: let it through, spam-fold it, or block it."></span></div><div class="audit-tag-value ${policyColor}">${d.policy || "missing"}</div></div>
+        <div class="audit-tag"><div class="audit-tag-key">pct= (enforcement)<span class="info-tip" tabindex="0" data-tip="What percentage of mail the policy actually applies to. 100% means every email is checked."></span></div><div class="audit-tag-value ${pctColor}">${d.pct}%</div></div>
+        <div class="audit-tag"><div class="audit-tag-key">sp= (subdomains)<span class="info-tip" tabindex="0" data-tip="A separate rule just for sub-addresses like mail.company.com, if one is set."></span></div><div class="audit-tag-value ${spColor}">${d.sp || "not set"}</div></div>
+        <div class="audit-tag"><div class="audit-tag-key">rua= (reports)<span class="info-tip" tabindex="0" data-tip="An email address that receives daily summaries of who is sending mail using this domain."></span></div><div class="audit-tag-value ${ruaColor}">${d.rua ? "configured" : "not set"}</div></div>
+        <div class="audit-tag"><div class="audit-tag-key">aspf= (SPF align)<span class="info-tip" tabindex="0" data-tip="How strictly the sending server's domain must match. Relaxed still allows subdomains; strict requires an exact match."></span></div><div class="audit-tag-value">${d.aspf === 'r' ? 'relaxed' : 'strict'}</div></div>
+        <div class="audit-tag"><div class="audit-tag-key">adkim= (DKIM align)<span class="info-tip" tabindex="0" data-tip="How strictly the email's digital signature must match the visible sender domain. Relaxed allows subdomains; strict requires an exact match."></span></div><div class="audit-tag-value">${d.adkim === 'r' ? 'relaxed' : 'strict'}</div></div>
       </div>`;
   } else {
     tagsEl.innerHTML = `<div class="reason-box" style="color:var(--fail);">No DMARC record found for ${r.domain}.</div>`;
@@ -740,8 +762,8 @@ function renderMonitorResult(r) {
       <span style="color:var(--muted);">From:</span>        ${e.from || 'unknown'}<br>
       <span style="color:var(--muted);">Subject:</span>     ${e.subject || '(no subject)'}<br>
       <span style="color:var(--muted);">From Domain:</span> ${e.fromDomain || 'unknown'}<br>
-      <span style="color:var(--muted);">Envelope:</span>    ${e.envelopeDomain || 'unknown'}<br>
-      <span style="color:var(--muted);">DKIM Signed:</span> ${e.hasDKIM ? 'Yes (' + e.dkimDomain + ')' : 'No'}<br>
+      <span style="color:var(--muted);">Envelope:<span class="info-tip" tabindex="0" data-tip="The actual sending address used behind the scenes — can be different from the From: address the recipient sees."></span></span> ${e.envelopeDomain || 'unknown'}<br>
+      <span style="color:var(--muted);">DKIM Signed:<span class="info-tip" tabindex="0" data-tip="Whether the email carried a digital signature proving it wasn't altered in transit."></span></span> ${e.hasDKIM ? 'Yes (' + e.dkimDomain + ')' : 'No'}<br>
       <span style="color:var(--muted);">Received:</span>    ${e.receivedAt ? new Date(e.receivedAt).toLocaleTimeString() : 'unknown'}
     </div>
 
