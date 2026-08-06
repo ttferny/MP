@@ -425,6 +425,23 @@ async function evaluateSPFRecord(domain, senderIP, dns, depth = 0, stats = null,
 async function checkSPF(parsed) {
   let { envelopeDomain, senderIP } = parsed;
 
+  const isSchoolDomain = (domain = '') => {
+    const value = String(domain || '').toLowerCase();
+    return value === 'tp.edu.sg' || value.endsWith('.tp.edu.sg');
+  };
+
+  if (parsed.isTrustedInternal && isSchoolDomain(parsed.fromDomain)) {
+    logger.info(`[Dynamic SPF] Trusted internal school mail detected for ${parsed.fromDomain}`);
+    return {
+      result: SPF_RESULTS.PASS,
+      reason: 'Trusted internal school mail delivery (Exchange AuthAs: Internal)',
+      record: null,
+      matchedMechanism: null,
+      domain: envelopeDomain || parsed.fromDomain,
+      ip: senderIP || '',
+    };
+  }
+
   // Dynamic fallback: If senderIP is a local/private IP or empty, 
   // attempt to extract the external sending IP from raw auth results
   if ((!senderIP || senderIP.startsWith('127.') || senderIP.startsWith('10.') || senderIP.startsWith('192.168.')) && parsed.authResultsRaw) {
