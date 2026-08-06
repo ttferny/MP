@@ -16,7 +16,7 @@ jest.mock('../services/dnsLibrary', () => ({
   isValidDomain: jest.fn((domain) => /^[a-z0-9.-]+$/i.test(domain)),
 }));
 
-const { lookupTxtRecords } = require('../services/dns');
+const { lookupTxtRecords, lookupSPFRecord, lookupDMARCRecord } = require('../services/dns');
 const dnsLibrary = require('../services/dnsLibrary');
 
 beforeEach(() => {
@@ -67,4 +67,41 @@ test('planDnsAutomation plans a delete for managed records that are no longer de
   const plan = await dnsAutomation.planDnsAutomation('example.com', []);
 
   expect(plan.changes[0].action).toBe('delete');
+});
+
+test('planDnsAutomation marks live SPF as an update instead of creating a second SPF record', async () => {
+  lookupSPFRecord.mockResolvedValue('v=spf1 ip4:20.33.0.0/16 include:spf.protection.outlook.com -all');
+  lookupDMARCRecord.mockResolvedValue(null);
+  dnsLibrary.getRecords.mockReturnValue([]);
+
+  const plan = await dnsAutomation.planDnsAutomation('example.com', [
+    { type: 'TXT', name: '', content: 'v=spf1 a mx -all', ttl: 3600, purpose: 'spf' },
+  ]);
+
+  expect(plan.changes).toHaveLength(1);
+  expect(plan.changes[0].action).toBe('update');
+  expect(plan.changes[0].currentValue).toContain('include:spf.protection.outlook.com');
+  expect(plan.changes[0].reason).toContain('differs from recommended policy');
+});
+
+test('planDnsAutomation uses existing parsed DNS records when provided instead of relying on a separate lookup', async () => {
+  dnsLibrary.getRecords.mockReturnValue([]);
+
+  const plan = await dnsAutomation.planDnsAutomation(
+    'example.com',
+    [{ type: 'TXT', name: '', content: 'v=spf1 a mx -all', ttl: 3600, purpose: 'spf' }],
+    {
+      existingRecords: {
+        spf: {
+          status: 'found',
+          record: 'v=spf1 include:_spf.example.com ~all',
+        },
+      },
+    }
+  );
+
+  expect(plan.changes).toHaveLength(1);
+  expect(plan.changes[0].action).toBe('update');
+  expect(plan.changes[0].currentValue).toBe('v=spf1 include:_spf.example.com ~all');
+  expect(lookupSPFRecord).not.toHaveBeenCalled();
 });

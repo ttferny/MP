@@ -1,5 +1,69 @@
 {
   "records": {
-    "ntuc.org.sg": []
+    "ntuc.org.sg": [],
+    "google.com": [
+      {
+        "id": "google.com_1786034009555_gyd6mzrqj",
+        "domain": "google.com",
+        "type": "TXT",
+        "name": "",
+        "content": "v=spf1 a mx -all",
+        "ttl": 3600,
+        "priority": null,
+        "weight": null,
+        "port": null,
+        "flag": null,
+        "tag": null,
+        "createdAt": "2026-08-06T16:33:29.555Z",
+        "updatedAt": "2026-08-06T16:33:29.555Z"
+      },
+      {
+        "id": "google.com_1786034009557_dp5ks7ugh",
+        "domain": "google.com",
+        "type": "TXT",
+        "name": "_dmarc",
+        "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+        "ttl": 3600,
+        "priority": null,
+        "weight": null,
+        "port": null,
+        "flag": null,
+        "tag": null,
+        "createdAt": "2026-08-06T16:33:29.557Z",
+        "updatedAt": "2026-08-06T16:33:29.557Z"
+      }
+    ],
+    "grab.com": [
+      {
+        "id": "grab.com_1786034412404_4mltmhm5e",
+        "domain": "grab.com",
+        "type": "TXT",
+        "name": "",
+        "content": "v=spf1 a mx -all",
+        "ttl": 3600,
+        "priority": null,
+        "weight": null,
+        "port": null,
+        "flag": null,
+        "tag": null,
+        "createdAt": "2026-08-06T16:40:12.404Z",
+        "updatedAt": "2026-08-06T16:40:12.404Z"
+      },
+      {
+        "id": "grab.com_1786034412405_rmnuh8o1j",
+        "domain": "grab.com",
+        "type": "TXT",
+        "name": "_dmarc",
+        "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+        "ttl": 3600,
+        "priority": null,
+        "weight": null,
+        "port": null,
+        "flag": null,
+        "tag": null,
+        "createdAt": "2026-08-06T16:40:12.405Z",
+        "updatedAt": "2026-08-06T16:40:12.405Z"
+      }
+    ]
   }
 }

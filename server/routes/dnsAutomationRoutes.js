@@ -10,8 +10,8 @@ const logger = require('../utils/logger');
 
 router.post('/plan', async (req, res) => {
   try {
-    const { domain, desiredRecords } = req.body;
-    const plan = await planDnsAutomation(domain, desiredRecords);
+    const { domain, desiredRecords, existingRecords } = req.body;
+    const plan = await planDnsAutomation(domain, desiredRecords, { existingRecords });
     res.json({ success: true, data: plan });
   } catch (err) {
     logger.error(`DNS automation plan error: ${err.message}`);

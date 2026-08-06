@@ -382,6 +382,52 @@
     .quick-setup li {
       margin-bottom: 5px;
     }
+
+    .propagation-results {
+      margin-top: 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      background: #f9f9f9;
+      padding: 12px;
+      max-height: 260px;
+      overflow-y: auto;
+      font-size: 0.9em;
+    }
+
+    .propagation-item {
+      border-left: 3px solid #999;
+      background: #fff;
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    .propagation-item.updated {
+      border-left-color: #2ed573;
+    }
+
+    .propagation-item.pending {
+      border-left-color: #ffa502;
+    }
+
+    .propagation-status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.8em;
+      margin-left: 8px;
+    }
+
+    .propagation-status.updated {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .propagation-status.pending {
+      background: #fff3cd;
+      color: #856404;
+    }
   </style>
 </head>
 <body>
@@ -492,6 +538,20 @@
           <button class="btn-success" onclick="setupEmailAuth()" style="width: 100%; margin-top: 10px;">
             Setup Email Authentication
           </button>
+        </div>
+
+        <div class="section" style="margin-top: 20px;">
+          <h2>🌍 DNS Propagation</h2>
+          <div class="form-group">
+            <label for="propagationRecordName">Record Name (optional)</label>
+            <input type="text" id="propagationRecordName" placeholder="Leave empty for root domain">
+          </div>
+          <div class="form-group">
+            <label for="propagationExpected">Expected TXT Snippet</label>
+            <input type="text" id="propagationExpected" value="v=spf1" placeholder="e.g. v=DMARC1">
+          </div>
+          <button class="btn-primary" style="width: 100%;" onclick="checkPropagation()">Check Propagation</button>
+          <div id="propagationResults" class="propagation-results">Run a propagation check to see per-resolver status.</div>
         </div>
       </div>
 
@@ -845,6 +905,70 @@
         loadRecords();
         loadStats();
       } catch (err) {
+        showMessage(`Error: ${err.message}`, 'error');
+      }
+    }
+
+    async function checkPropagation() {
+      const domain = document.getElementById('domain').value.trim();
+      const recordName = document.getElementById('propagationRecordName').value.trim();
+      const expectedValue = document.getElementById('propagationExpected').value.trim();
+
+      if (!domain) {
+        showMessage('Please enter a domain', 'error');
+        return;
+      }
+
+      const resultsEl = document.getElementById('propagationResults');
+      resultsEl.textContent = 'Checking propagation across public resolvers...';
+
+      try {
+        const res = await fetch('/api/dns-automation/propagation-check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            domain,
+            recordName,
+            expectedValue,
+            recordType: 'TXT',
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'Propagation check failed');
+        }
+
+        const summary = data.data.summary || {};
+        const overall = summary.status === 'fully-propagated'
+          ? `Fully propagated (${summary.updated}/${summary.total} resolvers)`
+          : summary.status === 'partially-propagated'
+            ? `Propagation in progress (${summary.updated}/${summary.total} resolvers)`
+            : `Not propagated (${summary.updated}/${summary.total} resolvers)`;
+
+        const items = (data.data.results || []).map((entry) => {
+          const isUpdated = entry.status === 'updated';
+          const itemClass = isUpdated ? 'updated' : 'pending';
+          const statusText = isUpdated ? 'Updated' : (entry.status === 'timeout' ? 'Timeout' : 'Still old');
+          const recordText = Array.isArray(entry.records) && entry.records.length
+            ? entry.records.join(' | ')
+            : 'No matching TXT seen yet';
+
+          return `
+            <div class="propagation-item ${itemClass}">
+              <strong>${entry.resolver}</strong>
+              <span class="propagation-status ${itemClass}">${statusText}</span>
+              <div style="margin-top: 6px; color: #555; word-break: break-all;">${recordText}</div>
+            </div>
+          `;
+        }).join('');
+
+        resultsEl.innerHTML = `
+          <div style="font-weight: 700; margin-bottom: 10px;">${overall}</div>
+          ${items || 'No resolver data returned.'}
+        `;
+      } catch (err) {
+        resultsEl.textContent = `Propagation check failed: ${err.message}`;
         showMessage(`Error: ${err.message}`, 'error');
       }
     }

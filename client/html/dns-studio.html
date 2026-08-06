@@ -4,13 +4,32 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Automated DNS & DKIM Studio</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="../css/spf.css" />
   <style>
     * { box-sizing: border-box; }
+
+    body.legacy-theme {
+      --bg: #f8f7f3;
+      --bg-alt: #fffaf2;
+      --card: #fffdf8;
+      --border: #e4d8c8;
+      --ink: #231f1a;
+      --text: #231f1a;
+      --muted: #6a5b4b;
+      --accent: #1a7a7f;
+      --accent-dark: #0f5f63;
+      --accent2: #3e9ca1;
+      --accent-warm: #e76f51;
+      --accent-warm-dark: #c95d41;
+      --success: #0d8f59;
+      --danger: #b63732;
+      --warn: #bb7a00;
+    }
+
     body {
       background: var(--bg);
       color: var(--ink);
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: var(--sans);
       margin: 0;
       padding: 0;
     }
@@ -49,7 +68,7 @@
       border-radius: 14px;
       padding: 40px;
       margin-bottom: 40px;
-      box-shadow: 0 18px 40px rgba(26, 24, 20, 0.12);
+      box-shadow: var(--shadow);
     }
 
     .input-group {
@@ -180,7 +199,12 @@
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 28px;
-      box-shadow: 0 18px 40px rgba(26, 24, 20, 0.12);
+      box-shadow: var(--shadow);
+    }
+
+    .result-card.full-span {
+      grid-column: 1 / -1;
+      padding: 32px;
     }
 
     .result-card h3 {
@@ -249,6 +273,83 @@
       line-height: 1.5;
     }
 
+    .propagation-controls {
+      display: grid;
+      grid-template-columns: minmax(260px, 1.2fr) minmax(240px, 1fr) minmax(300px, 1.2fr) auto;
+      gap: 14px;
+      margin-bottom: 16px;
+      align-items: end;
+    }
+
+    .propagation-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg-alt);
+      color: var(--ink);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.98rem;
+    }
+
+    .propagation-controls .btn {
+      padding: 14px 24px;
+      font-size: 0.9rem;
+      min-height: 52px;
+      white-space: nowrap;
+    }
+
+    .propagation-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(26, 122, 127, 0.15);
+    }
+
+    .propagation-hint {
+      font-size: 0.92rem;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .propagation-warning {
+      margin-top: 10px;
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border: 1px solid rgba(217, 119, 6, 0.35);
+      border-left: 4px solid var(--warn);
+      border-radius: 8px;
+      background: rgba(217, 119, 6, 0.08);
+      color: var(--ink);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    #propagationResults .record-item {
+      padding: 18px;
+      font-size: 0.95rem;
+      margin-bottom: 14px;
+    }
+
+    #propagationResults .record-key {
+      font-size: 0.82rem;
+    }
+
+    #propagationResults .record-value {
+      font-size: 0.98rem;
+      line-height: 1.6;
+    }
+
+    #propagationResults .status-badge {
+      font-size: 0.8rem;
+      padding: 5px 12px;
+    }
+
+    @media (max-width: 900px) {
+      .propagation-controls {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .summary-stats {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -290,6 +391,28 @@
     .hidden {
       display: none;
     }
+
+    .theme-toggle-wrap {
+      margin-top: 14px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .theme-toggle-btn {
+      border: 1px solid var(--border);
+      background: var(--bg-alt);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .theme-toggle-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
   </style>
 </head>
 <body>
@@ -299,6 +422,9 @@
     <div class="header-section">
       <h1>🔍 Automated DNS & DKIM Studio</h1>
       <p>Enter a domain to automatically check DNS records, SPF, DMARC, and DKIM configuration</p>
+      <div class="theme-toggle-wrap">
+        <button id="themeToggleBtn" class="theme-toggle-btn" type="button" title="Switch between the shared studio colors and legacy DNS Studio colors.">Switch to Legacy Colors</button>
+      </div>
     </div>
 
     <!-- Control Panel -->
@@ -311,13 +437,12 @@
           placeholder="Enter domain (e.g., example.com)"
           spellcheck="false"
         />
-        <button id="checkBtn" class="btn btn-primary">Check DNS</button>
-        <button id="fixBtn" class="btn btn-secondary">Apply Fixes</button>
-        <button id="liveSyncPlanBtn" class="btn btn-secondary">Live Sync Plan</button>
-        <button id="liveSyncApplyBtn" class="btn btn-primary">Apply Live Sync</button>
-        <button id="propagationBtn" class="btn btn-secondary">Check Propagation</button>
-        <button id="refreshResultsBtn" class="btn btn-secondary">Refresh</button>
-        <button id="clearBtn" class="btn btn-secondary">Clear</button>
+        <button id="checkBtn" class="btn btn-primary" title="Run a full DNS check for SPF, DMARC, DKIM, and build an automation plan.">Check DNS</button>
+        <button id="fixBtn" class="btn btn-secondary" title="Apply the desired SPF/DMARC fixes from the automation plan to the current provider mode.">Apply Fixes</button>
+        <button id="liveSyncPlanBtn" class="btn btn-secondary" title="Compare desired TXT records against live DNS and preview required updates.">Live Sync Plan</button>
+        <button id="liveSyncApplyBtn" class="btn btn-primary" title="Apply the live sync changes so outdated/missing TXT records are created or updated.">Apply Live Sync</button>
+        <button id="refreshResultsBtn" class="btn btn-secondary" title="Re-run checks for the current domain and refresh all result panels.">Refresh</button>
+        <button id="clearBtn" class="btn btn-secondary" title="Clear the current domain, header input, and displayed results from the page.">Clear</button>
       </div>
 
       <label class="textarea-label">Email Header (optional - for DKIM validation)</label>
@@ -342,8 +467,8 @@
           <input id="cloudflareZoneInput" type="text" placeholder="Cloudflare Zone ID" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.04); color: var(--text);" />
         </div>
         <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
-          <button id="saveConfigBtn" class="btn btn-secondary">Save Provider Config</button>
-          <button id="testCloudflareBtn" class="btn btn-primary">Test Cloudflare Connection</button>
+          <button id="saveConfigBtn" class="btn btn-secondary" title="Save provider mode and Cloudflare credentials for DNS automation actions.">Save Provider Config</button>
+          <button id="testCloudflareBtn" class="btn btn-primary" title="Test whether the current Cloudflare token and zone ID can be used successfully.">Test Cloudflare Connection</button>
         </div>
       </div>
 
@@ -381,9 +506,32 @@
         <div class="result-card">
           <h3>
             <span class="result-icon">⚙️</span>
-            Automation Plan
+            Recommended Policy Comparison
           </h3>
           <div id="automationResults"></div>
+        </div>
+
+        <div class="result-card full-span">
+          <h3>
+            <span class="result-icon">🌍</span>
+            Propagation Monitor
+          </h3>
+          <div class="propagation-hint">Choose what to verify. SPF, DMARC, and DKIM presets auto-fill record details.</div>
+          <div id="dkimSelectorWarning" class="propagation-warning hidden">⚠ DKIM requires a selector from the email header.<br/>Example: <strong>s=selector1</strong></div>
+          <div class="propagation-controls">
+            <select id="propagationPresetSelect" class="propagation-input">
+              <option value="spf">SPF (root TXT)</option>
+              <option value="dmarc">DMARC (_dmarc)</option>
+              <option value="dkim">DKIM (selector1._domainkey)</option>
+              <option value="custom">Custom</option>
+            </select>
+            <input id="propagationRecordNameInput" class="propagation-input" type="text" placeholder="Record name" />
+            <input id="propagationExpectedInput" class="propagation-input" type="text" placeholder="Expected TXT snippet" value="v=spf1" />
+            <button id="propagationBtn" class="btn btn-secondary" title="Query multiple public resolvers to see whether this TXT change has propagated.">Check Propagation</button>
+          </div>
+          <div id="propagationResults">
+            <div class="record-item">Run a propagation check to see resolver-by-resolver status in this dedicated area.</div>
+          </div>
         </div>
       </div>
 
@@ -408,6 +556,11 @@
     const liveSyncPlanBtn = document.getElementById('liveSyncPlanBtn');
     const liveSyncApplyBtn = document.getElementById('liveSyncApplyBtn');
     const propagationBtn = document.getElementById('propagationBtn');
+    const propagationPresetSelect = document.getElementById('propagationPresetSelect');
+    const propagationRecordNameInput = document.getElementById('propagationRecordNameInput');
+    const propagationExpectedInput = document.getElementById('propagationExpectedInput');
+    const propagationResults = document.getElementById('propagationResults');
+    const dkimSelectorWarning = document.getElementById('dkimSelectorWarning');
     const refreshResultsBtn = document.getElementById('refreshResultsBtn');
     const clearBtn = document.getElementById('clearBtn');
     const providerBadge = document.getElementById('providerBadge');
@@ -419,7 +572,17 @@
     const loadingState = document.getElementById('loadingState');
     const errorBox = document.getElementById('errorBox');
     const resultsContainer = document.getElementById('resultsContainer');
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
     let lastRefreshAt = null;
+
+    function applyDnsStudioTheme(theme) {
+      const useLegacy = theme === 'legacy';
+      document.body.classList.toggle('legacy-theme', useLegacy);
+      if (themeToggleBtn) {
+        themeToggleBtn.textContent = useLegacy ? 'Switch to Shared Studio Colors' : 'Switch to Legacy Colors';
+      }
+      localStorage.setItem('dnsStudioTheme', useLegacy ? 'legacy' : 'shared');
+    }
 
     /**
      * Format DNS record for display
@@ -564,35 +727,50 @@
 
     function renderAutomationResults(plan) {
       if (!plan || !plan.summary) {
-        return '<div class="record-item">No automation plan available.</div>';
+        return '<div class="record-item">No policy comparison available.</div>';
       }
 
       const changes = plan.changes || [];
-      const missingCount = plan.summary.missingCount || 0;
-      const statusText = missingCount === 0 ? 'No changes needed' : `${missingCount} record(s) to add`;
-      const statusClass = missingCount === 0 ? 'found' : 'not-found';
+      const createCount = plan.summary.createCount || 0;
+      const updateCount = plan.summary.updateCount || 0;
+      const deleteCount = plan.summary.deleteCount || 0;
+      const totalChanges = createCount + updateCount + deleteCount;
+      const statusText = totalChanges === 0
+        ? 'Recommended policy already matches live state'
+        : `${updateCount} review/update, ${createCount} create, ${deleteCount} delete`;
+      const statusClass = totalChanges === 0 ? 'found' : 'error';
 
       let html = `
         <div class="record-item">
-          <div class="record-key">Automation Status</div>
+          <div class="record-key">Comparison Status</div>
           <span class="status-badge ${statusClass}">${statusText}</span>
         </div>
         <div class="record-item">
-          <div class="record-key">Desired SPF/DMARC State</div>
-          <div class="record-value">SPF and DMARC records are compared against the live domain state and any missing entries are flagged here.</div>
+          <div class="record-key">Recommended Policy Baseline</div>
+          <div class="record-value">SPF and DMARC are compared against the recommended policy. Existing records that differ are flagged for review instead of being treated as missing.</div>
         </div>
       `;
 
       if (changes.length === 0) {
-        html += '<div class="record-item">Everything in your desired DNS state is already present.</div>';
+        html += '<div class="record-item">Your live SPF and DMARC records already match the recommended policy.</div>';
       } else {
         changes.forEach((change) => {
+          const actionLabel = change.action === 'update'
+            ? 'Review / Update'
+            : change.action === 'delete'
+              ? 'Delete'
+              : 'Create';
+          const borderColor = change.action === 'update'
+            ? 'var(--warn)'
+            : change.action === 'delete'
+              ? 'var(--danger)'
+              : 'var(--accent)';
           const recordName = change.record.name || '@';
           const recordValue = change.record.content || '';
           html += `
-            <div class="record-item" style="border-left: 3px solid var(--accent);">
-              <div class="record-key">Create ${change.record.type}</div>
-              <div class="record-value">Name: ${recordName}<br/>Value: ${recordValue}</div>
+            <div class="record-item" style="border-left: 3px solid ${borderColor};">
+              <div class="record-key">${actionLabel} ${change.record.type}</div>
+              <div class="record-value">Name: ${recordName}<br/>Value: ${recordValue}${change.currentValue ? `<br/>Existing: ${change.currentValue}` : ''}${change.reason ? `<br/>Reason: ${change.reason}` : ''}</div>
             </div>
           `;
         });
@@ -744,36 +922,37 @@
         }
 
         const apiBase = getApiBase();
-        const [dnsResponse, automationResponse] = await Promise.all([
-          fetch(`${apiBase}/api/dns/full-check`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          }),
-          fetch(`${apiBase}/api/dns-automation/plan`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              domain,
-              desiredRecords: [
-                { type: 'TXT', name: '', content: 'v=spf1 a mx -all', ttl: 3600, purpose: 'spf' },
-                { type: 'TXT', name: '_dmarc', content: 'v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com', ttl: 3600, purpose: 'dmarc' },
-              ],
-            }),
-          }),
-        ]);
+        const dnsResponse = await fetch(`${apiBase}/api/dns/full-check`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
 
         if (!dnsResponse.ok) {
           const err = await parseJsonResponse(dnsResponse);
           throw new Error(err.error || 'DNS check failed');
         }
 
+        const dnsResult = await parseJsonResponse(dnsResponse);
+
+        const automationResponse = await fetch(`${apiBase}/api/dns-automation/plan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            domain,
+            desiredRecords: [
+              { type: 'TXT', name: '', content: 'v=spf1 a mx -all', ttl: 3600, purpose: 'spf' },
+              { type: 'TXT', name: '_dmarc', content: 'v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com', ttl: 3600, purpose: 'dmarc' },
+            ],
+            existingRecords: dnsResult.data?.dnsCheck?.records || {},
+          }),
+        });
+
         if (!automationResponse.ok) {
           const err = await parseJsonResponse(automationResponse);
           throw new Error(err.error || 'Automation plan failed');
         }
 
-        const dnsResult = await parseJsonResponse(dnsResponse);
         const automationResult = await parseJsonResponse(automationResponse);
 
         if (dnsResult.success && automationResult.success) {
@@ -841,6 +1020,18 @@
         return;
       }
 
+      const preset = (propagationPresetSelect?.value || 'spf').trim();
+      let recordName = (propagationRecordNameInput?.value || '').trim();
+      const expectedValue = (propagationExpectedInput?.value || '').trim();
+
+      if (preset === 'spf') {
+        recordName = '';
+      } else if (preset === 'dmarc') {
+        recordName = '_dmarc';
+      } else if (preset === 'dkim' && !recordName) {
+        recordName = 'selector1._domainkey';
+      }
+
       loadingState.classList.remove('hidden');
       errorBox.classList.add('hidden');
 
@@ -851,8 +1042,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             domain,
-            recordName: '',
-            expectedValue: 'v=spf1',
+            recordName,
+            expectedValue,
             recordType: 'TXT',
           }),
         });
@@ -869,7 +1060,7 @@
             ? 'Propagation in progress'
             : 'Not propagated';
 
-        document.getElementById('automationResults').innerHTML = `
+        propagationResults.innerHTML = `
           <div class="record-item">
             <div class="record-key">DNS Propagation Status</div>
             <div class="record-value">${statusText} (${summary.updated || 0}/${summary.total || 0} servers updated)</div>
@@ -887,6 +1078,36 @@
         showError(err.message);
       } finally {
         loadingState.classList.add('hidden');
+      }
+    }
+
+    function updatePropagationPreset() {
+      const preset = propagationPresetSelect?.value || 'spf';
+      if (dkimSelectorWarning) {
+        dkimSelectorWarning.classList.toggle('hidden', preset !== 'dkim');
+      }
+
+      if (preset === 'spf') {
+        propagationRecordNameInput.value = '';
+        propagationRecordNameInput.placeholder = 'Root record (auto)';
+        propagationRecordNameInput.disabled = true;
+        propagationExpectedInput.value = 'v=spf1';
+      } else if (preset === 'dmarc') {
+        propagationRecordNameInput.value = '_dmarc';
+        propagationRecordNameInput.placeholder = '_dmarc';
+        propagationRecordNameInput.disabled = true;
+        propagationExpectedInput.value = 'v=DMARC1';
+      } else if (preset === 'dkim') {
+        propagationRecordNameInput.value = 'selector1._domainkey';
+        propagationRecordNameInput.placeholder = 'selector1._domainkey';
+        propagationRecordNameInput.disabled = false;
+        propagationExpectedInput.value = 'v=DKIM1';
+      } else {
+        propagationRecordNameInput.value = '';
+        propagationRecordNameInput.placeholder = 'Custom record name (optional)';
+        propagationRecordNameInput.disabled = false;
+        propagationExpectedInput.value = '';
+        propagationExpectedInput.placeholder = 'Expected TXT snippet';
       }
     }
 
@@ -1018,6 +1239,11 @@
     liveSyncPlanBtn.addEventListener('click', () => runLiveSync('plan'));
     liveSyncApplyBtn.addEventListener('click', () => runLiveSync('apply'));
     propagationBtn.addEventListener('click', runPropagationCheck);
+    propagationPresetSelect.addEventListener('change', updatePropagationPreset);
+    themeToggleBtn.addEventListener('click', () => {
+      const nextTheme = document.body.classList.contains('legacy-theme') ? 'shared' : 'legacy';
+      applyDnsStudioTheme(nextTheme);
+    });
     refreshResultsBtn.addEventListener('click', () => {
       if (domainInput.value.trim()) {
         performCheck();
@@ -1046,10 +1272,13 @@
     const storedToken = localStorage.getItem('cloudflareApiToken') || '';
     const storedZone = localStorage.getItem('cloudflareZoneId') || '';
     const storedMode = localStorage.getItem('providerMode') || 'local-memory';
+    const storedTheme = localStorage.getItem('dnsStudioTheme') || 'shared';
     if (storedToken) cloudflareTokenInput.value = storedToken;
     if (storedZone) cloudflareZoneInput.value = storedZone;
     providerModeSelect.value = storedMode;
+    applyDnsStudioTheme(storedTheme);
     refreshProviderStatus();
+    updatePropagationPreset();
     domainInput.focus();
   </script>
 

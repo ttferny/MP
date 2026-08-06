@@ -86,7 +86,72 @@ function getProviderClient() {
   }
 }
 
-async function planDnsAutomation(domain, desiredRecords = DEFAULT_DESIRED_RECORDS) {
+function normalizeExistingDnsSnapshot(existingRecords = {}) {
+  const normalized = [];
+
+  if (existingRecords.spf?.status === 'found' && existingRecords.spf.record) {
+    normalized.push({
+      type: 'TXT',
+      name: '',
+      content: existingRecords.spf.record,
+      source: 'dns-check',
+      purpose: 'spf',
+    });
+  }
+
+  if (existingRecords.dmarc?.status === 'found' && existingRecords.dmarc.record) {
+    normalized.push({
+      type: 'TXT',
+      name: '_dmarc',
+      content: existingRecords.dmarc.record,
+      source: 'dns-check',
+      purpose: 'dmarc',
+    });
+  }
+
+  return normalized;
+}
+
+async function getLiveComparableRecords(domain, desiredRecords) {
+  const liveRecords = [];
+
+  for (const desired of desiredRecords) {
+    if (desired.type !== 'TXT') {
+      continue;
+    }
+
+    if (desired.purpose === 'spf' || desired.name === '') {
+      const liveSpf = await lookupWithFallback(dns.lookupSPFRecord, domain);
+      if (liveSpf) {
+        liveRecords.push({
+          type: 'TXT',
+          name: '',
+          content: liveSpf,
+          source: 'live-dns',
+          purpose: 'spf',
+        });
+      }
+      continue;
+    }
+
+    if (desired.purpose === 'dmarc' || desired.name === '_dmarc') {
+      const liveDmarc = await lookupWithFallback(dns.lookupDMARCRecord, domain);
+      if (liveDmarc) {
+        liveRecords.push({
+          type: 'TXT',
+          name: '_dmarc',
+          content: liveDmarc,
+          source: 'live-dns',
+          purpose: 'dmarc',
+        });
+      }
+    }
+  }
+
+  return liveRecords;
+}
+
+async function planDnsAutomation(domain, desiredRecords = DEFAULT_DESIRED_RECORDS, options = {}) {
   if (!domain || typeof domain !== 'string') {
     throw new Error('Domain is required');
   }
@@ -97,12 +162,29 @@ async function planDnsAutomation(domain, desiredRecords = DEFAULT_DESIRED_RECORD
 
   const normalizedDesired = (desiredRecords || []).map(normalizeRecord);
   const providerClient = getProviderClient();
-  const existingRecords = providerClient ? await providerClient.listRecords().catch(() => []) : (dnsLibrary.getRecords(domain) || []);
+  const providerRecords = providerClient ? await providerClient.listRecords().catch(() => []) : [];
+  const storedRecords = providerClient ? providerRecords : (dnsLibrary.getRecords(domain) || []);
+  const dnsSnapshotRecords = normalizeExistingDnsSnapshot(options.existingRecords || {});
+  const liveComparableRecords = dnsSnapshotRecords.length > 0
+    ? dnsSnapshotRecords
+    : await getLiveComparableRecords(domain, normalizedDesired);
+  const existingRecords = [...storedRecords];
+
+  for (const liveRecord of liveComparableRecords) {
+    const hasEquivalentStoredRecord = existingRecords.some((record) => {
+      return record.type === liveRecord.type && String(record.name || '') === String(liveRecord.name || '');
+    });
+
+    if (!hasEquivalentStoredRecord) {
+      existingRecords.push(liveRecord);
+    }
+  }
+
   const changes = [];
 
   const desiredKeys = new Set(normalizedDesired.map((record) => `${record.type}:${String(record.name || '')}:${String(record.content || '')}`));
 
-  const managedRecords = existingRecords.filter((record) => record.managedByDesiredState || record.source === 'desired-state' || record.purpose);
+  const managedRecords = storedRecords.filter((record) => record.managedByDesiredState || record.source === 'desired-state' || record.purpose);
 
   for (const desired of normalizedDesired) {
     const desiredKey = `${desired.type}:${String(desired.name || '')}:${String(desired.content || '')}`;
@@ -114,9 +196,10 @@ async function planDnsAutomation(domain, desiredRecords = DEFAULT_DESIRED_RECORD
         changes.push({
           action: 'update',
           record: desired,
-          reason: `${desired.purpose || desired.type} record differs from desired state`,
+          reason: `${(desired.purpose || desired.type).toUpperCase()} record differs from recommended policy`,
           currentValue: sameNameRecord.content || sameNameRecord.target || '',
           existingRecord: sameNameRecord,
+          reviewRequired: true,
         });
       } else {
         changes.push({
@@ -140,8 +223,8 @@ async function planDnsAutomation(domain, desiredRecords = DEFAULT_DESIRED_RECORD
     }
   }
 
-  const liveSpf = await lookupWithFallback(dns.lookupSPFRecord, domain);
-  const liveDmarc = await lookupWithFallback(dns.lookupDMARCRecord, domain);
+  const liveSpf = liveComparableRecords.find((record) => record.purpose === 'spf')?.content || null;
+  const liveDmarc = liveComparableRecords.find((record) => record.purpose === 'dmarc')?.content || null;
 
   const summary = {
     desiredCount: normalizedDesired.length,

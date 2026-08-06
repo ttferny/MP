@@ -243,5 +243,2189 @@
         "reason": "dmarc record missing"
       }
     ]
+  },
+  {
+    "id": "1786033170624-15vmrg",
+    "timestamp": "2026-08-06T16:19:30.625Z",
+    "kind": "plan",
+    "domain": "ntuc.org.sg",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786033234424-lbmvdz",
+    "timestamp": "2026-08-06T16:20:34.424Z",
+    "kind": "plan",
+    "domain": "ntuc.org.sg",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786033242030-mkie4b",
+    "timestamp": "2026-08-06T16:20:42.030Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786033262901-165yvu",
+    "timestamp": "2026-08-06T16:21:02.901Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786033358911-05b0ac",
+    "timestamp": "2026-08-06T16:22:38.911Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786033364046-x5ujux",
+    "timestamp": "2026-08-06T16:22:44.046Z",
+    "kind": "plan",
+    "domain": "grab.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786033457614-eljybs",
+    "timestamp": "2026-08-06T16:24:17.614Z",
+    "kind": "plan",
+    "domain": "grab.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786033523218-k73j80",
+    "timestamp": "2026-08-06T16:25:23.218Z",
+    "kind": "plan",
+    "domain": "grab.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786033785287-166l8g",
+    "timestamp": "2026-08-06T16:29:45.287Z",
+    "kind": "plan",
+    "domain": "grab.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786033786607-6a2667",
+    "timestamp": "2026-08-06T16:29:46.607Z",
+    "kind": "plan",
+    "domain": "grab.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786033869831-af32k5",
+    "timestamp": "2026-08-06T16:31:09.831Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786033975354-zzwakh",
+    "timestamp": "2026-08-06T16:32:55.354Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786034009552-q3qu9g",
+    "timestamp": "2026-08-06T16:33:29.552Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786034009560-ruklv3",
+    "timestamp": "2026-08-06T16:33:29.560Z",
+    "kind": "apply",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "applied": [
+      {
+        "id": "google.com_1786034009555_gyd6mzrqj",
+        "domain": "google.com",
+        "type": "TXT",
+        "name": "",
+        "content": "v=spf1 a mx -all",
+        "ttl": 3600,
+        "priority": null,
+        "weight": null,
+        "port": null,
+        "flag": null,
+        "tag": null,
+        "createdAt": "2026-08-06T16:33:29.555Z",
+        "updatedAt": "2026-08-06T16:33:29.555Z"
+      },
+      {
+        "id": "google.com_1786034009557_dp5ks7ugh",
+        "domain": "google.com",
+        "type": "TXT",
+        "name": "_dmarc",
+        "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+        "ttl": 3600,
+        "priority": null,
+        "weight": null,
+        "port": null,
+        "flag": null,
+        "tag": null,
+        "createdAt": "2026-08-06T16:33:29.557Z",
+        "updatedAt": "2026-08-06T16:33:29.557Z"
+      }
+    ],
+    "dryRun": false
+  },
+  {
+    "id": "1786034029544-m4k06y",
+    "timestamp": "2026-08-06T16:33:49.544Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": []
+  },
+  {
+    "id": "1786034057239-6p7vhj",
+    "timestamp": "2026-08-06T16:34:17.239Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": []
+  },
+  {
+    "id": "1786034057243-artwp9",
+    "timestamp": "2026-08-06T16:34:17.243Z",
+    "kind": "apply",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "applied": [],
+    "dryRun": false
+  },
+  {
+    "id": "1786034061009-sx02zy",
+    "timestamp": "2026-08-06T16:34:21.009Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": []
+  },
+  {
+    "id": "1786034068641-9lhfyi",
+    "timestamp": "2026-08-06T16:34:28.641Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": []
+  },
+  {
+    "id": "1786034084851-9lyu2k",
+    "timestamp": "2026-08-06T16:34:44.851Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": []
+  },
+  {
+    "id": "1786034106211-75jxwv",
+    "timestamp": "2026-08-06T16:35:06.211Z",
+    "kind": "plan",
+    "domain": "grab.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786034364165-g2ibfc",
+    "timestamp": "2026-08-06T16:39:24.165Z",
+    "kind": "plan",
+    "domain": "grab.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786034412403-5lid17",
+    "timestamp": "2026-08-06T16:40:12.403Z",
+    "kind": "plan",
+    "domain": "grab.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786034412408-dmf35v",
+    "timestamp": "2026-08-06T16:40:12.408Z",
+    "kind": "apply",
+    "domain": "grab.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "applied": [
+      {
+        "id": "grab.com_1786034412404_4mltmhm5e",
+        "domain": "grab.com",
+        "type": "TXT",
+        "name": "",
+        "content": "v=spf1 a mx -all",
+        "ttl": 3600,
+        "priority": null,
+        "weight": null,
+        "port": null,
+        "flag": null,
+        "tag": null,
+        "createdAt": "2026-08-06T16:40:12.404Z",
+        "updatedAt": "2026-08-06T16:40:12.404Z"
+      },
+      {
+        "id": "grab.com_1786034412405_rmnuh8o1j",
+        "domain": "grab.com",
+        "type": "TXT",
+        "name": "_dmarc",
+        "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+        "ttl": 3600,
+        "priority": null,
+        "weight": null,
+        "port": null,
+        "flag": null,
+        "tag": null,
+        "createdAt": "2026-08-06T16:40:12.405Z",
+        "updatedAt": "2026-08-06T16:40:12.405Z"
+      }
+    ],
+    "dryRun": false
+  },
+  {
+    "id": "1786034440711-1nrwb8",
+    "timestamp": "2026-08-06T16:40:40.711Z",
+    "kind": "plan",
+    "domain": "ntuc.org.sg",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786034443247-uv3qgw",
+    "timestamp": "2026-08-06T16:40:43.247Z",
+    "kind": "plan",
+    "domain": "ntuc.org.sg",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786034487144-s5esr1",
+    "timestamp": "2026-08-06T16:41:27.144Z",
+    "kind": "plan",
+    "domain": "ntuc.org.sg",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786035822940-tb4enc",
+    "timestamp": "2026-08-06T17:03:42.940Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786035822947-zr8m5l",
+    "timestamp": "2026-08-06T17:03:42.947Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 1,
+      "existingCount": 0,
+      "createCount": 1,
+      "missingCount": 1,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786035822977-q1t9y2",
+    "timestamp": "2026-08-06T17:03:42.977Z",
+    "kind": "apply",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 1,
+      "existingCount": 0,
+      "createCount": 1,
+      "missingCount": 1,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "applied": [
+      {
+        "id": "1",
+        "type": "TXT"
+      }
+    ],
+    "dryRun": false
+  },
+  {
+    "id": "1786035822982-ypzwp1",
+    "timestamp": "2026-08-06T17:03:42.982Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 1,
+      "existingCount": 1,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 1,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.example.com ~all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record differs from recommended policy",
+        "currentValue": "v=spf1 a mx -all",
+        "existingRecord": {
+          "id": "1",
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786035822986-da3wa0",
+    "timestamp": "2026-08-06T17:03:42.986Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 0,
+      "existingCount": 1,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 1,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "delete",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record is no longer desired",
+        "existingRecord": {
+          "id": "2",
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "managedByDesiredState": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "1786035822991-bvjyrl",
+    "timestamp": "2026-08-06T17:03:42.991Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 1,
+      "existingCount": 1,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 1,
+      "deleteCount": 1,
+      "hasSpf": true,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 ip4:20.33.0.0/16 include:spf.protection.outlook.com -all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 ip4:20.33.0.0/16 include:spf.protection.outlook.com -all",
+          "source": "live-dns",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "delete",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 ip4:20.33.0.0/16 include:spf.protection.outlook.com -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "TXT record is no longer desired",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 ip4:20.33.0.0/16 include:spf.protection.outlook.com -all",
+          "source": "live-dns",
+          "purpose": "spf"
+        }
+      }
+    ]
+  },
+  {
+    "id": "1786035835108-i35eo5",
+    "timestamp": "2026-08-06T17:03:55.108Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786035835114-coc9v3",
+    "timestamp": "2026-08-06T17:03:55.114Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 1,
+      "existingCount": 0,
+      "createCount": 1,
+      "missingCount": 1,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786035835138-3kbqbw",
+    "timestamp": "2026-08-06T17:03:55.138Z",
+    "kind": "apply",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 1,
+      "existingCount": 0,
+      "createCount": 1,
+      "missingCount": 1,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "applied": [
+      {
+        "id": "1",
+        "type": "TXT"
+      }
+    ],
+    "dryRun": false
+  },
+  {
+    "id": "1786035835142-scvaxx",
+    "timestamp": "2026-08-06T17:03:55.143Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 1,
+      "existingCount": 1,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 1,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.example.com ~all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record differs from recommended policy",
+        "currentValue": "v=spf1 a mx -all",
+        "existingRecord": {
+          "id": "1",
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786035835149-axzimg",
+    "timestamp": "2026-08-06T17:03:55.149Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 0,
+      "existingCount": 1,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 1,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "delete",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record is no longer desired",
+        "existingRecord": {
+          "id": "2",
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "managedByDesiredState": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "1786035835153-29848u",
+    "timestamp": "2026-08-06T17:03:55.153Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 1,
+      "existingCount": 1,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 1,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 ip4:20.33.0.0/16 include:spf.protection.outlook.com -all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 ip4:20.33.0.0/16 include:spf.protection.outlook.com -all",
+          "source": "live-dns",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786037178979-0qw0is",
+    "timestamp": "2026-08-06T17:26:18.979Z",
+    "kind": "plan",
+    "domain": "ntuc.org.sg",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786037264979-jr8ohp",
+    "timestamp": "2026-08-06T17:27:44.979Z",
+    "kind": "plan",
+    "domain": "ntuc.org.sg",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786037505693-xai3d4",
+    "timestamp": "2026-08-06T17:31:45.693Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": []
+  },
+  {
+    "id": "1786037717665-hfv3se",
+    "timestamp": "2026-08-06T17:35:17.665Z",
+    "kind": "plan",
+    "domain": "ntuc.org.sg",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786038016372-33nejh",
+    "timestamp": "2026-08-06T17:40:16.372Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786038016378-nouyt7",
+    "timestamp": "2026-08-06T17:40:16.378Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 1,
+      "existingCount": 0,
+      "createCount": 1,
+      "missingCount": 1,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786038016410-vydv81",
+    "timestamp": "2026-08-06T17:40:16.410Z",
+    "kind": "apply",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 1,
+      "existingCount": 0,
+      "createCount": 1,
+      "missingCount": 1,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "applied": [
+      {
+        "id": "1",
+        "type": "TXT"
+      }
+    ],
+    "dryRun": false
+  },
+  {
+    "id": "1786038016414-pvuw43",
+    "timestamp": "2026-08-06T17:40:16.414Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 1,
+      "existingCount": 1,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 1,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.example.com ~all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record differs from recommended policy",
+        "currentValue": "v=spf1 a mx -all",
+        "existingRecord": {
+          "id": "1",
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786038016418-8n79rt",
+    "timestamp": "2026-08-06T17:40:16.418Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 0,
+      "existingCount": 1,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 1,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "delete",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record is no longer desired",
+        "existingRecord": {
+          "id": "2",
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "managedByDesiredState": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "1786038016422-qdnidt",
+    "timestamp": "2026-08-06T17:40:16.422Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 1,
+      "existingCount": 1,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 1,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 ip4:20.33.0.0/16 include:spf.protection.outlook.com -all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 ip4:20.33.0.0/16 include:spf.protection.outlook.com -all",
+          "source": "live-dns",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786038016426-ua9q54",
+    "timestamp": "2026-08-06T17:40:16.426Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 1,
+      "existingCount": 1,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 1,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.example.com ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.example.com ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786041764936-s4ei4j",
+    "timestamp": "2026-08-06T18:42:44.936Z",
+    "kind": "plan",
+    "domain": "ntuc.org.sg",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
   }
 ]
