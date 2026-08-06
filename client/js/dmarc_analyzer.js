@@ -54,7 +54,6 @@ function setupEventListeners() {
 
 function updateUploadUI(file) {
   uploadBox.innerHTML = `
-    <div style="color: #10b981; font-size: 2rem; margin-bottom: 10px;">✅</div>
     <p style="color: #fff; margin: 0;"><strong>${file.name}</strong></p>
     <p style="color: #9ca3af; margin: 5px 0 0 0; font-size: 0.9rem;">${(file.size / 1024).toFixed(2)} KB</p>
   `;
@@ -213,7 +212,7 @@ function displayResults() {
   document.getElementById('suspiciousCount').textContent = suspiciousActivity.suspiciousIPs.length;
 
   if (suspiciousActivity.suspiciousIPs.length === 0) {
-    suspiciousContainer.innerHTML = '<p style="color: #86efac; padding: 15px;">✅ No suspicious IPs detected</p>';
+    suspiciousContainer.innerHTML = '<p style="color: #86efac; padding: 15px;">No suspicious IPs detected</p>';
     document.getElementById('suspiciousCard').style.display = 'none';
   } else {
     suspiciousContainer.innerHTML = suspiciousActivity.suspiciousIPs.map(ip => `
@@ -229,7 +228,7 @@ function displayResults() {
   if (spoofingDetection.detected) {
     document.getElementById('spoofingCard').style.display = 'block';
     spoofingContainer.innerHTML = `
-      <div class="spoofing-status detected">⚠️ Spoofing Indicators Detected (${spoofingDetection.confidence}% confidence)</div>
+      <div class="spoofing-status detected">Spoofing Indicators Detected (${spoofingDetection.confidence}% confidence)</div>
       <p style="color: #9ca3af; margin-bottom: 15px;">${spoofingDetection.affectedEmails} suspicious email(s) detected</p>
       <div class="spoofing-indicators">
         ${spoofingDetection.indicators.slice(0, 5).map(indicator => `
@@ -274,8 +273,8 @@ function displayResults() {
         <span class="category-tag">${rec.category}</span>
       </div>
       <div class="recommendation-title">${rec.issue}</div>
-      <div class="recommendation-desc">🔧 ${rec.action}</div>
-      <div class="recommendation-impact">📌 ${rec.impact}</div>
+      <div class="recommendation-desc">${rec.action}</div>
+      <div class="recommendation-impact">${rec.impact}</div>
     </div>
   `).join('');
 

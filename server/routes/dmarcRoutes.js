@@ -349,10 +349,23 @@ router.post('/test-email', async (req, res) => {
       // Same structural heuristic used by the live SMTP monitor —
       // we can't cryptographically verify an email found elsewhere,
       // so we check whether the visible identity lines up structurally.
-      const spfDomain  = parsed.envelopeDomain || parsed.fromDomain;
-      const spf        = { status: spfDomain === parsed.fromDomain ? 'pass' : 'fail', domain: spfDomain };
+      //
+      // parseEmailHeader() silently falls back to fromDomain for
+      // envelopeDomain when no Return-Path or Authentication-Results
+      // header exists — without checking for that here, a bare email
+      // (From: + Subject: only, no real headers) would look identical
+      // to a genuine SPF pass. We check the raw pasted text directly
+      // for actual evidence before treating SPF as verifiable at all.
+      const hasEnvelopeEvidence = /^\s*(return-path|authentication-results|received-spf)\s*:/im.test(rawSource);
+
+      const spfDomain = parsed.envelopeDomain || parsed.fromDomain;
+      const spfStatus = !hasEnvelopeEvidence
+        ? 'none'
+        : (spfDomain === parsed.fromDomain ? 'pass' : 'fail');
+      const spf = { status: spfStatus, domain: spfDomain };
+
       const dkimDomain = parsed.dkimSignature?.d || '';
-      const dkim        = { status: dkimDomain ? 'pass' : 'fail', domain: dkimDomain };
+      const dkim = { status: dkimDomain ? 'pass' : 'none', domain: dkimDomain };
 
       const result = evaluateDMARC(spf, dkim, dmarcParsed);
 
@@ -362,6 +375,7 @@ router.post('/test-email', async (req, res) => {
         ...result,
         fromDomain: parsed.fromDomain,
         heuristic: true,
+        hasEnvelopeEvidence,
         email: {
           from:           parsed.fromEmail,
           subject:        parsed.subject || '(no subject)',
@@ -486,10 +500,10 @@ router.get('/propagation/:domain', async (req, res) => {
 
   // Four major public DNS resolvers
   const resolvers = [
-    { name: 'Google',     ip: '8.8.8.8',       flag: '🇺🇸' },
-    { name: 'Cloudflare', ip: '1.1.1.1',       flag: '🌐' },
-    { name: 'OpenDNS',    ip: '208.67.222.222', flag: '🇺🇸' },
-    { name: 'Quad9',      ip: '9.9.9.9',        flag: '🇨🇭' },
+    { name: 'Google',     ip: '8.8.8.8' },
+    { name: 'Cloudflare', ip: '1.1.1.1' },
+    { name: 'OpenDNS',    ip: '208.67.222.222' },
+    { name: 'Quad9',      ip: '9.9.9.9' },
   ];
 
   // Query each resolver in parallel with a 5 second timeout
@@ -509,7 +523,6 @@ router.get('/propagation/:domain', async (req, res) => {
       return {
         resolver:  r.name,
         ip:        r.ip,
-        flag:      r.flag,
         status:    dmarcRecord ? 'found' : 'not_found',
         record:    dmarcRecord,
         error:     null,
@@ -518,7 +531,6 @@ router.get('/propagation/:domain', async (req, res) => {
       return {
         resolver:  r.name,
         ip:        r.ip,
-        flag:      r.flag,
         status:    err.message === 'timeout' ? 'timeout' : 'not_found',
         record:    null,
         error:     err.message === 'timeout' ? 'Request timed out' : null,

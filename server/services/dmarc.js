@@ -94,7 +94,12 @@ const evaluateDMARC = (spf, dkim, parsed) => {
 
 const checkAlignment = (authStatus, authDomain, fromDomain, mode, protocolLabel = "Authentication") => {
   if (authStatus !== "pass") {
-    return { aligned: false, reason: `${protocolLabel} ${authStatus === "fail" ? "failed" : `check returned "${authStatus}"`} — a failed check cannot be used for alignment` };
+    const detail = authStatus === "fail"
+      ? `${protocolLabel} failed`
+      : authStatus === "none"
+        ? `No ${protocolLabel} information was found to check`
+        : `${protocolLabel} check returned "${authStatus}"`;
+    return { aligned: false, reason: `${detail} — cannot be used for DMARC alignment` };
   }
   if (!authDomain || !fromDomain) {
     return { aligned: false, reason: "One or both domains are missing — alignment check cannot be completed" };

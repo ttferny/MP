@@ -23,7 +23,7 @@
         <a class="nav-link" href="spf.html">SPF Lab</a>
         <a class="nav-link active" href="dmarc.html">DMARC Lab</a>
         <a class="nav-link" href="dns-studio.html">DNS Automation</a>
-        <a class="nav-link featured" href="dns-manager.html">🌐 DNS Manager</a>
+        <a class="nav-link featured" href="dns-manager.html">DNS Manager</a>
       </nav>
     </div>
   </header>
@@ -210,7 +210,7 @@
         </div>
 
         <button type="button" class="btn-secondary" id="advanced-toggle-btn" onclick="toggleAdvancedPolicy()" style="font-size:12px; padding:8px 14px;">
-          ⚙ Show Advanced Settings (SPF/DKIM strictness, subdomains)
+          Show Advanced Settings (SPF/DKIM strictness, subdomains)
         </button>
 
         <div id="advanced-policy-settings" style="display:none; margin-top:14px;">
@@ -259,7 +259,6 @@
         <div class="card-title">Step 3 — Policy Engine Result</div>
 
         <div class="verdict-badge" id="verdict-badge">
-          <span class="verdict-icon" id="verdict-icon"></span>
           <span id="verdict-text"></span>
         </div>
 
@@ -304,6 +303,9 @@
           <div style="font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--fail); margin-bottom:6px;">Real World Impact</div>
           <div id="cost-callout-text" style="font-size:13px; color:var(--text); line-height:1.6;"></div>
         </div>
+
+        <div class="card-title" style="margin-top:20px;">Step-by-Step: How DMARC Reached This Verdict</div>
+        <div id="scenario-pipeline"></div>
       </div>
 
       <!-- Inline Policy Comparison — appears after result is shown -->
@@ -536,6 +538,13 @@
         </div>
 
         <div id="test-email-raw-section">
+          <div class="form-group" style="margin-bottom:16px;">
+            <label>Quick Load — Example Emails<span class="info-tip" tabindex="0" data-tip="Real phishing headers are hard to get hold of, since most examples online are just screenshots without the underlying headers. These are constructed examples with realistic headers so you can see the checker working."></span></label>
+            <div class="scenarios" style="margin-top:8px;">
+              <button class="scenario-btn" onclick="loadEmailExample('phish')">Spoofed Bank Phishing</button>
+              <button class="scenario-btn" onclick="loadEmailExample('legit')">Legitimate Notification</button>
+            </div>
+          </div>
           <div class="form-group" style="margin-bottom:12px;">
             <label>Raw Email Source<span class="info-tip" tabindex="0" data-tip="In Gmail: open the email, click the ⋮ menu, choose 'Show original', then copy everything. In Outlook: File → Properties → Internet headers. Paste the whole thing, headers included."></span></label>
             <textarea id="test-email-raw" rows="8" placeholder="Paste the full raw email here — including the headers (From:, Received:, DKIM-Signature:, etc.), not just the visible message text." style="width:100%; resize:vertical; font-size:12px;"></textarea>
