@@ -192,5 +192,56 @@
         }
       }
     ]
+  },
+  {
+    "id": "1786030667973-8e3lgs",
+    "timestamp": "2026-08-06T15:37:47.973Z",
+    "kind": "plan",
+    "domain": "ntuc.org.sg",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
   }
 ]
