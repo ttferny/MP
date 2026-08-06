@@ -1148,6 +1148,52 @@ async function testRawEmail() {
   }
 }
 
+// Builds concrete next-action guidance for a raw-header DMARC evaluation —
+// turns a verdict into "what do I actually do now" rather than just an explanation.
+function buildNextStepsHTML(r, hasEvidence) {
+  const items = [];
+
+  if (!hasEvidence) {
+    items.push("SPF couldn't be checked from what was pasted — get the full raw source (headers included, not just the visible message) from your email client for a real check, or confirm with the sender through a separate, already-known channel before trusting it.");
+  } else if (r.status === 'fail') {
+    items.push("This failed DMARC — treat it as suspicious. Don't click any links, reply, or enter any information.");
+    items.push('Report it to your IT/security team, or use your email client\'s "Report Phishing" option, then delete it.');
+    if (r.action === 'deliver') {
+      items.push(`This domain's DMARC policy is weak (p=${r.policy || 'none'}), so a real attacker's copy of this would likely have reached the inbox unblocked — worth flagging to whoever manages this domain's email security.`);
+    }
+  } else {
+    items.push("SPF/DKIM aligned with the sender domain — structurally this looks like it came from where it claims to.");
+    items.push("That only confirms authentication, not intent. If it asks for money, credentials, or urgent action, verify through a separate, known channel before acting on it.");
+  }
+
+  items.push("This check covers DMARC/SPF/DKIM only — it doesn't scan links, attachments, or wording for malicious content.");
+
+  return `
+    <div class="card-title" style="margin-top:20px;">Recommended Next Steps</div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      ${items.map(i => `<div class="audit-rec">${i}</div>`).join('')}
+    </div>`;
+}
+
+// Same idea for the "basic details" heuristic check
+function buildSimpleNextStepsHTML(r) {
+  const items = [];
+  if (r.claimedDomain === null) {
+    items.push('Add the real company\'s domain above to check whether this sender is a lookalike.');
+  } else if (r.domainsMatch) {
+    items.push('The domain matches, but that alone doesn\'t prove the email is genuine. Use "Paste Raw Email" with the full headers for a real authentication check.');
+    items.push("If it asks for money, credentials, or urgent action, verify through a separate, known channel first.");
+  } else {
+    items.push("This did not come from the real company's domain. Don't click any links, reply, or enter any information.");
+    items.push('Report it to your IT/security team or your email provider\'s phishing report option, then delete it.');
+  }
+  return `
+    <div class="card-title" style="margin-top:16px;">Recommended Next Steps</div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      ${items.map(i => `<div class="audit-rec">${i}</div>`).join('')}
+    </div>`;
+}
+
 function renderTestEmailRawResult(r) {
   const resultEl = document.getElementById('test-email-result');
   const e = r.email || {};
@@ -1176,7 +1222,8 @@ function renderTestEmailRawResult(r) {
     </div>
 
     <div class="card-title">Step-by-Step: How We Got This Result</div>
-    ${buildPipelineHTML(r, e)}`;
+    ${buildPipelineHTML(r, e)}
+    ${buildNextStepsHTML(r, r.hasEnvelopeEvidence)}`;
 
   resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -1229,7 +1276,8 @@ function renderTestEmailSimpleResult(r) {
       <div style="display:flex; align-items:center; gap:16px; margin-bottom:12px;">
         <div class="grade-${audit.grade}" style="width:56px; height:56px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:28px; font-weight:700; flex-shrink:0;">${audit.grade}</div>
         <div style="font-size:14px; color:var(--text); line-height:1.5;">${audit.gradeDescription || ''}</div>
-      </div>` : ''}`;
+      </div>` : ''}
+    ${buildSimpleNextStepsHTML(r)}`;
 
   resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
