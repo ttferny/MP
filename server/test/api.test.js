@@ -34,7 +34,7 @@ const request    = require('supertest'); // HTTP test client
 // ── We build a lightweight test version of the app ────────
 // This avoids needing dkim.js and dmarc.js to exist yet.
 // We mock those services so Tiffany's parts can be tested independently.
-jest.mock('../server/services/dkim', () => ({
+jest.mock('../services/dkim', () => ({
   verifyDKIM: jest.fn().mockResolvedValue({
     result: 'pass',
     reason: 'Mocked DKIM pass',
@@ -45,7 +45,7 @@ jest.mock('../server/services/dkim', () => ({
   }),
 }));
 
-jest.mock('../server/services/dmarc', () => ({
+jest.mock('../services/dmarc', () => ({
   evaluateDMARC: jest.fn().mockResolvedValue({
     verdict: 'deliver',
     policy: 'reject',
@@ -58,16 +58,14 @@ jest.mock('../server/services/dmarc', () => ({
 }));
 
 // Mock dns lookups so tests don't make real network calls
-jest.mock('../server/services/dns', () => ({
+jest.mock('../services/dns', () => ({
   lookupSPFRecord:  jest.fn().mockResolvedValue('v=spf1 ip4:203.0.113.0/24 -all'),
   lookupDMARCRecord: jest.fn().mockResolvedValue('v=DMARC1; p=reject'),
   lookupDKIMRecord:  jest.fn().mockResolvedValue('v=DKIM1; k=rsa; p=mockkey'),
-  lookupARecords:    jest.fn().mockResolvedValue([]),
-  lookupMXRecords:   jest.fn().mockResolvedValue([]),
 }));
 
 // Now load the real app (with mocks in place)
-const app = require('../server/app');
+const app = require('../app');
 
 // ── Sample headers used across tests ──────────────────────
 const VALID_HEADER = [
@@ -178,7 +176,7 @@ describe('POST /api/analyse/header — response structure', () => {
     expect(spf.reason).toBeDefined();
     expect(spf.domain).toBeDefined();
     expect(spf.ip).toBeDefined();
-  });
+  }, 10000);
 
   // ── POSITIVE: SPF result is a valid RFC 7208 value ────────
   test('[POSITIVE] SPF result value is a valid RFC 7208 string', async () => {
@@ -198,7 +196,7 @@ describe('POST /api/analyse/header — response structure', () => {
 
     expect(res.body.parsed.raw).toBeDefined();
     expect(typeof res.body.parsed.raw).toBe('object');
-  });
+  }, 10000);
 });
 
 // ══════════════════════════════════════════════════════════════

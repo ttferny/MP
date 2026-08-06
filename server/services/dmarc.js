@@ -30,8 +30,8 @@ const evaluateDMARC = (spf, dkim, parsed) => {
     };
   }
 
-  const spfCheck  = checkAlignment(spf.status,  spf.domain,  fromDomain, aspf);
-  const dkimCheck = checkAlignment(dkim.status, dkim.domain, fromDomain, adkim);
+  const spfCheck  = checkAlignment(spf.status,  spf.domain,  fromDomain, aspf,  "SPF");
+  const dkimCheck = checkAlignment(dkim.status, dkim.domain, fromDomain, adkim, "DKIM");
 
   const spfAligned  = spfCheck.aligned;
   const dkimAligned = dkimCheck.aligned;
@@ -92,9 +92,14 @@ const evaluateDMARC = (spf, dkim, parsed) => {
 };
 
 
-const checkAlignment = (authStatus, authDomain, fromDomain, mode) => {
+const checkAlignment = (authStatus, authDomain, fromDomain, mode, protocolLabel = "Authentication") => {
   if (authStatus !== "pass") {
-    return { aligned: false, reason: `${authStatus === "fail" ? "SPF/DKIM" : "Authentication"} check failed — a failed check cannot be used for alignment` };
+    const detail = authStatus === "fail"
+      ? `${protocolLabel} failed`
+      : authStatus === "none"
+        ? `No ${protocolLabel} information was found to check`
+        : `${protocolLabel} check returned "${authStatus}"`;
+    return { aligned: false, reason: `${detail} — cannot be used for DMARC alignment` };
   }
   if (!authDomain || !fromDomain) {
     return { aligned: false, reason: "One or both domains are missing — alignment check cannot be completed" };

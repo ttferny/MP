@@ -78,7 +78,10 @@ function splitHeaders(raw) {
 // ─────────────────────────────────────────────
 function extractEmail(str = '') {
   const match = str.match(/<([^>]+)>/);
-  return match ? match[1].trim() : str.trim();
+  let email = match ? match[1].trim() : str.trim();
+  // Strip any surrounding quotes
+  email = email.replace(/^["']|["']$/g, '');
+  return email;
 }
 
 // ─────────────────────────────────────────────
@@ -89,7 +92,27 @@ function extractEmail(str = '') {
 // ─────────────────────────────────────────────
 function extractDomain(email = '') {
   const parts = email.split('@');
-  return parts.length === 2 ? parts[1].toLowerCase() : '';
+  let domain = parts.length === 2 ? parts[1].toLowerCase() : '';
+  // Strip any surrounding quotes
+  domain = domain.replace(/^["']|["']$/g, '');
+  return domain;
+}
+
+function normalizeHeaderText(value) {
+  if (Array.isArray(value)) {
+    return value.join(' ');
+  }
+  return value || '';
+}
+
+function extractAuthDomain(value = '') {
+  const cleaned = String(value).replace(/[<>]/g, '').trim();
+  return extractDomain(cleaned) || cleaned.toLowerCase();
+}
+
+function isSchoolDomain(domain = '') {
+  const value = String(domain || '').toLowerCase();
+  return value === 'tp.edu.sg' || value.endsWith('.tp.edu.sg');
 }
 
 // ─────────────────────────────────────────────
@@ -150,11 +173,18 @@ function parseEmailHeader(rawHeader) {
     ? headers['return-path'][0]
     : (headers['return-path'] || '');
 // Check Received-SPF or Authentication-Results if Return-Path is empty
-  const authResults = headers['authentication-results'] || '';
-  const spfHeaderMatch = authResults.match(/smtp\.mailfrom=([^\s;]+)/i);
+  const authResults = normalizeHeaderText(headers['authentication-results']);
+  const receivedSpf = normalizeHeaderText(headers['received-spf']);
+  const exchangeAuthAs = normalizeHeaderText(headers['x-ms-exchange-organization-authas']);
+  const exchangeAuthMechanism = normalizeHeaderText(headers['x-ms-exchange-organization-authmechanism']);
+  const exchangeAuthSource = normalizeHeaderText(headers['x-ms-exchange-organization-authsource']);
+  const spfAuthContext = `${authResults} ${receivedSpf}`.trim();
+  const spfHeaderMatch = spfAuthContext.match(/(?:smtp\.mailfrom|envelope-from)=<?([^\s;>]+)/i);
 
   const envelopeFrom = extractEmail(returnPath);
-  const envelopeDomain = extractDomain(envelopeFrom) || fromDomain;
+  const envelopeDomain = spfHeaderMatch
+    ? extractAuthDomain(spfHeaderMatch[1])
+    : (extractDomain(envelopeFrom) || fromDomain);
   // Example: "Return-Path: <bounce@attacker.com>" → envelopeDomain = "attacker.com"
 
   // ── Received headers (the routing chain) ──────────────────
@@ -185,12 +215,8 @@ function parseEmailHeader(rawHeader) {
     };
 
     // 1. Check Authentication-Results or Received-SPF for explicit client-ip/designator IP
-    const authResults = Array.isArray(headers['authentication-results']) 
-      ? headers['authentication-results'].join(' ') 
-      : (headers['authentication-results'] || '');
-    const receivedSpf = Array.isArray(headers['received-spf']) 
-      ? headers['received-spf'].join(' ') 
-      : (headers['received-spf'] || '');
+    const authResults = normalizeHeaderText(headers['authentication-results']);
+    const receivedSpf = normalizeHeaderText(headers['received-spf']);
 
     const explicitIpMatch = (authResults + ' ' + receivedSpf).match(/(?:client-ip|designator\/ip)=([0-9.]+)/i);
     if (explicitIpMatch && isPublicIP(explicitIpMatch[1])) {
@@ -227,6 +253,8 @@ function parseEmailHeader(rawHeader) {
     Array.isArray(dkimRaw) ? dkimRaw[0] : dkimRaw
   );
 
+  const isTrustedInternal = exchangeAuthAs.toLowerCase() === 'internal' && isSchoolDomain(fromDomain);
+
   // ── Assemble final parsed object ──────────────────────────
   const parsed = {
     // Identity fields
@@ -248,7 +276,11 @@ function parseEmailHeader(rawHeader) {
 
     // Authentication data
     dkimSignature,         // Parsed DKIM-Signature fields → used by DKIM
-    authResultsRaw: headers['authentication-results'] || '', // Raw auth results if present
+    authResultsRaw: authResults, // Raw auth results if present
+    exchangeAuthAs,
+    exchangeAuthMechanism,
+    exchangeAuthSource,
+    isTrustedInternal,
 
     // Full raw headers (available for debugging or display in the UI)
     raw: headers,

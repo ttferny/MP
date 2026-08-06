@@ -19,6 +19,71 @@ const scenarioMeta = {
 
 let currentScenario = null;
 
+// Toggle the advanced SPF/DKIM strictness + subdomain policy controls
+function toggleAdvancedPolicy() {
+  const el = document.getElementById('advanced-policy-settings');
+  const btn = document.getElementById('advanced-toggle-btn');
+  const isHidden = el.style.display === 'none';
+  el.style.display = isHidden ? 'block' : 'none';
+  btn.textContent = isHidden
+    ? 'Hide Advanced Settings'
+    : 'Show Advanced Settings (SPF/DKIM strictness, subdomains)';
+}
+
+// Plain-English labels for the technical action values (deliver/quarantine/reject/none)
+const actionLabels = {
+  deliver:    "Delivered",
+  quarantine: "Sent to Spam",
+  reject:     "Blocked",
+  none:       "No Action Taken"
+};
+
+// Builds a step-by-step breakdown of how a DMARC result was reached,
+// from the raw evaluateDMARC() result object (r) and the email info (e).
+// Used by both the Live Monitor and the "Test Your Own Email" feature.
+function buildPipelineHTML(r, e) {
+  e = e || {};
+  const spfPass  = !!r.spfAligned;
+  const dkimPass = !!r.dkimAligned;
+  const verdictLabel = (actionLabels[r.action] || r.action || 'Unknown').toString();
+  const verdictStatus = r.action === 'deliver' ? 'pass' : r.action === 'reject' ? 'fail' : 'warn';
+
+  const steps = [
+    {
+      status: null, title: 'Email Received',
+      desc: `From <strong>${e.from || r.fromDomain || 'unknown sender'}</strong>${e.subject ? `, subject "${e.subject}"` : ''}.`
+    },
+    {
+      status: spfPass ? 'pass' : 'fail', title: 'SPF Check',
+      desc: (r.alignmentDetails && r.alignmentDetails.spf) || 'SPF alignment could not be determined.'
+    },
+    {
+      status: dkimPass ? 'pass' : 'fail', title: 'DKIM Check',
+      desc: (r.alignmentDetails && r.alignmentDetails.dkim) || 'DKIM alignment could not be determined.'
+    },
+    {
+      status: null, title: 'DMARC Policy Looked Up',
+      desc: r.policy
+        ? `${e.fromDomain || r.fromDomain || 'This domain'}'s DNS says: <strong>p=${r.policy}</strong>${r.pct !== undefined && r.pct !== 100 ? ` (applies to ${r.pct}% of mail)` : ''}.`
+        : `No DMARC record was found for ${e.fromDomain || r.fromDomain || 'this domain'} — there is no policy to enforce.`
+    },
+    {
+      status: verdictStatus, title: `Final Verdict: ${verdictLabel}`,
+      desc: r.reason || ''
+    }
+  ];
+
+  return `<div class="pipeline">${steps.map((s, i) => `
+    <div class="pipeline-step ${s.status || ''}">
+      <div class="pipeline-num">${i + 1}</div>
+      <div class="pipeline-body">
+        <div class="pipeline-title">${s.title}${s.status ? `<span class="pipeline-tag ${s.status}">${s.status === 'pass' ? 'Passed' : s.status === 'fail' ? 'Failed' : 'Note'}</span>` : ''}</div>
+        <div class="pipeline-desc">${s.desc}</div>
+      </div>
+    </div>
+    ${i < steps.length - 1 ? '<div class="pipeline-connector"></div>' : ''}`).join('')}</div>`;
+}
+
 // Load scenario details into Step 2 panel
 function loadScenario(key) {
   const s = scenarioMeta[key];
@@ -97,9 +162,7 @@ function renderResult(r) {
   const badge = document.getElementById("verdict-badge");
   badge.className = "verdict-badge " + r.action;
 
-  const icons = { deliver: "✅", quarantine: "⚠️", reject: "❌", none: "👀" };
-  document.getElementById("verdict-icon").textContent = icons[r.action] || "ℹ️";
-  document.getElementById("verdict-text").textContent = r.action.toUpperCase();
+  document.getElementById("verdict-text").textContent = (actionLabels[r.action] || r.action.toUpperCase()).toUpperCase();
 
   // Status chip
   const statusEl = document.getElementById("res-status");
@@ -108,7 +171,7 @@ function renderResult(r) {
 
   // Action chip
   const actionEl = document.getElementById("res-action");
-  actionEl.textContent = r.action.toUpperCase();
+  actionEl.textContent = (actionLabels[r.action] || r.action.toUpperCase()).toUpperCase();
   actionEl.className = "chip-value " + (r.action === "deliver" ? "pass" : r.action === "quarantine" ? "warn" : "fail");
 
   // Policy chip
@@ -127,8 +190,8 @@ function renderResult(r) {
   // Alignment dots — comes from dmarc.js evaluateDMARC()
   document.getElementById("spf-dot").className  = "align-dot " + (r.spfAligned  ? "pass" : "fail");
   document.getElementById("dkim-dot").className = "align-dot " + (r.dkimAligned ? "pass" : "fail");
-  document.getElementById("spf-align-text").textContent  = "SPF: "  + (r.spfAligned  ? "Aligned ✓" : "Not Aligned ✗");
-  document.getElementById("dkim-align-text").textContent = "DKIM: " + (r.dkimAligned ? "Aligned ✓" : "Not Aligned ✗");
+  document.getElementById("spf-align-text").textContent  = "SPF: "  + (r.spfAligned  ? "Aligned" : "Not Aligned");
+  document.getElementById("dkim-align-text").textContent = "DKIM: " + (r.dkimAligned ? "Aligned" : "Not Aligned");
 
   // Explanation — comes from scenarioService.js on the backend
   document.getElementById("explain-box").textContent = r.explanation || "";
@@ -158,6 +221,15 @@ function renderResult(r) {
       costEl.style.display = "none";
     }
   }
+
+  // Step-by-step pipeline
+  const s = scenarioMeta[currentScenario];
+  const pipelineEmail = {
+    from:       s ? `sender@${s.fromDomain}` : r.fromDomain,
+    fromDomain: r.fromDomain,
+    subject:    s ? s.name : ''
+  };
+  document.getElementById("scenario-pipeline").innerHTML = buildPipelineHTML(r, pipelineEmail);
 }
 
 
@@ -194,7 +266,7 @@ function renderReportSummary(s) {
         <div class="summary-value fail">${s.failed}</div>
       </div>
       <div class="summary-card">
-        <div class="summary-label">High Risk (>70)</div>
+        <div class="summary-label">High Risk<span class="info-tip" tabindex="0" data-tip="Emails scoring above 70 out of 100 on the risk scale — the ones most likely to be an attack."></span></div>
         <div class="summary-value fail">${s.highRisk}</div>
       </div>
       <div class="summary-card">
@@ -205,15 +277,15 @@ function renderReportSummary(s) {
 
     <div class="summary-details">
       <div class="detail-section">
-        <strong>By Policy:</strong>
+        <strong>By DMARC Policy:</strong>
         <div class="policy-breakdown">
           ${Object.entries(s.byPolicy).map(([p, c]) => `<div>${p.toUpperCase()}: ${c}</div>`).join("")}
         </div>
       </div>
       <div class="detail-section">
-        <strong>By Action:</strong>
+        <strong>By Outcome:</strong>
         <div class="action-breakdown">
-          ${Object.entries(s.byAction).map(([a, c]) => `<div>${a.toUpperCase()}: ${c}</div>`).join("")}
+          ${Object.entries(s.byAction).map(([a, c]) => `<div>${(actionLabels[a] || a.toUpperCase())}: ${c}</div>`).join("")}
         </div>
       </div>
     </div>
@@ -252,7 +324,7 @@ function renderReportsList(reports) {
       <td>${r.timestamp.substring(0, 19)}</td>
       <td>${r.scenario}</td>
       <td><span class="chip-value ${r.status === 'pass' ? 'pass' : 'fail'}">${r.status}</span></td>
-      <td><span class="chip-value ${r.action === 'deliver' ? 'pass' : r.action === 'quarantine' ? 'warn' : 'fail'}">${r.action}</span></td>
+      <td><span class="chip-value ${r.action === 'deliver' ? 'pass' : r.action === 'quarantine' ? 'warn' : 'fail'}">${actionLabels[r.action] || r.action}</span></td>
       <td>${r.riskScore}</td>
       <td>${r.fromDomain}</td>
     </tr>
@@ -426,13 +498,11 @@ async function loadComparison(key) {
 }
 
 function renderComparisonColumn(colId, r, description) {
-  const icons      = { deliver: "✉️", quarantine: "📁", reject: "🚫" };
   const riskColor  = r.riskScore <= 20 ? "pass" : r.riskScore <= 50 ? "warn" : "fail";
 
   document.getElementById(`comp-col-${colId}`).innerHTML = `
     <div class="comp-verdict ${r.action}">
-      <span>${icons[r.action] || "ℹ️"}</span>
-      <span>${r.action.toUpperCase()}</span>
+      <span>${(actionLabels[r.action] || r.action.toUpperCase()).toUpperCase()}</span>
     </div>
 
     <div class="comp-risk">
@@ -549,7 +619,10 @@ async function runAuditLive() {
           </div>
         </div>
       </div>
-      <div id="audit-tags" style="margin-bottom:16px;"></div>
+      <details style="margin-bottom:16px;">
+        <summary style="cursor:pointer; font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted);">Show technical DNS details</summary>
+        <div id="audit-tags" style="margin-top:12px;"></div>
+      </details>
       <div id="audit-issues-section" style="display:none; margin-bottom:16px;">
         <div style="font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--fail); margin-bottom:10px;">Issues Found</div>
         <div id="audit-issues"></div>
@@ -603,12 +676,12 @@ function renderAuditResult(r) {
     const spColor     = d.sp === 'reject' ? 'good' : d.sp === 'quarantine' ? 'warn' : d.sp === 'none' ? 'bad' : 'muted';
     tagsEl.innerHTML = `
       <div class="audit-tag-grid">
-        <div class="audit-tag"><div class="audit-tag-key">p= (policy)</div><div class="audit-tag-value ${policyColor}">${d.policy || "missing"}</div></div>
-        <div class="audit-tag"><div class="audit-tag-key">pct= (enforcement)</div><div class="audit-tag-value ${pctColor}">${d.pct}%</div></div>
-        <div class="audit-tag"><div class="audit-tag-key">sp= (subdomains)</div><div class="audit-tag-value ${spColor}">${d.sp || "not set"}</div></div>
-        <div class="audit-tag"><div class="audit-tag-key">rua= (reports)</div><div class="audit-tag-value ${ruaColor}">${d.rua ? "configured" : "not set"}</div></div>
-        <div class="audit-tag"><div class="audit-tag-key">aspf= (SPF align)</div><div class="audit-tag-value">${d.aspf === 'r' ? 'relaxed' : 'strict'}</div></div>
-        <div class="audit-tag"><div class="audit-tag-key">adkim= (DKIM align)</div><div class="audit-tag-value">${d.adkim === 'r' ? 'relaxed' : 'strict'}</div></div>
+        <div class="audit-tag"><div class="audit-tag-key">p= (policy)<span class="info-tip" tabindex="0" data-tip="What this domain tells email providers to do with suspicious mail: let it through, spam-fold it, or block it."></span></div><div class="audit-tag-value ${policyColor}">${d.policy || "missing"}</div></div>
+        <div class="audit-tag"><div class="audit-tag-key">pct= (enforcement)<span class="info-tip" tabindex="0" data-tip="What percentage of mail the policy actually applies to. 100% means every email is checked."></span></div><div class="audit-tag-value ${pctColor}">${d.pct}%</div></div>
+        <div class="audit-tag"><div class="audit-tag-key">sp= (subdomains)<span class="info-tip" tabindex="0" data-tip="A separate rule just for sub-addresses like mail.company.com, if one is set."></span></div><div class="audit-tag-value ${spColor}">${d.sp || "not set"}</div></div>
+        <div class="audit-tag"><div class="audit-tag-key">rua= (reports)<span class="info-tip" tabindex="0" data-tip="An email address that receives daily summaries of who is sending mail using this domain."></span></div><div class="audit-tag-value ${ruaColor}">${d.rua ? "configured" : "not set"}</div></div>
+        <div class="audit-tag"><div class="audit-tag-key">aspf= (SPF align)<span class="info-tip" tabindex="0" data-tip="How strictly the sending server's domain must match. Relaxed still allows subdomains; strict requires an exact match."></span></div><div class="audit-tag-value">${d.aspf === 'r' ? 'relaxed' : 'strict'}</div></div>
+        <div class="audit-tag"><div class="audit-tag-key">adkim= (DKIM align)<span class="info-tip" tabindex="0" data-tip="How strictly the email's digital signature must match the visible sender domain. Relaxed allows subdomains; strict requires an exact match."></span></div><div class="audit-tag-value">${d.adkim === 'r' ? 'relaxed' : 'strict'}</div></div>
       </div>`;
   } else {
     tagsEl.innerHTML = `<div class="reason-box" style="color:var(--fail);">No DMARC record found for ${r.domain}.</div>`;
@@ -617,7 +690,7 @@ function renderAuditResult(r) {
   const issuesEl  = document.getElementById("audit-issues");
   if (r.issues && r.issues.length > 0) {
     issuesSec.style.display = "block";
-    issuesEl.innerHTML = r.issues.map(i => `<div class="audit-issue">⚠ ${i}</div>`).join("");
+    issuesEl.innerHTML = r.issues.map(i => `<div class="audit-issue">${i}</div>`).join("");
   } else { issuesSec.style.display = "none"; }
   const recsSec = document.getElementById("audit-recs-section");
   const recsEl  = document.getElementById("audit-recs");
@@ -643,7 +716,7 @@ function toggleMonitor() {
 
 function startMonitor() {
   monitorActive = true;
-  document.getElementById('monitor-btn-text').textContent    = '⏹ Stop Monitor';
+  document.getElementById('monitor-btn-text').textContent    = 'Stop Monitor';
   document.getElementById('monitor-dot').style.background    = 'var(--pass)';
   document.getElementById('monitor-dot').style.boxShadow     = '0 0 6px var(--pass)';
   document.getElementById('monitor-status-text').textContent = 'Monitoring port 2525...';
@@ -655,7 +728,7 @@ function startMonitor() {
 function stopMonitor() {
   monitorActive = false;
   if (monitorInterval) { clearInterval(monitorInterval); monitorInterval = null; }
-  document.getElementById('monitor-btn-text').textContent    = '▶ Start Monitor';
+  document.getElementById('monitor-btn-text').textContent    = 'Start Monitor';
   document.getElementById('monitor-dot').style.background    = 'var(--muted)';
   document.getElementById('monitor-dot').style.boxShadow     = 'none';
   document.getElementById('monitor-status-text').textContent = 'Not monitoring';
@@ -724,14 +797,12 @@ function renderMonitorResult(r) {
   el.style.animation = 'fadeUp 0.4s ease both';
 
   const e = r.email || {};
-  const icons  = { deliver: '✅', quarantine: '⚠️', reject: '❌' };
   const labels = { deliver: 'EMAIL DELIVERED', quarantine: 'SENT TO SPAM', reject: 'EMAIL BLOCKED' };
 
   el.innerHTML = `
     <div class="card-title">Latest Email Result</div>
 
     <div class="monitor-banner ${r.action}">
-      <div class="monitor-banner-icon">${icons[r.action] || 'ℹ️'}</div>
       <div class="monitor-banner-label">${labels[r.action] || r.action.toUpperCase()}</div>
       <div class="monitor-banner-reason">${r.reason || ''}</div>
     </div>
@@ -740,21 +811,24 @@ function renderMonitorResult(r) {
       <span style="color:var(--muted);">From:</span>        ${e.from || 'unknown'}<br>
       <span style="color:var(--muted);">Subject:</span>     ${e.subject || '(no subject)'}<br>
       <span style="color:var(--muted);">From Domain:</span> ${e.fromDomain || 'unknown'}<br>
-      <span style="color:var(--muted);">Envelope:</span>    ${e.envelopeDomain || 'unknown'}<br>
-      <span style="color:var(--muted);">DKIM Signed:</span> ${e.hasDKIM ? 'Yes (' + e.dkimDomain + ')' : 'No'}<br>
+      <span style="color:var(--muted);">Envelope:<span class="info-tip" tabindex="0" data-tip="The actual sending address used behind the scenes — can be different from the From: address the recipient sees."></span></span> ${e.envelopeDomain || 'unknown'}<br>
+      <span style="color:var(--muted);">DKIM Signed:<span class="info-tip" tabindex="0" data-tip="Whether the email carried a digital signature proving it wasn't altered in transit."></span></span> ${e.hasDKIM ? 'Yes (' + e.dkimDomain + ')' : 'No'}<br>
       <span style="color:var(--muted);">Received:</span>    ${e.receivedAt ? new Date(e.receivedAt).toLocaleTimeString() : 'unknown'}
     </div>
 
     <div class="result-details">
       <div class="detail-chip"><div class="chip-label">Status</div><div class="chip-value ${r.status === 'pass' ? 'pass' : 'fail'}">${r.status.toUpperCase()}</div></div>
       <div class="detail-chip"><div class="chip-label">Policy Applied</div><div class="chip-value">${(r.policy || 'N/A').toUpperCase()}</div></div>
-      <div class="detail-chip"><div class="chip-label">Risk Score</div><div class="chip-value ${r.riskScore <= 20 ? 'pass' : r.riskScore <= 50 ? 'warn' : 'fail'}">${r.riskScore} / 100</div></div>
+      <div class="detail-chip"><div class="chip-label">Risk Score<span class="info-tip" tabindex="0" data-tip="A 0-100 score estimating how dangerous this email is. Higher means more suspicious."></span></div><div class="chip-value ${r.riskScore <= 20 ? 'pass' : r.riskScore <= 50 ? 'warn' : 'fail'}">${r.riskScore} / 100</div></div>
     </div>
 
     <div class="alignment-row">
-      <div class="align-chip"><div class="align-dot ${r.spfAligned ? 'pass' : 'fail'}"></div><span>SPF: ${r.spfAligned ? 'Aligned ✓' : 'Not Aligned ✗'}</span></div>
-      <div class="align-chip"><div class="align-dot ${r.dkimAligned ? 'pass' : 'fail'}"></div><span>DKIM: ${r.dkimAligned ? 'Aligned ✓' : 'Not Aligned ✗'}</span></div>
-    </div>`;
+      <div class="align-chip"><div class="align-dot ${r.spfAligned ? 'pass' : 'fail'}"></div><span>SPF: ${r.spfAligned ? 'Aligned' : 'Not Aligned'}</span><span class="info-tip" tabindex="0" data-tip="SPF checks whether the email came from a server the domain owner approved. Aligned means yes, this is a trusted server."></span></div>
+      <div class="align-chip"><div class="align-dot ${r.dkimAligned ? 'pass' : 'fail'}"></div><span>DKIM: ${r.dkimAligned ? 'Aligned' : 'Not Aligned'}</span><span class="info-tip" tabindex="0" data-tip="DKIM is a digital signature on the email proving it wasn't altered and really came from who it claims. Aligned means the signature checks out."></span></div>
+    </div>
+
+    <div class="card-title" style="margin-top:20px;">Step-by-Step: How DMARC Reached This Verdict</div>
+    ${buildPipelineHTML(r, e)}`;
 
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -821,7 +895,7 @@ function copyRecord() {
   const record = document.getElementById('gen-record-output').textContent;
   navigator.clipboard.writeText(record).then(() => {
     const btn = document.getElementById('copy-btn');
-    btn.textContent = 'Copied ✓';
+    btn.textContent = 'Copied';
     btn.style.color = 'var(--pass)';
     btn.style.borderColor = 'var(--pass)';
     setTimeout(() => {
@@ -884,10 +958,10 @@ function renderPropagationResult(data) {
 
   // Status colours and labels
   const statusConfig = {
-    FULLY_PROPAGATED:      { color: 'var(--pass)', icon: '✅', label: 'Fully Propagated', desc: `Your DMARC record has propagated to all ${s.total} resolvers and they all agree.` },
-    PARTIALLY_PROPAGATED:  { color: 'var(--warn)', icon: '⚠️', label: 'Partially Propagated', desc: `Found on ${s.found} of ${s.total} resolvers. Propagation is still in progress — check again in a few hours.` },
-    INCONSISTENT:          { color: 'var(--warn)', icon: '⚠️', label: 'Inconsistent', desc: 'Different resolvers are returning different records. DNS caching may cause this — wait a few hours.' },
-    NOT_PROPAGATED:        { color: 'var(--fail)', icon: '❌', label: 'Not Propagated', desc: 'No resolvers found a DMARC record. Either the record has not been published yet or it has not propagated.' },
+    FULLY_PROPAGATED:      { color: 'var(--pass)', label: 'Fully Propagated', desc: `Your DMARC record has propagated to all ${s.total} resolvers and they all agree.` },
+    PARTIALLY_PROPAGATED:  { color: 'var(--warn)', label: 'Partially Propagated', desc: `Found on ${s.found} of ${s.total} resolvers. Propagation is still in progress — check again in a few hours.` },
+    INCONSISTENT:          { color: 'var(--warn)', label: 'Inconsistent', desc: 'Different resolvers are returning different records. DNS caching may cause this — wait a few hours.' },
+    NOT_PROPAGATED:        { color: 'var(--fail)', label: 'Not Propagated', desc: 'No resolvers found a DMARC record. Either the record has not been published yet or it has not propagated.' },
   };
 
   const cfg = statusConfig[s.propagationStatus] || statusConfig.NOT_PROPAGATED;
@@ -897,7 +971,6 @@ function renderPropagationResult(data) {
 
     <!-- Overall status banner -->
     <div style="background:rgba(0,0,0,0.2); border:1px solid ${cfg.color}; border-radius:10px; padding:20px; margin-bottom:20px; display:flex; align-items:center; gap:16px;">
-      <div style="font-size:36px;">${cfg.icon}</div>
       <div>
         <div style="font-family:var(--mono); font-size:16px; font-weight:700; color:${cfg.color}; margin-bottom:4px;">${cfg.label}</div>
         <div style="font-size:13px; color:var(--muted);">${cfg.desc}</div>
@@ -912,17 +985,15 @@ function renderPropagationResult(data) {
     <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
       ${data.results.map(r => {
         const statusColor = r.status === 'found' ? 'var(--pass)' : r.status === 'timeout' ? 'var(--warn)' : 'var(--fail)';
-        const statusIcon  = r.status === 'found' ? '✅' : r.status === 'timeout' ? '⏱' : '❌';
         const statusLabel = r.status === 'found' ? 'FOUND' : r.status === 'timeout' ? 'TIMEOUT' : 'NOT FOUND';
         return `
           <div style="background:var(--surface2); border:1px solid var(--border); border-left:3px solid ${statusColor}; border-radius:8px; padding:14px 16px;">
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:${r.record ? '8px' : '0'};">
-              <span style="font-size:18px;">${r.flag}</span>
               <div style="flex:1;">
                 <span style="font-family:var(--mono); font-weight:700; color:var(--text);">${r.resolver}</span>
                 <span style="font-family:var(--mono); font-size:11px; color:var(--muted); margin-left:8px;">${r.ip}</span>
               </div>
-              <span style="font-family:var(--mono); font-size:11px; font-weight:700; color:${statusColor};">${statusIcon} ${statusLabel}</span>
+              <span style="font-family:var(--mono); font-size:11px; font-weight:700; color:${statusColor};">${statusLabel}</span>
             </div>
             ${r.record ? `<div style="font-family:var(--mono); font-size:11px; color:var(--accent); background:var(--surface); padding:8px 10px; border-radius:6px; word-break:break-all;">${r.record}</div>` : ''}
             ${r.error  ? `<div style="font-family:var(--mono); font-size:11px; color:var(--warn);">${r.error}</div>` : ''}
@@ -933,7 +1004,7 @@ function renderPropagationResult(data) {
     <!-- Consistency note -->
     ${s.uniqueRecords.length > 1 ? `
       <div style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.3); border-radius:8px; padding:14px 16px;">
-        <div style="font-family:var(--mono); font-size:11px; font-weight:700; color:var(--warn); text-transform:uppercase; margin-bottom:8px;">⚠ Inconsistent Records Detected</div>
+        <div style="font-family:var(--mono); font-size:11px; font-weight:700; color:var(--warn); text-transform:uppercase; margin-bottom:8px;">Inconsistent Records Detected</div>
         <div style="font-size:13px; color:var(--text);">Different resolvers returned different records. This usually means DNS propagation is still in progress. Wait a few hours and check again.</div>
       </div>` : ''}
 
@@ -966,7 +1037,6 @@ async function runHealthCheck() {
     const isProtected = grade === "A" || grade === "B";
     const isVulnerable = grade === "F" || grade === "D";
 
-    const icon   = isProtected ? "🛡️" : isVulnerable ? "🚨" : "⚠️";
     const color  = isProtected ? "var(--pass)" : isVulnerable ? "var(--fail)" : "var(--warn)";
     const bg     = isProtected ? "rgba(16,185,129,0.08)" : isVulnerable ? "rgba(239,68,68,0.08)" : "rgba(245,158,11,0.08)";
     const bdr    = isProtected ? "rgba(16,185,129,0.25)" : isVulnerable ? "rgba(239,68,68,0.25)" : "rgba(245,158,11,0.25)";
@@ -979,7 +1049,6 @@ async function runHealthCheck() {
 
     resultEl.innerHTML =
       '<div style="background:' + bg + ';border:1px solid ' + bdr + ';border-radius:8px;padding:14px 16px;display:flex;align-items:center;gap:14px;">' +
-        '<div style="font-size:28px;flex-shrink:0;">' + icon + '</div>' +
         '<div style="flex:1;">' +
           '<div style="font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:' + color + ';margin-bottom:4px;">Grade ' + grade + ' — Score ' + r.score + '/100</div>' +
           '<div style="font-size:13px;color:var(--text);line-height:1.6;">' + verdict + '</div>' +
@@ -993,4 +1062,222 @@ async function runHealthCheck() {
   } catch (err) {
     resultEl.innerHTML = '<div class="error-box">Could not check ' + domain + '. Make sure the server is running.</div>';
   }
+}
+
+
+// =============================================================
+// SECTION 9 — TEST YOUR OWN EMAIL
+// Calls POST /api/dmarc/test-email — either a raw pasted email
+// (mode: 'raw') or just the sender details (mode: 'simple')
+// =============================================================
+
+function setTestEmailMode(mode) {
+  const rawBtn        = document.getElementById('test-mode-btn-raw');
+  const simpleBtn      = document.getElementById('test-mode-btn-simple');
+  const rawSection     = document.getElementById('test-email-raw-section');
+  const simpleSection  = document.getElementById('test-email-simple-section');
+
+  if (mode === 'raw') {
+    rawSection.style.display = 'block'; simpleSection.style.display = 'none';
+    rawBtn.style.borderColor = 'var(--accent)'; rawBtn.style.color = 'var(--accent)';
+    simpleBtn.style.borderColor = ''; simpleBtn.style.color = '';
+  } else {
+    rawSection.style.display = 'none'; simpleSection.style.display = 'block';
+    simpleBtn.style.borderColor = 'var(--accent)'; simpleBtn.style.color = 'var(--accent)';
+    rawBtn.style.borderColor = ''; rawBtn.style.color = '';
+  }
+  document.getElementById('test-email-result').innerHTML = '';
+}
+
+// Constructed example raw emails — genuine phishing samples online are
+// almost always screenshots with no underlying headers attached, so
+// these give something realistic to test with right away.
+const emailExamples = {
+  phish:
+`From: "DBS Bank Security" <security@dbs.com.sg>
+Return-Path: <bounce@dbs-alert-secure.net>
+Received: from mail.dbs-alert-secure.net (198.51.100.24) by mx.example.com; Wed, 5 Aug 2026 09:12:44 +0000
+Authentication-Results: mx.example.com; spf=fail smtp.mailfrom=dbs-alert-secure.net; dkim=none
+Subject: URGENT: Unusual login detected - verify your account
+Date: Wed, 5 Aug 2026 09:12:44 +0000
+Message-ID: <9f2a@dbs-alert-secure.net>
+
+Dear Customer, we detected unusual activity on your DBS account. Click here immediately to verify your identity or your account will be suspended within 24 hours.`,
+
+  legit:
+`From: GitHub <notifications@github.com>
+Return-Path: <bounce+abc123@github.com>
+Received: from o1.mail.github.com (192.0.2.55) by mx.example.com; Wed, 5 Aug 2026 14:03:10 +0000
+DKIM-Signature: v=1; a=rsa-sha256; d=github.com; s=pf2023; c=relaxed/relaxed; h=from:subject:date; bh=abc123; b=validsignaturehere
+Subject: [GitHub] New sign-in to your account
+Date: Wed, 5 Aug 2026 14:03:10 +0000
+Message-ID: <abc123@github.com>
+
+We noticed a new sign-in to your GitHub account from a new device. If this was you, no action is required.`
+};
+
+function loadEmailExample(key) {
+  const raw = emailExamples[key];
+  if (!raw) return;
+  document.getElementById('test-email-raw').value = raw;
+  document.querySelectorAll('#test-email-raw-section .scenario-btn').forEach(b => { b.style.borderColor = ''; b.style.color = ''; });
+  event.currentTarget.style.borderColor = 'var(--accent)';
+  event.currentTarget.style.color = 'var(--accent)';
+  document.getElementById('test-email-result').innerHTML = '';
+}
+
+async function testRawEmail() {
+  const raw = document.getElementById('test-email-raw').value.trim();
+  const resultEl = document.getElementById('test-email-result');
+  if (!raw) { alert('Paste the raw email source first.'); return; }
+
+  resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;color:var(--muted);"><div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--accent);animation:spin 0.8s linear infinite;"></div>Checking headers against live DNS...</div>';
+
+  try {
+    const response = await fetch('/api/dmarc/test-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'raw', rawSource: raw })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Could not analyse this email');
+
+    renderTestEmailRawResult(data);
+  } catch (err) {
+    resultEl.innerHTML = `<div class="error-box">${err.message}</div>`;
+  }
+}
+
+// Builds concrete next-action guidance for a raw-header DMARC evaluation —
+// turns a verdict into "what do I actually do now" rather than just an explanation.
+function buildNextStepsHTML(r, hasEvidence) {
+  const items = [];
+
+  if (!hasEvidence) {
+    items.push("SPF couldn't be checked from what was pasted — get the full raw source (headers included, not just the visible message) from your email client for a real check, or confirm with the sender through a separate, already-known channel before trusting it.");
+  } else if (r.status === 'fail') {
+    items.push("This failed DMARC — treat it as suspicious. Don't click any links, reply, or enter any information.");
+    items.push('Report it to your IT/security team, or use your email client\'s "Report Phishing" option, then delete it.');
+    if (r.action === 'deliver') {
+      items.push(`This domain's DMARC policy is weak (p=${r.policy || 'none'}), so a real attacker's copy of this would likely have reached the inbox unblocked — worth flagging to whoever manages this domain's email security.`);
+    }
+  } else {
+    items.push("SPF/DKIM aligned with the sender domain — structurally this looks like it came from where it claims to.");
+    items.push("That only confirms authentication, not intent. If it asks for money, credentials, or urgent action, verify through a separate, known channel before acting on it.");
+  }
+
+  items.push("This check covers DMARC/SPF/DKIM only — it doesn't scan links, attachments, or wording for malicious content.");
+
+  return `
+    <div class="card-title" style="margin-top:20px;">Recommended Next Steps</div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      ${items.map(i => `<div class="audit-rec">${i}</div>`).join('')}
+    </div>`;
+}
+
+// Same idea for the "basic details" heuristic check
+function buildSimpleNextStepsHTML(r) {
+  const items = [];
+  if (r.claimedDomain === null) {
+    items.push('Add the real company\'s domain above to check whether this sender is a lookalike.');
+  } else if (r.domainsMatch) {
+    items.push('The domain matches, but that alone doesn\'t prove the email is genuine. Use "Paste Raw Email" with the full headers for a real authentication check.');
+    items.push("If it asks for money, credentials, or urgent action, verify through a separate, known channel first.");
+  } else {
+    items.push("This did not come from the real company's domain. Don't click any links, reply, or enter any information.");
+    items.push('Report it to your IT/security team or your email provider\'s phishing report option, then delete it.');
+  }
+  return `
+    <div class="card-title" style="margin-top:16px;">Recommended Next Steps</div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      ${items.map(i => `<div class="audit-rec">${i}</div>`).join('')}
+    </div>`;
+}
+
+function renderTestEmailRawResult(r) {
+  const resultEl = document.getElementById('test-email-result');
+  const e = r.email || {};
+  const labels = { deliver: 'WOULD BE DELIVERED', quarantine: 'WOULD BE SENT TO SPAM', reject: 'WOULD BE BLOCKED' };
+
+  const evidenceNote = r.hasEnvelopeEvidence
+    ? `Found a Return-Path / Authentication-Results header, so SPF could be checked structurally against it.`
+    : `No Return-Path or Authentication-Results header was found in what you pasted, so SPF could not be checked — it's being treated as unverifiable, not assumed to pass. Paste the full raw source (not just the visible message) for a real check.`;
+
+  resultEl.innerHTML = `
+    <div class="monitor-banner ${r.action}">
+      <div class="monitor-banner-label">${labels[r.action] || (actionLabels[r.action] || r.action || '').toUpperCase()}</div>
+      <div class="monitor-banner-reason">${r.reason || ''}</div>
+    </div>
+
+    <div style="background:rgba(56,189,248,0.05); border:1px solid rgba(56,189,248,0.15); border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:12px; color:var(--muted); line-height:1.5;">
+      ${evidenceNote} This checks structure (sender vs. envelope domain, whether a DKIM signature exists) rather than cryptographically re-verifying the signature — the same approach used by the Live Monitor above.
+    </div>
+
+    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:16px; font-family:var(--mono); font-size:13px; line-height:1.8;">
+      <span style="color:var(--muted);">From:</span> ${e.from || 'unknown'}<br>
+      <span style="color:var(--muted);">Subject:</span> ${e.subject || '(no subject)'}<br>
+      <span style="color:var(--muted);">From Domain:</span> ${e.fromDomain || 'unknown'}<br>
+      <span style="color:var(--muted);">Envelope:</span> ${r.hasEnvelopeEvidence ? (e.envelopeDomain || 'unknown') : 'not found in pasted headers'}<br>
+      <span style="color:var(--muted);">DKIM Signed:</span> ${e.hasDKIM ? 'Yes (' + e.dkimDomain + ')' : 'No signature found'}
+    </div>
+
+    <div class="card-title">Step-by-Step: How We Got This Result</div>
+    ${buildPipelineHTML(r, e)}
+    ${buildNextStepsHTML(r, r.hasEnvelopeEvidence)}`;
+
+  resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function testSimpleEmail() {
+  const fromAddress    = document.getElementById('test-email-from').value.trim();
+  const claimedDomain  = document.getElementById('test-email-claimed-domain').value.trim();
+  const resultEl = document.getElementById('test-email-result');
+  if (!fromAddress || !fromAddress.includes('@')) { alert('Enter the sender email address, e.g. security@paypal.com'); return; }
+
+  resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;color:var(--muted);"><div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--accent);animation:spin 0.8s linear infinite;"></div>Checking...</div>';
+
+  try {
+    const response = await fetch('/api/dmarc/test-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'simple', fromAddress, claimedDomain })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Could not check this sender');
+
+    renderTestEmailSimpleResult(data);
+  } catch (err) {
+    resultEl.innerHTML = `<div class="error-box">${err.message}</div>`;
+  }
+}
+
+function renderTestEmailSimpleResult(r) {
+  const resultEl = document.getElementById('test-email-result');
+  const audit = r.officialDomainAudit;
+
+  let matchLine;
+  if (r.claimedDomain === null) {
+    matchLine = `<div class="reason-box">We only have the sender address (<strong>${r.fromDomain}</strong>). Add the real company domain above for a lookalike check.</div>`;
+  } else if (r.domainsMatch) {
+    matchLine = `<div class="reason-box" style="border-left-color:var(--pass);">The sender domain exactly matches <strong>${r.claimedDomain}</strong> — no domain mismatch detected. (This alone doesn't prove the email is genuine — the full headers would be needed for that.)</div>`;
+  } else if (r.lookalikeWarning) {
+    matchLine = `<div class="reason-box" style="border-left-color:var(--fail);"><strong>${r.fromDomain}</strong> looks very similar to <strong>${r.claimedDomain}</strong> but is not the same domain — a classic lookalike-domain trick.</div>`;
+  } else {
+    matchLine = `<div class="reason-box" style="border-left-color:var(--fail);"><strong>${r.fromDomain}</strong> does not match ${r.claimedDomain}'s official domain at all — this did not come from the real company's mail system.</div>`;
+  }
+
+  resultEl.innerHTML = `
+    <div style="background:rgba(251,191,36,0.06); border:1px solid rgba(251,191,36,0.2); border-radius:8px; padding:12px 14px; margin-bottom:16px; font-size:13px; color:var(--text);">
+      This is a best-effort check based only on the sender address — without the full email headers we can't verify SPF/DKIM/DMARC directly. For a real verdict, use "Paste Raw Email" instead.
+    </div>
+    ${matchLine}
+    ${audit ? `
+      <div class="card-title" style="margin-top:16px;">${r.claimedDomain || r.fromDomain}'s Real DMARC Protection</div>
+      <div style="display:flex; align-items:center; gap:16px; margin-bottom:12px;">
+        <div class="grade-${audit.grade}" style="width:56px; height:56px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:28px; font-weight:700; flex-shrink:0;">${audit.grade}</div>
+        <div style="font-size:14px; color:var(--text); line-height:1.5;">${audit.gradeDescription || ''}</div>
+      </div>` : ''}
+    ${buildSimpleNextStepsHTML(r)}`;
+
+  resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }

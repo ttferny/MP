@@ -29,7 +29,7 @@
 
 // ── Import modules under test ──────────────────────────────
 const { parseEmailHeader, splitHeaders, extractEmail, extractDomain } = require('../services/parser');
-const { parseSPFRecord, SPF_RESULTS } = require('../services/spf');
+const { parseSPFRecord, evaluateSPFRecord, checkSPF, SPF_RESULTS } = require('../services/spf');
 const {
   validateParsedHeader,
   validateSPFResult,
@@ -196,6 +196,36 @@ describe('parser.js — parseEmailHeader()', () => {
     expect(parsed.envelopeDomain).toBe('example.com');
   });
 
+  test('[POSITIVE] prefers authenticated envelope domain and sender IP when auth headers are present', () => {
+    const header = [
+      'From: Tiffany <tiffanyctj@gmail.com>',
+      'Authentication-Results: mx.example.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass header.d=gmail.com; client-ip=209.85.220.41',
+      'Received-SPF: pass (example.com: domain of tiffanyctj@gmail.com designates 209.85.220.41 as permitted sender) client-ip=209.85.220.41;',
+      'Subject: Legit Gmail Message',
+    ].join('\n');
+
+    const parsed = parseEmailHeader(header);
+    expect(parsed.envelopeDomain).toBe('gmail.com');
+    expect(parsed.senderIP).toBe('209.85.220.41');
+    expect(parsed.authResultsRaw).toContain('smtp.mailfrom=gmail.com');
+  });
+
+  test('[POSITIVE] marks TP school mail as trusted internal transport', () => {
+    const header = [
+      'Received: from TYZPR02MB7265.apcprd02.prod.outlook.com (2603:1096:405:3f::12) by TYZPR02MB7045.apcprd02.prod.outlook.com with HTTPS; Mon, 25 May 2026 01:52:53 +0000',
+      'From: "Jet LIM (TP)" <Jet_LIM@TP.EDU.SG>',
+      'X-MS-Exchange-Organization-AuthAs: Internal',
+      'X-MS-Exchange-Organization-AuthMechanism: 04',
+      'X-MS-Exchange-Organization-AuthSource: SEZPR02MB7711.apcprd02.prod.outlook.com',
+      'Subject: CDF Semester Feedback - Junior Cohort',
+    ].join('\n');
+
+    const parsed = parseEmailHeader(header);
+    expect(parsed.fromDomain).toBe('tp.edu.sg');
+    expect(parsed.isTrustedInternal).toBe(true);
+    expect(parsed.exchangeAuthAs).toBe('Internal');
+  });
+
   // ── NEGATIVE: throws on empty input ───────────────────────
   test('[NEGATIVE] throws an error for empty input', () => {
     expect(() => parseEmailHeader('')).toThrow();
@@ -279,6 +309,54 @@ describe('spf.js — parseSPFRecord()', () => {
   // ── NEGATIVE: throws for completely wrong format ───────────
   test('[NEGATIVE] throws for non-SPF TXT record content', () => {
     expect(() => parseSPFRecord('v=DMARC1; p=reject')).toThrow('Invalid SPF record');
+  });
+});
+
+describe('spf.js — evaluateSPFRecord()', () => {
+  const dnsResolver = {
+    resolveA: jest.fn().mockResolvedValue([]),
+    resolveMx: jest.fn().mockResolvedValue([]),
+    resolveAAAA: jest.fn().mockResolvedValue([]),
+  };
+
+  const lookupRecordFn = jest.fn(async (domain) => {
+    const records = {
+      'gmail.com': 'v=spf1 include:_spf.google.com -all',
+      '_spf.google.com': 'v=spf1 ip4:209.85.220.41 -all',
+      'attacker.com': 'v=spf1 ip4:203.0.113.10 -all',
+    };
+    return records[domain] || null;
+  });
+
+  test('[POSITIVE] passes a legitimate Gmail-style sender through include mechanism', async () => {
+    const result = await evaluateSPFRecord('gmail.com', '209.85.220.41', dnsResolver, 0, { lookupCount: 0, trace: [] }, lookupRecordFn);
+    expect(result.result).toBe(SPF_RESULTS.PASS);
+    expect(result.matchedMechanism).toBe('include:_spf.google.com');
+  });
+
+  test('[NEGATIVE] fails when the sender IP is not authorised by the SPF policy', async () => {
+    const result = await evaluateSPFRecord('attacker.com', '198.51.100.22', dnsResolver, 0, { lookupCount: 0, trace: [] }, lookupRecordFn);
+    expect(result.result).toBe(SPF_RESULTS.FAIL);
+    expect(result.matchedMechanism).toBe('-all');
+  });
+});
+
+describe('spf.js — checkSPF()', () => {
+  test('[POSITIVE] passes trusted internal TP school mail without sender IP', async () => {
+    const header = [
+      'Received: from TYZPR02MB7265.apcprd02.prod.outlook.com (2603:1096:405:3f::12) by TYZPR02MB7045.apcprd02.prod.outlook.com with HTTPS; Mon, 25 May 2026 01:52:53 +0000',
+      'From: "Jet LIM (TP)" <Jet_LIM@TP.EDU.SG>',
+      'X-MS-Exchange-Organization-AuthAs: Internal',
+      'X-MS-Exchange-Organization-AuthMechanism: 04',
+      'X-MS-Exchange-Organization-AuthSource: SEZPR02MB7711.apcprd02.prod.outlook.com',
+      'Subject: CDF Semester Feedback - Junior Cohort',
+    ].join('\n');
+
+    const parsed = parseEmailHeader(header);
+    const result = await checkSPF(parsed);
+
+    expect(result.result).toBe(SPF_RESULTS.PASS);
+    expect(result.reason).toMatch(/Trusted internal school mail/i);
   });
 });
 

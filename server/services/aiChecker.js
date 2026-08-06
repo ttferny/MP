@@ -42,6 +42,7 @@ function sanitise(val, maxLen = 300) {
 
 function buildPrompt(parsed, spfResult, dkimResult, dmarcResult, content = '') {
   const domainMismatch = parsed.fromDomain !== parsed.envelopeDomain;
+  const spfIsInconclusive = ['none', 'neutral', 'temperror', 'permerror'].includes(String(spfResult?.result || '').toLowerCase()) || !parsed.senderIP;
 
   return `You are an email security analyst specialising in phishing and spoofing detection.
 
@@ -70,6 +71,8 @@ DMARC: ${sanitise(dmarcResult?.verdict)} (policy: ${sanitise(dmarcResult?.policy
 SPF aligned:  ${dmarcResult?.spfAligned  ? 'yes' : 'no'}
 DKIM aligned: ${dmarcResult?.dkimAligned ? 'yes' : 'no'}
 
+SPF verdict note: ${spfIsInconclusive ? 'SPF is inconclusive here. Do NOT call it a failure or spoof just because sender IP is missing.' : 'SPF has a concrete pass/fail verdict.'}
+
 === YOUR TASK ===
 Respond ONLY with a valid JSON object. No markdown. No code fences. No trailing commas. Single line.
 Keep ALL string values under 100 characters. Keep redFlags array to max 5 items, each under 60 characters.
@@ -81,6 +84,7 @@ Analyse BOTH the authentication results AND the email content/subject for these 
 - Generic greetings vs personalised
 - Mismatch between subject and content
 - Unusual sender patterns or display name tricks
+- If SPF is none/neutral/temperror/permerror or sender IP is missing, treat SPF as inconclusive, not spoofing
 
 {"classification":"safe"|"suspicious"|"phishing"|"spoofing","confidence":<0-100>,"redFlags":["flag1","flag2"],"explanation":"plain English for non-technical user, focus on what the email says and why it is or is not safe","technicalSummary":"technical details covering both protocol results and content signals","recommendation":"open"|"review"|"delete"|"report"}
 
