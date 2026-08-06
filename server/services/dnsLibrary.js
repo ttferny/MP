@@ -12,6 +12,7 @@
  */
 
 const logger = require('../utils/logger');
+const { loadDnsStore, saveDnsStore } = require('./persistentStore');
 
 /**
  * DNS Record Types
@@ -85,14 +86,19 @@ const VALIDATION_RULES = {
 /**
  * Local in-memory DNS record store (for testing/demo purposes)
  */
-let localDNSRecords = {};
+let localDNSRecords = loadDnsStore();
 
 /**
  * Initialize local DNS records for a domain
  */
+function persistState() {
+  saveDnsStore(localDNSRecords);
+}
+
 function initializeDomain(domain) {
   if (!localDNSRecords[domain]) {
     localDNSRecords[domain] = [];
+    persistState();
     logger.info(`Initialized DNS records for domain: ${domain}`);
   }
 }
@@ -188,6 +194,7 @@ function addRecord(domain, type, recordData) {
 
   // Add to store
   localDNSRecords[domain].push(record);
+  persistState();
   logger.info(`Added ${normalizedType} record for ${domain}: ${recordData.name}`);
 
   return record;
@@ -270,6 +277,7 @@ function updateRecord(domain, recordId, updates) {
   });
 
   records[index] = updatedRecord;
+  persistState();
   logger.info(`Updated record ${recordId} for domain ${domain}`);
 
   return updatedRecord;
@@ -298,6 +306,7 @@ function deleteRecord(domain, recordId) {
   }
 
   const deletedRecord = records.splice(index, 1)[0];
+  persistState();
   logger.info(`Deleted record ${recordId} for domain ${domain}`);
 
   return true;
@@ -386,6 +395,7 @@ function exportZoneFile(domain) {
 function clearDomain(domain) {
   if (localDNSRecords[domain]) {
     delete localDNSRecords[domain];
+    persistState();
     logger.info(`Cleared all records for domain: ${domain}`);
   }
 }

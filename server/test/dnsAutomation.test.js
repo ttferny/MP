@@ -48,3 +48,23 @@ test('applyDnsAutomation adds missing records when dryRun is false', async () =>
   expect(result.applied.length).toBe(1);
   expect(dnsLibrary.addRecord).toHaveBeenCalled();
 });
+
+test('planDnsAutomation plans an update when an existing local TXT differs from the desired value', async () => {
+  lookupTxtRecords.mockResolvedValue(['v=spf1 include:_spf.example.com ~all']);
+  dnsLibrary.getRecords.mockReturnValue([{ id: '1', type: 'TXT', name: '', content: 'v=spf1 a mx -all' }]);
+
+  const plan = await dnsAutomation.planDnsAutomation('example.com', [
+    { type: 'TXT', name: '', content: 'v=spf1 include:_spf.example.com ~all', ttl: 3600 },
+  ]);
+
+  expect(plan.changes[0].action).toBe('update');
+});
+
+test('planDnsAutomation plans a delete for managed records that are no longer desired', async () => {
+  lookupTxtRecords.mockResolvedValue([]);
+  dnsLibrary.getRecords.mockReturnValue([{ id: '2', type: 'TXT', name: '', content: 'v=spf1 a mx -all', managedByDesiredState: true }]);
+
+  const plan = await dnsAutomation.planDnsAutomation('example.com', []);
+
+  expect(plan.changes[0].action).toBe('delete');
+});

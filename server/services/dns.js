@@ -61,6 +61,8 @@ const isDkimTxtRecord = (record) => {
     || normalized.startsWith('p=');
 };
 
+const { Resolver } = require('dns').promises;
+
 const lookupTxtRecords = async (name) => {
   try {
     // Add timeout wrapper - 30 seconds with retry logic
@@ -176,10 +178,77 @@ async function lookupMXRecords(domain) {
   }
 }
 
+async function checkDnsPropagation(domain, recordName = '', expectedValue = '', recordType = 'TXT') {
+  if (!domain || typeof domain !== 'string') {
+    throw new Error('Domain is required');
+  }
+
+  const resolvers = [
+    { name: 'Google', ip: '8.8.8.8' },
+    { name: 'Cloudflare', ip: '1.1.1.1' },
+    { name: 'OpenDNS', ip: '208.67.222.222' },
+  ];
+
+  const results = await Promise.all(resolvers.map(async (resolverInfo) => {
+    const resolver = new Resolver();
+    resolver.setServers([resolverInfo.ip]);
+
+    try {
+      const records = await Promise.race([
+        resolver.resolveTxt(recordName ? `${recordName}.${domain}` : domain),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
+      ]);
+
+      const normalized = normalizeTxtRecords(records);
+      const matched = expectedValue
+        ? normalized.some((value) => String(value).includes(String(expectedValue)))
+        : normalized.length > 0;
+
+      return {
+        resolver: resolverInfo.name,
+        ip: resolverInfo.ip,
+        status: matched ? 'updated' : 'old',
+        records: normalized,
+        error: null,
+      };
+    } catch (err) {
+      return {
+        resolver: resolverInfo.name,
+        ip: resolverInfo.ip,
+        status: err.message === 'timeout' ? 'timeout' : 'not_found',
+        records: [],
+        error: err.message,
+      };
+    }
+  }));
+
+  const updatedCount = results.filter((result) => result.status === 'updated').length;
+  const status = updatedCount === results.length
+    ? 'fully-propagated'
+    : updatedCount > 0
+      ? 'partially-propagated'
+      : 'not-propagated';
+
+  return {
+    domain,
+    checkedAt: new Date().toISOString(),
+    recordType,
+    expectedValue,
+    results,
+    summary: {
+      total: results.length,
+      updated: updatedCount,
+      pending: results.length - updatedCount,
+      status,
+    },
+  };
+}
+
 module.exports = {
   lookupSPFRecord,
   lookupDMARCRecord,
   lookupDKIMRecord,
   lookupARecords,
   lookupMXRecords,
+  checkDnsPropagation,
 };

@@ -1,0 +1,196 @@
+[
+  {
+    "id": "1786029260364-uxz89v",
+    "timestamp": "2026-08-06T15:14:20.364Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786029260369-gafmuu",
+    "timestamp": "2026-08-06T15:14:20.369Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 1,
+      "existingCount": 0,
+      "createCount": 1,
+      "missingCount": 1,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786029260376-tnbnfn",
+    "timestamp": "2026-08-06T15:14:20.376Z",
+    "kind": "apply",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 1,
+      "existingCount": 0,
+      "createCount": 1,
+      "missingCount": 1,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "applied": [
+      {
+        "id": "1",
+        "type": "TXT"
+      }
+    ],
+    "dryRun": false
+  },
+  {
+    "id": "1786029260380-uv0qwm",
+    "timestamp": "2026-08-06T15:14:20.380Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 1,
+      "existingCount": 1,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 1,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.example.com ~all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record differs from desired state",
+        "currentValue": "v=spf1 a mx -all",
+        "existingRecord": {
+          "id": "1",
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all"
+        }
+      }
+    ]
+  },
+  {
+    "id": "1786029260384-rxcjb3",
+    "timestamp": "2026-08-06T15:14:20.384Z",
+    "kind": "plan",
+    "domain": "example.com",
+    "summary": {
+      "desiredCount": 0,
+      "existingCount": 1,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 1,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "delete",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": null
+        },
+        "reason": "TXT record is no longer desired",
+        "existingRecord": {
+          "id": "2",
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "managedByDesiredState": true
+        }
+      }
+    ]
+  }
+]

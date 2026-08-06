@@ -315,6 +315,7 @@
         <button id="fixBtn" class="btn btn-secondary">Apply Fixes</button>
         <button id="liveSyncPlanBtn" class="btn btn-secondary">Live Sync Plan</button>
         <button id="liveSyncApplyBtn" class="btn btn-primary">Apply Live Sync</button>
+        <button id="propagationBtn" class="btn btn-secondary">Check Propagation</button>
         <button id="refreshResultsBtn" class="btn btn-secondary">Refresh</button>
         <button id="clearBtn" class="btn btn-secondary">Clear</button>
       </div>
@@ -352,6 +353,7 @@
       </div>
 
       <div id="errorBox" class="error-box hidden"></div>
+      <div id="refreshTimestamp" style="margin-top: 12px; color: var(--muted); font-size: 0.85rem;"></div>
     </div>
 
     <!-- Results -->
@@ -405,6 +407,7 @@
     const fixBtn = document.getElementById('fixBtn');
     const liveSyncPlanBtn = document.getElementById('liveSyncPlanBtn');
     const liveSyncApplyBtn = document.getElementById('liveSyncApplyBtn');
+    const propagationBtn = document.getElementById('propagationBtn');
     const refreshResultsBtn = document.getElementById('refreshResultsBtn');
     const clearBtn = document.getElementById('clearBtn');
     const providerBadge = document.getElementById('providerBadge');
@@ -416,6 +419,7 @@
     const loadingState = document.getElementById('loadingState');
     const errorBox = document.getElementById('errorBox');
     const resultsContainer = document.getElementById('resultsContainer');
+    let lastRefreshAt = null;
 
     /**
      * Format DNS record for display
@@ -676,6 +680,50 @@
       }
     }
 
+    async function refreshPersistedPlan(domain) {
+      try {
+        const [persistedResponse, auditResponse] = await Promise.all([
+          fetch(`${getApiBase()}/api/dns-automation/persisted-plan?domain=${encodeURIComponent(domain)}`),
+          fetch(`${getApiBase()}/api/dns-automation/audit-log`),
+        ]);
+
+        const persistedResult = await persistedResponse.json().catch(() => null);
+        const auditResult = await auditResponse.json().catch(() => null);
+
+        const fragments = [];
+        if (persistedResponse.ok && persistedResult?.success && persistedResult.data) {
+          const persisted = persistedResult.data;
+          const summary = persisted.plan?.summary || persisted.summary || {};
+          const countText = `${summary.createCount || 0} create, ${summary.updateCount || 0} update, ${summary.deleteCount || 0} delete`;
+          const timestamp = persisted.plan?.appliedAt || persisted.createdAt || '';
+          fragments.push(`
+            <div class="record-item" style="margin-top: 10px; border-left: 3px solid var(--accent);">
+              <div class="record-key">Persisted Desired-State Plan</div>
+              <div class="record-value">${countText}${timestamp ? `<br/>Last saved: ${new Date(timestamp).toLocaleString()}` : ''}</div>
+            </div>
+          `);
+        }
+
+        if (auditResponse.ok && auditResult?.success && Array.isArray(auditResult.data)) {
+          const recentEntries = auditResult.data.slice(-3).reverse();
+          if (recentEntries.length) {
+            fragments.push(`
+              <div class="record-item" style="margin-top: 10px; border-left: 3px solid var(--success);">
+                <div class="record-key">Audit Trail</div>
+                <div class="record-value">${recentEntries.map((entry) => `${entry.kind.toUpperCase()} • ${entry.domain || 'unknown'} • ${new Date(entry.timestamp).toLocaleString()}`).join('<br/>')}</div>
+              </div>
+            `);
+          }
+        }
+
+        if (fragments.length) {
+          document.getElementById('automationResults').insertAdjacentHTML('beforeend', fragments.join(''));
+        }
+      } catch (err) {
+        // ignore persisted plan fetch errors
+      }
+    }
+
     async function performCheck() {
       const domain = domainInput.value.trim();
 
@@ -730,6 +778,7 @@
 
         if (dnsResult.success && automationResult.success) {
           displayResults(dnsResult.data, automationResult.data);
+          await refreshPersistedPlan(domain);
         } else {
           throw new Error((dnsResult.error || automationResult.error) || 'Unknown error');
         }
@@ -776,6 +825,62 @@
             <div class="record-key">Fixes Applied</div>
             <div class="record-value">${result.data.applied.length} DNS record(s) were added to the local DNS store.</div>
           </div>
+        `;
+        resultsContainer.classList.remove('hidden');
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        loadingState.classList.add('hidden');
+      }
+    }
+
+    async function runPropagationCheck() {
+      const domain = domainInput.value.trim();
+      if (!domain) {
+        showError('Please enter a domain');
+        return;
+      }
+
+      loadingState.classList.remove('hidden');
+      errorBox.classList.add('hidden');
+
+      try {
+        const apiBase = getApiBase();
+        const response = await fetch(`${apiBase}/api/dns-automation/propagation-check`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            domain,
+            recordName: '',
+            expectedValue: 'v=spf1',
+            recordType: 'TXT',
+          }),
+        });
+
+        const result = await parseJsonResponse(response);
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Propagation check failed');
+        }
+
+        const summary = result.data.summary || {};
+        const statusText = summary.status === 'fully-propagated'
+          ? 'Fully propagated'
+          : summary.status === 'partially-propagated'
+            ? 'Propagation in progress'
+            : 'Not propagated';
+
+        document.getElementById('automationResults').innerHTML = `
+          <div class="record-item">
+            <div class="record-key">DNS Propagation Status</div>
+            <div class="record-value">${statusText} (${summary.updated || 0}/${summary.total || 0} servers updated)</div>
+          </div>
+          ${result.data.results.map((entry) => `
+            <div class="record-item" style="border-left: 3px solid ${entry.status === 'updated' ? 'var(--success)' : 'var(--accent)'};">
+              <div class="record-key">${entry.resolver}</div>
+              <span class="status-badge ${entry.status === 'updated' ? 'found' : 'not-found'}">${entry.status === 'updated' ? 'Updated' : entry.status === 'timeout' ? 'Timeout' : 'Old'}</span>
+              <div class="record-value" style="margin-top: 8px;">${entry.records.length ? entry.records.join('<br/>') : 'No matching record seen yet'}</div>
+            </div>
+          `).join('')}
         `;
         resultsContainer.classList.remove('hidden');
       } catch (err) {
@@ -881,6 +986,11 @@
       }
 
       resultsContainer.classList.remove('hidden');
+      lastRefreshAt = new Date();
+      const refreshLabel = document.getElementById('refreshTimestamp');
+      if (refreshLabel) {
+        refreshLabel.textContent = `Last refreshed: ${lastRefreshAt.toLocaleTimeString()}`;
+      }
     }
 
     /**
@@ -907,6 +1017,7 @@
     fixBtn.addEventListener('click', applyAutomationFixes);
     liveSyncPlanBtn.addEventListener('click', () => runLiveSync('plan'));
     liveSyncApplyBtn.addEventListener('click', () => runLiveSync('apply'));
+    propagationBtn.addEventListener('click', runPropagationCheck);
     refreshResultsBtn.addEventListener('click', () => {
       if (domainInput.value.trim()) {
         performCheck();

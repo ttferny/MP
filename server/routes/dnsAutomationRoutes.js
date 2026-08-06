@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { planDnsAutomation, applyDnsAutomation } = require('../services/dnsAutomation');
+const { planDnsAutomation, applyDnsAutomation, getPersistedPlan } = require('../services/dnsAutomation');
+const { loadAuditLog } = require('../services/persistentStore');
+const { checkDnsPropagation } = require('../services/dns');
 const { syncDnsRecords } = require('../services/dnsAutomationUpdateDelete');
 const { planLiveDnsSync, applyLiveDnsSync } = require('../services/liveDnsSync');
 const { createCloudflareDnsClient, setRuntimeConfig, getRuntimeConfig } = require('../services/cloudflareDns');
@@ -24,6 +26,31 @@ router.post('/apply', async (req, res) => {
     res.json({ success: true, data: result });
   } catch (err) {
     logger.error(`DNS automation apply error: ${err.message}`);
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+router.get('/persisted-plan', async (req, res) => {
+  try {
+    const { domain } = req.query;
+    if (!domain) {
+      return res.status(400).json({ success: false, error: 'Domain is required' });
+    }
+
+    const persistedPlan = getPersistedPlan(domain);
+    res.json({ success: true, data: persistedPlan });
+  } catch (err) {
+    logger.error(`DNS automation persisted plan error: ${err.message}`);
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+router.get('/audit-log', async (req, res) => {
+  try {
+    const auditLog = loadAuditLog();
+    res.json({ success: true, data: auditLog });
+  } catch (err) {
+    logger.error(`DNS automation audit log error: ${err.message}`);
     res.status(400).json({ success: false, error: err.message });
   }
 });
@@ -95,6 +122,17 @@ router.post('/live-sync-apply', async (req, res) => {
     res.json({ success: true, data: result });
   } catch (err) {
     logger.error(`DNS live sync apply error: ${err.message}`);
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/propagation-check', async (req, res) => {
+  try {
+    const { domain, recordName, expectedValue, recordType } = req.body;
+    const result = await checkDnsPropagation(domain, recordName, expectedValue, recordType);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    logger.error(`DNS propagation check error: ${err.message}`);
     res.status(400).json({ success: false, error: err.message });
   }
 });
