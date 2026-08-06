@@ -312,6 +312,10 @@
           spellcheck="false"
         />
         <button id="checkBtn" class="btn btn-primary">Check DNS</button>
+        <button id="fixBtn" class="btn btn-secondary">Apply Fixes</button>
+        <button id="liveSyncPlanBtn" class="btn btn-secondary">Live Sync Plan</button>
+        <button id="liveSyncApplyBtn" class="btn btn-primary">Apply Live Sync</button>
+        <button id="refreshResultsBtn" class="btn btn-secondary">Refresh</button>
         <button id="clearBtn" class="btn btn-secondary">Clear</button>
       </div>
 
@@ -322,6 +326,25 @@
         placeholder="Paste raw email header here to validate DKIM signature..."
         spellcheck="false"
       ></textarea>
+
+      <div class="config-panel" style="margin-top: 16px; border: 1px solid var(--border); border-radius: 10px; padding: 14px; background: rgba(255,255,255,0.03);">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <strong>Cloudflare provider</strong>
+          <span id="providerBadge" class="status-badge not-found">Checking…</span>
+        </div>
+        <div style="margin-top: 10px; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+          <select id="providerModeSelect" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.04); color: var(--text);">
+            <option value="local-memory">Local memory</option>
+            <option value="cloudflare">Cloudflare</option>
+          </select>
+          <input id="cloudflareTokenInput" type="password" placeholder="Cloudflare API Token" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.04); color: var(--text);" />
+          <input id="cloudflareZoneInput" type="text" placeholder="Cloudflare Zone ID" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.04); color: var(--text);" />
+        </div>
+        <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+          <button id="saveConfigBtn" class="btn btn-secondary">Save Provider Config</button>
+          <button id="testCloudflareBtn" class="btn btn-primary">Test Cloudflare Connection</button>
+        </div>
+      </div>
 
       <div id="loadingState" class="loading hidden">
         <div class="spinner"></div>
@@ -351,6 +374,15 @@
           </h3>
           <div id="dkimResults"></div>
         </div>
+
+        <!-- Automation Results -->
+        <div class="result-card">
+          <h3>
+            <span class="result-icon">⚙️</span>
+            Automation Plan
+          </h3>
+          <div id="automationResults"></div>
+        </div>
       </div>
 
       <!-- Header Analysis (if provided) -->
@@ -370,7 +402,17 @@
     const domainInput = document.getElementById('domainInput');
     const headerInput = document.getElementById('headerInput');
     const checkBtn = document.getElementById('checkBtn');
+    const fixBtn = document.getElementById('fixBtn');
+    const liveSyncPlanBtn = document.getElementById('liveSyncPlanBtn');
+    const liveSyncApplyBtn = document.getElementById('liveSyncApplyBtn');
+    const refreshResultsBtn = document.getElementById('refreshResultsBtn');
     const clearBtn = document.getElementById('clearBtn');
+    const providerBadge = document.getElementById('providerBadge');
+    const providerModeSelect = document.getElementById('providerModeSelect');
+    const cloudflareTokenInput = document.getElementById('cloudflareTokenInput');
+    const cloudflareZoneInput = document.getElementById('cloudflareZoneInput');
+    const saveConfigBtn = document.getElementById('saveConfigBtn');
+    const testCloudflareBtn = document.getElementById('testCloudflareBtn');
     const loadingState = document.getElementById('loadingState');
     const errorBox = document.getElementById('errorBox');
     const resultsContainer = document.getElementById('resultsContainer');
@@ -516,9 +558,124 @@
       return html;
     }
 
+    function renderAutomationResults(plan) {
+      if (!plan || !plan.summary) {
+        return '<div class="record-item">No automation plan available.</div>';
+      }
+
+      const changes = plan.changes || [];
+      const missingCount = plan.summary.missingCount || 0;
+      const statusText = missingCount === 0 ? 'No changes needed' : `${missingCount} record(s) to add`;
+      const statusClass = missingCount === 0 ? 'found' : 'not-found';
+
+      let html = `
+        <div class="record-item">
+          <div class="record-key">Automation Status</div>
+          <span class="status-badge ${statusClass}">${statusText}</span>
+        </div>
+        <div class="record-item">
+          <div class="record-key">Desired SPF/DMARC State</div>
+          <div class="record-value">SPF and DMARC records are compared against the live domain state and any missing entries are flagged here.</div>
+        </div>
+      `;
+
+      if (changes.length === 0) {
+        html += '<div class="record-item">Everything in your desired DNS state is already present.</div>';
+      } else {
+        changes.forEach((change) => {
+          const recordName = change.record.name || '@';
+          const recordValue = change.record.content || '';
+          html += `
+            <div class="record-item" style="border-left: 3px solid var(--accent);">
+              <div class="record-key">Create ${change.record.type}</div>
+              <div class="record-value">Name: ${recordName}<br/>Value: ${recordValue}</div>
+            </div>
+          `;
+        });
+      }
+
+      return html;
+    }
+
     /**
      * Fetch and display results
      */
+    function getApiBase() {
+      const protocol = window.location.protocol;
+      const host = window.location.host;
+      return `${protocol}//${host}`;
+    }
+
+    async function parseJsonResponse(response) {
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        return response.json();
+      }
+
+      const text = await response.text();
+      throw new Error(text || `Request failed with status ${response.status}`);
+    }
+
+    async function refreshProviderStatus() {
+      try {
+        const response = await fetch(`${getApiBase()}/api/dns-automation/provider-status`);
+        const result = await response.json();
+        if (result.success && result.data) {
+          providerBadge.textContent = result.data.mode || 'local-memory';
+          providerBadge.className = `status-badge ${result.data.configured ? 'found' : 'not-found'}`;
+          providerModeSelect.value = result.data.mode || 'local-memory';
+        }
+      } catch (err) {
+        providerBadge.textContent = 'local-memory';
+        providerBadge.className = 'status-badge not-found';
+      }
+    }
+
+    async function saveProviderConfig() {
+      try {
+        const selectedMode = providerModeSelect.value;
+        localStorage.setItem('providerMode', selectedMode);
+
+        const response = await fetch(`${getApiBase()}/api/dns-automation/save-config`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            providerMode: selectedMode,
+            cloudflareApiToken: cloudflareTokenInput.value.trim(),
+            cloudflareZoneId: cloudflareZoneInput.value.trim(),
+          }),
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Unable to save provider config');
+        }
+        await refreshProviderStatus();
+        showError('Provider config saved');
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    async function testCloudflareConnection() {
+      try {
+        const response = await fetch(`${getApiBase()}/api/dns-automation/test-connection`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cloudflareApiToken: cloudflareTokenInput.value.trim(),
+            cloudflareZoneId: cloudflareZoneInput.value.trim(),
+          }),
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Cloudflare connection test failed');
+        }
+        showError(`Cloudflare connection successful: ${result.data.zoneName || 'zone ok'}`);
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
     async function performCheck() {
       const domain = domainInput.value.trim();
 
@@ -538,24 +695,169 @@
           payload.rawHeader = rawHeader;
         }
 
-        const response = await fetch('/api/dns/full-check', {
+        const apiBase = getApiBase();
+        const [dnsResponse, automationResponse] = await Promise.all([
+          fetch(`${apiBase}/api/dns/full-check`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          }),
+          fetch(`${apiBase}/api/dns-automation/plan`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              domain,
+              desiredRecords: [
+                { type: 'TXT', name: '', content: 'v=spf1 a mx -all', ttl: 3600, purpose: 'spf' },
+                { type: 'TXT', name: '_dmarc', content: 'v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com', ttl: 3600, purpose: 'dmarc' },
+              ],
+            }),
+          }),
+        ]);
+
+        if (!dnsResponse.ok) {
+          const err = await parseJsonResponse(dnsResponse);
+          throw new Error(err.error || 'DNS check failed');
+        }
+
+        if (!automationResponse.ok) {
+          const err = await parseJsonResponse(automationResponse);
+          throw new Error(err.error || 'Automation plan failed');
+        }
+
+        const dnsResult = await parseJsonResponse(dnsResponse);
+        const automationResult = await parseJsonResponse(automationResponse);
+
+        if (dnsResult.success && automationResult.success) {
+          displayResults(dnsResult.data, automationResult.data);
+        } else {
+          throw new Error((dnsResult.error || automationResult.error) || 'Unknown error');
+        }
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        loadingState.classList.add('hidden');
+      }
+    }
+
+    async function applyAutomationFixes() {
+      const domain = domainInput.value.trim();
+
+      if (!domain) {
+        showError('Please enter a domain');
+        return;
+      }
+
+      loadingState.classList.remove('hidden');
+      errorBox.classList.add('hidden');
+
+      try {
+        const apiBase = getApiBase();
+        const response = await fetch(`${apiBase}/api/dns-automation/apply`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({
+            domain,
+            desiredRecords: [
+              { type: 'TXT', name: '', content: 'v=spf1 a mx -all', ttl: 3600, purpose: 'spf' },
+              { type: 'TXT', name: '_dmarc', content: 'v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com', ttl: 3600, purpose: 'dmarc' },
+            ],
+            dryRun: false,
+          }),
         });
 
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error || 'Check failed');
+        const result = await parseJsonResponse(response);
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Apply failed');
         }
 
-        const result = await response.json();
+        document.getElementById('automationResults').innerHTML = `
+          <div class="record-item">
+            <div class="record-key">Fixes Applied</div>
+            <div class="record-value">${result.data.applied.length} DNS record(s) were added to the local DNS store.</div>
+          </div>
+        `;
+        resultsContainer.classList.remove('hidden');
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        loadingState.classList.add('hidden');
+      }
+    }
 
-        if (result.success) {
-          displayResults(result.data);
-        } else {
-          throw new Error(result.error || 'Unknown error');
+    async function runLiveSync(action) {
+      const domain = domainInput.value.trim();
+
+      if (!domain) {
+        showError('Please enter a domain');
+        return;
+      }
+
+      loadingState.classList.remove('hidden');
+      errorBox.classList.add('hidden');
+
+      try {
+        const apiBase = getApiBase();
+        const endpoint = action === 'apply'
+          ? `${apiBase}/api/dns-automation/live-sync-apply`
+          : `${apiBase}/api/dns-automation/live-sync-plan`;
+
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            domain,
+            desiredRecords: [
+              { type: 'TXT', name: '', content: 'v=spf1 a mx -all', ttl: 3600, purpose: 'spf' },
+              { type: 'TXT', name: '_dmarc', content: 'v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com', ttl: 3600, purpose: 'dmarc' },
+            ],
+            dryRun: action !== 'apply',
+          }),
+        });
+
+        const result = await parseJsonResponse(response);
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Live sync failed');
         }
+
+        const plan = result.data?.plan || result.data;
+        const records = plan.records || [];
+        const matchingCount = records.filter((entry) => entry.status === 'matching').length;
+        const outdatedCount = records.filter((entry) => entry.status === 'outdated').length;
+        const missingCount = records.filter((entry) => entry.action === 'create').length;
+
+        document.getElementById('automationResults').innerHTML = `
+          <div class="record-item">
+            <div class="record-key">Live Sync ${action === 'apply' ? 'Applied' : 'Plan'}</div>
+            <div class="record-value">${plan.summary?.changesCount || 0} change(s) identified out of ${records.length || 0} record(s).</div>
+          </div>
+          <div class="summary-stats" style="margin-top: 8px;">
+            <div class="stat">
+              <div class="stat-label">Matching</div>
+              <div class="stat-value">${matchingCount}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Outdated</div>
+              <div class="stat-value">${outdatedCount}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Missing</div>
+              <div class="stat-value">${missingCount}</div>
+            </div>
+          </div>
+          ${records.length ? records.map((entry) => {
+            const badgeClass = entry.status === 'matching' ? 'found' : 'not-found';
+            const label = entry.status === 'matching' ? 'Matching' : entry.action === 'update' ? 'Outdated' : 'Missing';
+            return `
+              <div class="record-item" style="border-left: 3px solid ${entry.status === 'matching' ? 'var(--success)' : 'var(--accent)'};">
+                <div class="record-key">${label} ${entry.record.type}</div>
+                <span class="status-badge ${badgeClass}">${label}</span>
+                <div class="record-value" style="margin-top: 8px;">Name: ${entry.fqdn || entry.record.name || '@'}<br/>Value: ${entry.record.content || ''}</div>
+              </div>
+            `;
+          }).join('') : '<div class="record-item">No live sync records found.</div>'}
+        `;
+        resultsContainer.classList.remove('hidden');
       } catch (err) {
         showError(err.message);
       } finally {
@@ -566,12 +868,13 @@
     /**
      * Display results in UI
      */
-    function displayResults(data) {
-      document.getElementById('dnsResults').innerHTML = renderDnsResults(data.dnsCheck);
-      document.getElementById('dkimResults').innerHTML = renderDkimResults(data.dnsCheck);
+    function displayResults(dnsData, automationData) {
+      document.getElementById('dnsResults').innerHTML = renderDnsResults(dnsData.dnsCheck);
+      document.getElementById('dkimResults').innerHTML = renderDkimResults(dnsData.dnsCheck);
+      document.getElementById('automationResults').innerHTML = renderAutomationResults(automationData);
 
-      if (data.headerCheck) {
-        document.getElementById('headerResults').innerHTML = renderHeaderResults(data.headerCheck);
+      if (dnsData.headerCheck) {
+        document.getElementById('headerResults').innerHTML = renderHeaderResults(dnsData.headerCheck);
         document.getElementById('headerResultsContainer').classList.remove('hidden');
       } else {
         document.getElementById('headerResultsContainer').classList.add('hidden');
@@ -601,12 +904,41 @@
 
     // Event listeners
     checkBtn.addEventListener('click', performCheck);
+    fixBtn.addEventListener('click', applyAutomationFixes);
+    liveSyncPlanBtn.addEventListener('click', () => runLiveSync('plan'));
+    liveSyncApplyBtn.addEventListener('click', () => runLiveSync('apply'));
+    refreshResultsBtn.addEventListener('click', () => {
+      if (domainInput.value.trim()) {
+        performCheck();
+      } else {
+        showError('Enter a domain to refresh results');
+      }
+    });
     clearBtn.addEventListener('click', clearAll);
+    saveConfigBtn.addEventListener('click', saveProviderConfig);
+    testCloudflareBtn.addEventListener('click', testCloudflareConnection);
+    cloudflareTokenInput.addEventListener('change', () => {
+      if (cloudflareTokenInput.value.trim()) {
+        localStorage.setItem('cloudflareApiToken', cloudflareTokenInput.value.trim());
+      }
+    });
+    cloudflareZoneInput.addEventListener('change', () => {
+      if (cloudflareZoneInput.value.trim()) {
+        localStorage.setItem('cloudflareZoneId', cloudflareZoneInput.value.trim());
+      }
+    });
     domainInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') performCheck();
     });
 
     // Focus on load
+    const storedToken = localStorage.getItem('cloudflareApiToken') || '';
+    const storedZone = localStorage.getItem('cloudflareZoneId') || '';
+    const storedMode = localStorage.getItem('providerMode') || 'local-memory';
+    if (storedToken) cloudflareTokenInput.value = storedToken;
+    if (storedZone) cloudflareZoneInput.value = storedZone;
+    providerModeSelect.value = storedMode;
+    refreshProviderStatus();
     domainInput.focus();
   </script>
 

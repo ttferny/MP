@@ -34,6 +34,7 @@ const dmarcRoutes   = require('./routes/dmarcRoutes'); // Zircon's DMARC-specifi
 const spfRoutes     = require('./routes/spfRoutes');   // SPF POC routes
 const dnsRoutes     = require('./routes/dnsRoutes');   // Automated DNS/DKIM checking
 const dnsManagementRoutes = require('./routes/dnsManagementRoutes'); // DNS record management (add, update, delete)
+const dnsAutomationRoutes = require('./routes/dnsAutomationRoutes'); // Desired-state DNS automation
 const { startSMTPServer } = require('./services/smtpReceiver');
 
 const app = express();
@@ -70,6 +71,7 @@ app.use('/api/dmarc',   dmarcRoutes);    // DMARC-specific routes (Zircon)
 app.use('/api/spf',     spfRoutes);      // SPF POC routes
 app.use('/api/dns',     dnsRoutes);      // Automated DNS/DKIM checking
 app.use('/api/dns-mgmt', dnsManagementRoutes); // DNS record management (add, update, delete, bulk operations)
+app.use('/api/dns-automation', dnsAutomationRoutes); // Desired-state DNS automation
 
 app.get('/api/dmarc/smtp/latest', (req, res) => {
   const result = smtp.getLastResult();
