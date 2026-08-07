@@ -278,9 +278,64 @@ function displayResults() {
     </div>
   `).join('');
 
+  // Step-by-step methodology
+  const pipelineEl = document.getElementById('analyzer-pipeline');
+  if (pipelineEl) pipelineEl.innerHTML = buildAnalyzerPipelineHTML(currentAnalysis);
+
   // Show results
   resultsSection.style.display = 'block';
   resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Builds a step-by-step breakdown of how the uploaded DMARC XML report
+// was turned into the summary/risk assessment shown above. Reuses
+// renderPipelineSteps() from dmarc_ui.js (loaded earlier on this page).
+function buildAnalyzerPipelineHTML(analysis) {
+  const { summary, authenticationStats, mailServers, suspiciousActivity, spoofingDetection, riskAssessment } = analysis;
+
+  const total = authenticationStats.spf.pass + authenticationStats.spf.fail;
+  const spfRate = total > 0 ? (authenticationStats.spf.pass / total) * 100 : 0;
+  const dkimRate = total > 0 ? (authenticationStats.dkim.pass / total) * 100 : 0;
+  const alignmentRate = total > 0 ? (authenticationStats.alignment.aligned / total) * 100 : 0;
+
+  const steps = [
+    {
+      status: null,
+      title: 'Parsed the Report',
+      desc: `Read ${summary.totalEmails.toLocaleString()} email record(s) from ${summary.organization}'s report on ${summary.domain}, covering ${formatDateRange(summary.reportDate)}.`
+    },
+    {
+      status: spfRate >= 90 && dkimRate >= 90 ? 'pass' : (spfRate >= 50 || dkimRate >= 50) ? 'warn' : 'fail',
+      title: 'Checked Authentication Results',
+      desc: `${authenticationStats.spf.pass.toLocaleString()} of ${total.toLocaleString()} passed SPF (${spfRate.toFixed(1)}%); ${authenticationStats.dkim.pass.toLocaleString()} passed DKIM (${dkimRate.toFixed(1)}%).`
+    },
+    {
+      status: alignmentRate >= 90 ? 'pass' : alignmentRate >= 50 ? 'warn' : 'fail',
+      title: 'Checked DMARC Alignment',
+      desc: `${authenticationStats.alignment.aligned.toLocaleString()} of ${total.toLocaleString()} emails aligned with ${summary.domain} (${alignmentRate.toFixed(1)}%) — this is what DMARC actually requires, not SPF or DKIM alone.`
+    },
+    {
+      status: suspiciousActivity.suspiciousIPs.length === 0 ? 'pass' : 'warn',
+      title: 'Scanned Sending Servers',
+      desc: `Found ${mailServers.count} distinct sending server(s); ${suspiciousActivity.suspiciousIPs.length} flagged as suspicious based on failure patterns.`
+    },
+    {
+      status: spoofingDetection.detected ? 'fail' : 'pass',
+      title: 'Checked for Spoofing',
+      desc: spoofingDetection.detected
+        ? `Found spoofing indicators across ${spoofingDetection.affectedEmails} email(s), ${spoofingDetection.confidence}% confidence.`
+        : 'No spoofing indicators found in this report.'
+    },
+    {
+      status: riskAssessment.riskLevel === 'LOW' ? 'pass' : riskAssessment.riskLevel === 'MEDIUM' ? 'warn' : 'fail',
+      title: `Computed Overall Risk: ${riskAssessment.riskLevel} (${riskAssessment.overallRiskScore}/100)`,
+      desc: riskAssessment.factors && riskAssessment.factors.length
+        ? `Based on ${riskAssessment.factors.length} factor(s): ${riskAssessment.factors[0]}${riskAssessment.factors.length > 1 ? ', among others' : ''}.`
+        : 'No specific risk factors flagged.'
+    }
+  ];
+
+  return renderPipelineSteps(steps);
 }
 
 function formatDateRange(dateRange) {

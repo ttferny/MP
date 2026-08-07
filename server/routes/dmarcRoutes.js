@@ -116,50 +116,6 @@ router.post('/scenarios/:key', (req, res) => {
   });
 });
 
-
-// ─────────────────────────────────────────────────────────────
-// SECTION 3 — DMARC RECORD AUDITOR
-// Analyses a raw DMARC TXT record string and grades the
-// domain's DMARC configuration against security best practices.
-// DNS lookup is handled by Ashton's DNS module — this route
-// only receives the record and evaluates it.
-// ─────────────────────────────────────────────────────────────
-
-// POST /api/dmarc/audit
-// Grades a DMARC record against security best practices
-// Body: { domain, dmarcRecord }
-//   domain      — the domain being audited (e.g. "dbs.com.sg")
-//   dmarcRecord — raw DMARC TXT record string from Ashton's DNS module
-//                 e.g. "v=DMARC1; p=reject; rua=mailto:dmarc@dbs.com.sg; pct=100"
-//                 pass null or omit if no DMARC record exists for the domain
-// Returns: { domain, score, grade, issues[], recommendations[], dmarc{} }
-router.post('/audit', (req, res) => {
-  const { domain, dmarcRecord } = req.body;
-
-  if (!domain) {
-    return res.status(400).json({ error: "domain is required" });
-  }
-
-  const result = auditDMARC(dmarcRecord, domain);
-  res.json(result);
-});
-
-// GET /api/dmarc/audit/:domain
-// Fetches the real DMARC record from DNS using Ashton's dns.js module
-// then runs it through the DMARC auditor automatically
-// No request body needed — just pass the domain in the URL
-// e.g. GET /api/dmarc/audit/google.com
-router.get('/audit/:domain', async (req, res) => {
-  try {
-    const dmarcRecord = await lookupDMARCRecord(req.params.domain);
-    const result = auditDMARC(dmarcRecord, req.params.domain);
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
 // ─────────────────────────────────────────────────────────────
 // SECTION 4 — AGGREGATE REPORTS
 // Logs and retrieves DMARC evaluation history.

@@ -38,7 +38,6 @@
     <!-- Tab Navigation -->
     <div class="tab-nav">
       <button class="tab-btn active" data-tab="scenarios" onclick="switchTab('scenarios')">Try an Attack</button>
-      <button class="tab-btn" data-tab="audit" onclick="switchTab('audit')">Check a Domain</button>
       <button class="tab-btn" data-tab="monitor" onclick="switchTab('monitor')">Watch it Live</button>
       <button class="tab-btn" data-tab="reports" onclick="switchTab('reports')">Reports</button>
       <button class="tab-btn" data-tab="analyzer" onclick="switchTab('analyzer')">Analyse Reports</button>
@@ -372,118 +371,6 @@
       </div>
     </div><!-- end tab-scenarios -->
     
-    <!-- ===================== DMARC AUDIT TAB ===================== -->
-    <div id="tab-audit" class="tab-content" style="display:none">
-
-      <!-- Health Check card -->
-      <div class="card" style="background:linear-gradient(135deg,rgba(0,212,255,0.06),rgba(124,58,237,0.06)); border-color:rgba(0,212,255,0.2);">
-        <div style="font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px;">Quick Domain Health Check</div>
-        <p style="font-size:14px; color:var(--text); line-height:1.6; margin-bottom:16px;">
-          Type any domain below to instantly check if it can be spoofed. (e.g., your company domain, email domain, or any domain you want to verify.)
-        </p>
-        <div style="display:flex; gap:10px; align-items:flex-start;">
-          <input id="health-check-domain" type="text" placeholder="e.g. yourcompany.com" style="flex:1;"
-            onkeydown="if(event.key==='Enter') runHealthCheck()">
-          <button class="btn-evaluate" onclick="runHealthCheck()" style="width:auto; padding:10px 20px; white-space:nowrap;">
-            Check Now
-          </button>
-        </div>
-        <div id="health-check-result" style="margin-top:16px; display:none;"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">DMARC Record Auditor</div>
-        <p style="color:var(--muted); font-size:14px; margin-bottom:24px;">
-          Look up a real domain's DMARC record from DNS or paste one manually.
-          Get a security grade with specific issues and recommendations.
-        </p>
-
-        <div class="form-group" style="margin-bottom:20px;">
-          <label>Audit Mode</label>
-          <div class="scenarios" style="margin-top:8px;">
-            <button class="scenario-btn" id="mode-btn-live"
-              style="border-color:var(--accent); color:var(--accent);"
-              onclick="setAuditMode('live')">Live DNS Lookup</button>
-            <button class="scenario-btn" id="mode-btn-manual"
-              onclick="setAuditMode('manual')">Paste Record</button>
-          </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <div id="audit-live-section">
-          <div class="form-group" style="margin-bottom:16px;">
-            <label>Domain Name</label>
-            <input id="audit-live-domain" type="text" placeholder="e.g. dbs.com.sg or google.com" style="width:100%;">
-            <span class="field-hint">The real DMARC record will be fetched from DNS automatically</span>
-          </div>
-          <div class="form-group" style="margin-bottom:20px;">
-            <label>Quick Load — Real Domains</label>
-            <div class="scenarios" style="margin-top:8px;">
-              <button class="scenario-btn" onclick="loadLiveDomain('google.com')">google.com</button>
-              <button class="scenario-btn" onclick="loadLiveDomain('dbs.com.sg')">dbs.com.sg</button>
-              <button class="scenario-btn" onclick="loadLiveDomain('tp.edu.sg')">tp.edu.sg</button>
-              <button class="scenario-btn" onclick="loadLiveDomain('nodmarc-test.com')">nodmarc-test.com</button>
-            </div>
-          </div>
-          <button class="btn-evaluate" onclick="runAuditLive()">Fetch DNS &amp; Audit</button>
-        </div>
-
-        <div id="audit-manual-section" style="display:none">
-          <div class="form-group" style="margin-bottom:16px;">
-            <label>Quick Load — Sample Records</label>
-            <div class="scenarios" style="margin-top:8px;">
-              <button class="scenario-btn" onclick="loadSampleRecord('strong')">Strong (Grade A)</button>
-              <button class="scenario-btn" onclick="loadSampleRecord('moderate')">Moderate (Grade C)</button>
-              <button class="scenario-btn" onclick="loadSampleRecord('weak')">Weak (Grade D)</button>
-              <button class="scenario-btn" onclick="loadSampleRecord('none')">No Record (Grade F)</button>
-            </div>
-          </div>
-          <div class="form-group" style="margin-bottom:16px;">
-            <label>Domain Name</label>
-            <input id="audit-domain" type="text" placeholder="e.g. dbs.com.sg" style="width:100%;">
-            <span class="field-hint">The domain being audited</span>
-          </div>
-          <div class="form-group" style="margin-bottom:20px;">
-            <label>DMARC TXT Record</label>
-            <textarea id="audit-record" rows="3" placeholder="v=DMARC1; p=reject; rua=mailto:dmarc@example.com; pct=100" style="width:100%; resize:vertical;"></textarea>
-            <span class="field-hint">Paste the full DMARC TXT record. Leave blank to simulate no record.</span>
-          </div>
-          <button class="btn-evaluate" onclick="runAudit()">Audit DMARC Record</button>
-        </div>
-      </div>
-
-      <div class="card" id="audit-result" style="display:none">
-        <div class="card-title">Audit Result</div>
-        <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
-          <div id="audit-grade-badge" style="width:80px; height:80px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:40px; font-weight:700; flex-shrink:0;"></div>
-          <div style="flex:1;">
-            <div style="font-family:var(--mono); font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Security Grade</div>
-            <div id="audit-grade-desc" style="font-size:15px; color:var(--text); line-height:1.5;"></div>
-            <div id="audit-real-world" style="margin-top:8px; font-size:13px; color:var(--muted); line-height:1.5; font-style:italic;"></div>
-            <div style="margin-top:8px; background:var(--surface2); border-radius:6px; height:8px; overflow:hidden;">
-              <div id="audit-score-bar" style="height:100%; border-radius:6px; transition:width 0.6s ease;"></div>
-            </div>
-            <div style="font-family:var(--mono); font-size:12px; color:var(--muted); margin-top:4px;">
-              Score: <span id="audit-score-val" style="color:var(--text); font-weight:600;"></span> / 100
-            </div>
-          </div>
-        </div>
-        <details style="margin-bottom:16px;">
-          <summary style="cursor:pointer; font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted);">Show technical DNS details</summary>
-          <div id="audit-tags" style="margin-top:12px;"></div>
-        </details>
-        <div id="audit-issues-section" style="display:none; margin-bottom:16px;">
-          <div style="font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--fail); margin-bottom:10px;">Issues Found</div>
-          <div id="audit-issues"></div>
-        </div>
-        <div id="audit-recs-section" style="display:none;">
-          <div style="font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); margin-bottom:10px;">Recommendations</div>
-          <div id="audit-recs"></div>
-        </div>
-      </div>
-    </div><!-- end tab-audit -->
-
     <!-- ===================== LIVE MONITOR TAB ===================== -->
     <!-- Polls GET /api/dmarc/smtp/latest every 3 seconds when active -->
     <!-- Send test emails via node test/testEmailSend.js to see results -->
@@ -582,6 +469,34 @@
         <p style="color:var(--muted); font-size:14px; margin-bottom:20px;">
           Every scenario and test email you've run gets logged automatically, so you can look back at what happened and export the results.
         </p>
+
+        <div class="card-title" style="font-size:12px; margin-bottom:12px;">Step-by-Step: How This List Is Built</div>
+        <div class="pipeline" style="margin-bottom:20px;">
+          <div class="pipeline-step">
+            <div class="pipeline-num">1</div>
+            <div class="pipeline-body">
+              <div class="pipeline-title">Something Gets Evaluated</div>
+              <div class="pipeline-desc">A scenario from Try an Attack, a test email from Watch it Live, or a "Test Your Own Email" check runs through the DMARC policy engine.</div>
+            </div>
+          </div>
+          <div class="pipeline-connector"></div>
+          <div class="pipeline-step">
+            <div class="pipeline-num">2</div>
+            <div class="pipeline-body">
+              <div class="pipeline-title">The Result Is Logged</div>
+              <div class="pipeline-desc">Status, action, policy, risk score, and domain are recorded automatically — no extra step needed.</div>
+            </div>
+          </div>
+          <div class="pipeline-connector"></div>
+          <div class="pipeline-step">
+            <div class="pipeline-num">3</div>
+            <div class="pipeline-body">
+              <div class="pipeline-title">Everything Below Is Aggregated</div>
+              <div class="pipeline-desc">The totals, pass/fail counts, and breakdowns you see are computed live from every logged result — load or export them any time.</div>
+            </div>
+          </div>
+        </div>
+
         <button class="btn-secondary" onclick="loadReportSummary()">Load Reports</button>
         <div id="report-summary"></div>
       </div>
@@ -758,6 +673,14 @@
             <div class="recommendations-list" id="recommendationsList"></div>
           </div>
 
+          <!-- Step-by-Step methodology -->
+          <div class="result-card">
+            <div class="card-header">
+              <h3>Step-by-Step: How This Report Was Analyzed</h3>
+            </div>
+            <div id="analyzer-pipeline"></div>
+          </div>
+
         </div>
       </div>
     </div><!-- end tab-analyzer -->
@@ -771,7 +694,6 @@
     // Maps internal tab keys to the readable ?tab= name shown in the URL
     const tabUrlNames = {
       scenarios: 'try_an_attack',
-      audit:     'check_a_domain',
       monitor:   'watch_it_live',
       reports:   'reports',
       analyzer:  'analyse_reports'

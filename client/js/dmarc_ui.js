@@ -73,11 +73,17 @@ function buildPipelineHTML(r, e) {
     }
   ];
 
+  return renderPipelineSteps(steps);
+}
+
+// Shared renderer for any step list built by the buildXPipelineHTML functions —
+// keeps the markup identical across the DMARC verdict, audit, and analyzer pipelines.
+function renderPipelineSteps(steps) {
   return `<div class="pipeline">${steps.map((s, i) => `
     <div class="pipeline-step ${s.status || ''}">
       <div class="pipeline-num">${i + 1}</div>
       <div class="pipeline-body">
-        <div class="pipeline-title">${s.title}${s.status ? `<span class="pipeline-tag ${s.status}">${s.status === 'pass' ? 'Passed' : s.status === 'fail' ? 'Failed' : 'Note'}</span>` : ''}</div>
+        <div class="pipeline-title">${s.title}${s.status ? `<span class="pipeline-tag ${s.status}">${s.status === 'pass' ? 'Passed' : s.status === 'fail' ? 'Failed' : s.status === 'warn' ? 'Warning' : 'Note'}</span>` : ''}</div>
         <div class="pipeline-desc">${s.desc}</div>
       </div>
     </div>
@@ -110,6 +116,10 @@ function loadScenario(key) {
   detailCard.style.animation = "fadeUp 0.4s ease both";
 
   document.getElementById("result").style.display = "none";
+  document.getElementById("inline-comparison-trigger").style.display = "none";
+  document.getElementById("inline-comparison").style.display = "none";
+
+  detailCard.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 // Call backend: POST /api/dmarc/scenarios/:key
@@ -230,6 +240,15 @@ function renderResult(r) {
     subject:    s ? s.name : ''
   };
   document.getElementById("scenario-pipeline").innerHTML = buildPipelineHTML(r, pipelineEmail);
+
+  // The 4-policy comparison only has data for a handful of scenarios —
+  // only offer it when there's actually something to show.
+  const compareTrigger = document.getElementById("inline-comparison-trigger");
+  compareTrigger.style.display = comparisonScenarios[currentScenario] ? "block" : "none";
+  document.getElementById("inline-comparison").style.display = "none";
+  document.getElementById("compare-btn").textContent = "See this scenario across all 4 DMARC policies";
+
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 
@@ -296,6 +315,7 @@ function renderReportSummary(s) {
       <button class="btn-secondary" onclick="clearReports()">Clear Reports</button>
     </div>
   `;
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 // Load detailed reports list
@@ -424,26 +444,45 @@ const comparisonScenarios = {
   }
 };
 
+// Expand/collapse the inline 4-policy comparison beneath the current result,
+// loading it on first expand.
+function toggleInlineComparison() {
+  const wrap = document.getElementById('inline-comparison');
+  const btn  = document.getElementById('compare-btn');
+  const isHidden = wrap.style.display === 'none' || !wrap.style.display;
+
+  if (isHidden) {
+    wrap.style.display = 'block';
+    btn.textContent = 'Hide policy comparison';
+    loadComparison(currentScenario);
+  } else {
+    wrap.style.display = 'none';
+    btn.textContent = 'See this scenario across all 4 DMARC policies';
+  }
+}
+
 // Run all four policy columns for the selected attack
 async function loadComparison(key) {
   const s = comparisonScenarios[key];
   if (!s) return;
 
-  // Highlight selected button
-  document.querySelectorAll('#tab-comparison .scenario-btn').forEach(b => {
-    b.style.borderColor = '';
-    b.style.color = '';
-  });
-  event.currentTarget.style.borderColor = 'var(--accent)';
-  event.currentTarget.style.color = 'var(--accent)';
-
   // Show attack description
-  document.getElementById("comparison-attack-box").style.display = "block";
-  document.getElementById("comparison-attack-text").textContent = s.attack;
+  const attackBox = document.getElementById("inline-attack-box");
+  attackBox.style.display = "block";
+  attackBox.textContent = s.attack;
 
   // Show loading state
-  const resultEl = document.getElementById("comparison-result");
-  resultEl.style.display = "block";
+  const grid = document.getElementById("inline-comparison-grid");
+  const takeawayCard = document.getElementById("inline-takeaway-card");
+  const loadingBar = document.getElementById("inline-loading-bar");
+  const loadingText = document.getElementById("inline-loading-text");
+  grid.style.display = "none";
+  takeawayCard.style.display = "none";
+  loadingText.style.display = "block";
+  loadingText.textContent = "Running all four policy evaluations...";
+  loadingBar.style.width = "0";
+  void loadingBar.offsetWidth;
+  loadingBar.style.width = "90%";
   ['nodmarc','none','quarantine','reject'].forEach(id => {
     document.getElementById(`comp-col-${id}`).innerHTML = `<div style="color:var(--muted); font-family:var(--mono); font-size:12px; text-align:center; padding:20px;">Loading...</div>`;
   });
@@ -485,15 +524,20 @@ async function loadComparison(key) {
 
     document.getElementById("comparison-takeaway").textContent = s.takeaway;
 
-    // Animate in
-    resultEl.style.animation = "none";
-    void resultEl.offsetWidth;
-    resultEl.style.animation = "fadeUp 0.4s ease both";
+    loadingText.style.display = "none";
+    grid.style.display = "grid";
+    takeawayCard.style.display = "block";
+    grid.style.animation = "none";
+    void grid.offsetWidth;
+    grid.style.animation = "fadeUp 0.4s ease both";
+    grid.scrollIntoView({ behavior: "smooth", block: "start" });
 
   } catch (err) {
+    loadingText.textContent = "Could not reach server. Make sure node app.js is running.";
     ['nodmarc','none','quarantine','reject'].forEach(id => {
       document.getElementById(`comp-col-${id}`).innerHTML = `<div class="error-box">Server error. Make sure node app.js is running.</div>`;
     });
+    grid.style.display = "grid";
   }
 }
 
@@ -514,191 +558,6 @@ function renderComparisonColumn(colId, r, description) {
 
     <div class="comp-detail">${description}</div>
   `;
-}
-
-
-// =============================================================
-// SECTION 5 — DMARC AUDIT TAB
-// =============================================================
-
-const sampleRecords = {
-  strong:   { domain: "example.com",      record: "v=DMARC1; p=reject; rua=mailto:dmarc@example.com; pct=100; aspf=r; adkim=r" },
-  moderate: { domain: "moderate.com",     record: "v=DMARC1; p=quarantine; pct=60" },
-  weak:     { domain: "weak.com",         record: "v=DMARC1; p=none" },
-  none:     { domain: "nodmarc-test.com", record: "" }
-};
-
-function setAuditMode(mode) {
-  const liveSection   = document.getElementById('audit-live-section');
-  const manualSection = document.getElementById('audit-manual-section');
-  const liveBtn       = document.getElementById('mode-btn-live');
-  const manualBtn     = document.getElementById('mode-btn-manual');
-  if (mode === 'live') {
-    liveSection.style.display   = 'block';
-    manualSection.style.display = 'none';
-    liveBtn.style.borderColor   = 'var(--accent)';
-    liveBtn.style.color         = 'var(--accent)';
-    manualBtn.style.borderColor = '';
-    manualBtn.style.color       = '';
-  } else {
-    liveSection.style.display   = 'none';
-    manualSection.style.display = 'block';
-    manualBtn.style.borderColor = 'var(--accent)';
-    manualBtn.style.color       = 'var(--accent)';
-    liveBtn.style.borderColor   = '';
-    liveBtn.style.color         = '';
-  }
-  document.getElementById("audit-result").style.display = "none";
-}
-
-function loadSampleRecord(key) {
-  const s = sampleRecords[key];
-  if (!s) return;
-  setAuditMode('manual');
-  document.getElementById("audit-domain").value = s.domain;
-  document.getElementById("audit-record").value = s.record;
-  document.querySelectorAll('#audit-manual-section .scenario-btn').forEach(b => { b.style.borderColor = ''; b.style.color = ''; });
-  event.currentTarget.style.borderColor = 'var(--accent)';
-  event.currentTarget.style.color       = 'var(--accent)';
-  document.getElementById("audit-result").style.display = "none";
-}
-
-function loadLiveDomain(domain) {
-  document.getElementById("audit-live-domain").value = domain;
-  document.querySelectorAll('#audit-live-section .scenario-btn').forEach(b => { b.style.borderColor = ''; b.style.color = ''; });
-  event.currentTarget.style.borderColor = 'var(--accent)';
-  event.currentTarget.style.color       = 'var(--accent)';
-  document.getElementById("audit-result").style.display = "none";
-}
-
-async function runAudit() {
-  const domain      = document.getElementById("audit-domain").value.trim();
-  const dmarcRecord = document.getElementById("audit-record").value.trim() || null;
-  if (!domain) { alert("Please enter a domain name."); return; }
-  try {
-    const response = await fetch("/api/dmarc/audit", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ domain, dmarcRecord })
-    });
-    if (!response.ok) throw new Error("Server error: " + response.status);
-    renderAuditResult(await response.json());
-  } catch (err) {
-    const el = document.getElementById("audit-result");
-    el.style.display = "block";
-    el.innerHTML = `<div class="error-box">Could not reach server: ${err.message}. Make sure node app.js is running.</div>`;
-  }
-}
-
-async function runAuditLive() {
-  const domain = document.getElementById("audit-live-domain").value.trim();
-  if (!domain) { alert("Please enter a domain name."); return; }
-  const resultEl = document.getElementById("audit-result");
-  resultEl.style.display = "block";
-  resultEl.innerHTML = `
-    <div class="card-title">Audit Result</div>
-    <div style="display:flex; align-items:center; gap:14px; padding:20px 0;">
-      <div style="width:20px; height:20px; border-radius:50%; border:3px solid var(--border); border-top-color:var(--accent); animation:spin 0.8s linear infinite; flex-shrink:0;"></div>
-      <div style="font-family:var(--mono); font-size:13px; color:var(--muted);">Fetching DNS record for ${domain}...</div>
-    </div>`;
-  try {
-    const response = await fetch(`/api/dmarc/audit/${encodeURIComponent(domain)}`);
-    if (!response.ok) throw new Error("Server error: " + response.status);
-    const result = await response.json();
-    resultEl.innerHTML = `
-      <div class="card-title">Audit Result</div>
-      <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
-        <div id="audit-grade-badge" style="width:80px; height:80px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:40px; font-weight:700; flex-shrink:0;"></div>
-        <div style="flex:1;">
-          <div style="font-family:var(--mono); font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Security Grade</div>
-          <div id="audit-grade-desc" style="font-size:15px; color:var(--text); line-height:1.5;"></div>
-          <div style="margin-top:8px; background:var(--surface2); border-radius:6px; height:8px; overflow:hidden;">
-            <div id="audit-score-bar" style="height:100%; border-radius:6px; transition:width 0.6s ease;"></div>
-          </div>
-          <div style="font-family:var(--mono); font-size:12px; color:var(--muted); margin-top:4px;">
-            Score: <span id="audit-score-val" style="color:var(--text); font-weight:600;"></span> / 100
-          </div>
-        </div>
-      </div>
-      <details style="margin-bottom:16px;">
-        <summary style="cursor:pointer; font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted);">Show technical DNS details</summary>
-        <div id="audit-tags" style="margin-top:12px;"></div>
-      </details>
-      <div id="audit-issues-section" style="display:none; margin-bottom:16px;">
-        <div style="font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--fail); margin-bottom:10px;">Issues Found</div>
-        <div id="audit-issues"></div>
-      </div>
-      <div id="audit-recs-section" style="display:none;">
-        <div style="font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); margin-bottom:10px;">Recommendations</div>
-        <div id="audit-recs"></div>
-      </div>`;
-    renderAuditResult(result);
-  } catch (err) {
-    resultEl.innerHTML = `<div class="error-box">Could not fetch DNS record for ${domain}: ${err.message}</div>`;
-  }
-}
-
-function renderAuditResult(r) {
-  const el = document.getElementById("audit-result");
-  el.style.display = "block";
-  el.style.animation = "none";
-  void el.offsetWidth;
-  el.style.animation = "fadeUp 0.4s ease both";
-  const badge = document.getElementById("audit-grade-badge");
-  badge.textContent = r.grade;
-  badge.className   = `grade-${r.grade}`;
-  badge.style.cssText = "width:80px; height:80px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:40px; font-weight:700; flex-shrink:0;";
-  document.getElementById("audit-grade-desc").textContent = r.gradeDescription || "";
-
-  // Real world context sentence based on grade
-  const rwEl = document.getElementById("audit-real-world");
-  if (rwEl && r.domain) {
-    const rwText = {
-      "A": `${r.domain} is well protected. Spoofed emails claiming to be from this domain will be blocked by mail servers worldwide.`,
-      "B": `${r.domain} has good protection but some gaps. Most spoofed emails will be blocked, but the configuration could be stronger.`,
-      "C": `${r.domain} has partial protection. Some spoofed emails may still reach inboxes depending on how the receiving server handles them.`,
-      "D": `${r.domain} has weak protection. Attackers can likely send emails pretending to be from this domain with a reasonable chance of success.`,
-      "F": `${r.domain} has no DMARC protection. Anyone can send emails pretending to be from this domain right now and most mail servers will deliver them.`,
-    };
-    rwEl.textContent = rwText[r.grade] || "";
-  }
-  const scoreBar   = document.getElementById("audit-score-bar");
-  const scoreColor = r.score >= 90 ? "var(--pass)" : r.score >= 60 ? "var(--warn)" : "var(--fail)";
-  scoreBar.style.width      = r.score + "%";
-  scoreBar.style.background = scoreColor;
-  document.getElementById("audit-score-val").textContent = r.score;
-  document.getElementById("audit-score-val").style.color = scoreColor;
-  const tagsEl = document.getElementById("audit-tags");
-  if (r.dmarc) {
-    const d = r.dmarc;
-    const policyColor = d.policy === 'reject' ? 'good' : d.policy === 'quarantine' ? 'warn' : 'bad';
-    const pctColor    = d.pct === 100 ? 'good' : d.pct >= 50 ? 'warn' : 'bad';
-    const ruaColor    = d.rua ? 'good' : 'bad';
-    const spColor     = d.sp === 'reject' ? 'good' : d.sp === 'quarantine' ? 'warn' : d.sp === 'none' ? 'bad' : 'muted';
-    tagsEl.innerHTML = `
-      <div class="audit-tag-grid">
-        <div class="audit-tag"><div class="audit-tag-key">p= (policy)<span class="info-tip" tabindex="0" data-tip="What this domain tells email providers to do with suspicious mail: let it through, spam-fold it, or block it."></span></div><div class="audit-tag-value ${policyColor}">${d.policy || "missing"}</div></div>
-        <div class="audit-tag"><div class="audit-tag-key">pct= (enforcement)<span class="info-tip" tabindex="0" data-tip="What percentage of mail the policy actually applies to. 100% means every email is checked."></span></div><div class="audit-tag-value ${pctColor}">${d.pct}%</div></div>
-        <div class="audit-tag"><div class="audit-tag-key">sp= (subdomains)<span class="info-tip" tabindex="0" data-tip="A separate rule just for sub-addresses like mail.company.com, if one is set."></span></div><div class="audit-tag-value ${spColor}">${d.sp || "not set"}</div></div>
-        <div class="audit-tag"><div class="audit-tag-key">rua= (reports)<span class="info-tip" tabindex="0" data-tip="An email address that receives daily summaries of who is sending mail using this domain."></span></div><div class="audit-tag-value ${ruaColor}">${d.rua ? "configured" : "not set"}</div></div>
-        <div class="audit-tag"><div class="audit-tag-key">aspf= (SPF align)<span class="info-tip" tabindex="0" data-tip="How strictly the sending server's domain must match. Relaxed still allows subdomains; strict requires an exact match."></span></div><div class="audit-tag-value">${d.aspf === 'r' ? 'relaxed' : 'strict'}</div></div>
-        <div class="audit-tag"><div class="audit-tag-key">adkim= (DKIM align)<span class="info-tip" tabindex="0" data-tip="How strictly the email's digital signature must match the visible sender domain. Relaxed allows subdomains; strict requires an exact match."></span></div><div class="audit-tag-value">${d.adkim === 'r' ? 'relaxed' : 'strict'}</div></div>
-      </div>`;
-  } else {
-    tagsEl.innerHTML = `<div class="reason-box" style="color:var(--fail);">No DMARC record found for ${r.domain}.</div>`;
-  }
-  const issuesSec = document.getElementById("audit-issues-section");
-  const issuesEl  = document.getElementById("audit-issues");
-  if (r.issues && r.issues.length > 0) {
-    issuesSec.style.display = "block";
-    issuesEl.innerHTML = r.issues.map(i => `<div class="audit-issue">${i}</div>`).join("");
-  } else { issuesSec.style.display = "none"; }
-  const recsSec = document.getElementById("audit-recs-section");
-  const recsEl  = document.getElementById("audit-recs");
-  if (r.recommendations && r.recommendations.length > 0) {
-    recsSec.style.display = "block";
-    recsEl.innerHTML = r.recommendations.map(rec => `<div class="audit-rec">→ ${rec}</div>`).join("");
-  } else { recsSec.style.display = "none"; }
-  el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 
@@ -769,6 +628,7 @@ async function sendTestEmail(type) {
       <div style="width:20px; height:20px; border-radius:50%; border:3px solid var(--border); border-top-color:var(--accent); animation:spin 0.8s linear infinite; flex-shrink:0;"></div>
       <div style="font-family:var(--mono); font-size:13px; color:var(--muted);">Sending email — waiting for DMARC evaluation...</div>
     </div>`;
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   try { await fetch('/api/dmarc/smtp/latest', { method: 'DELETE' }); } catch (e) {}
   lastSeenTime = null;
   try {
@@ -1015,56 +875,6 @@ function renderPropagationResult(data) {
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-
-// =============================================================
-// HEALTH CHECK — Quick domain spoofability check
-// Calls GET /api/dmarc/audit/:domain
-// =============================================================
-async function runHealthCheck() {
-  const domain = document.getElementById("health-check-domain").value.trim();
-  if (!domain) { alert("Please enter a domain name."); return; }
-
-  const resultEl = document.getElementById("health-check-result");
-  resultEl.style.display = "block";
-  resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;color:var(--muted);"><div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--accent);animation:spin 0.8s linear infinite;"></div>Checking ' + domain + '...</div>';
-
-  try {
-    const response = await fetch("/api/dmarc/audit/" + encodeURIComponent(domain));
-    if (!response.ok) throw new Error("Server error");
-    const r = await response.json();
-
-    const grade = r.grade;
-    const isProtected = grade === "A" || grade === "B";
-    const isVulnerable = grade === "F" || grade === "D";
-
-    const color  = isProtected ? "var(--pass)" : isVulnerable ? "var(--fail)" : "var(--warn)";
-    const bg     = isProtected ? "rgba(16,185,129,0.08)" : isVulnerable ? "rgba(239,68,68,0.08)" : "rgba(245,158,11,0.08)";
-    const bdr    = isProtected ? "rgba(16,185,129,0.25)" : isVulnerable ? "rgba(239,68,68,0.25)" : "rgba(245,158,11,0.25)";
-
-    const verdict = isProtected
-      ? "<strong style='color:var(--pass);'>" + domain + " is protected.</strong> Spoofed emails claiming to be from this domain will be blocked."
-      : isVulnerable
-      ? "<strong style='color:var(--fail);'>" + domain + " can be spoofed right now.</strong> Anyone can send fake emails pretending to be from this domain."
-      : "<strong style='color:var(--warn);'>" + domain + " is partially protected.</strong> Some spoofed emails may still get through.";
-
-    resultEl.innerHTML =
-      '<div style="background:' + bg + ';border:1px solid ' + bdr + ';border-radius:8px;padding:14px 16px;display:flex;align-items:center;gap:14px;">' +
-        '<div style="flex:1;">' +
-          '<div style="font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:' + color + ';margin-bottom:4px;">Grade ' + grade + ' — Score ' + r.score + '/100</div>' +
-          '<div style="font-size:13px;color:var(--text);line-height:1.6;">' + verdict + '</div>' +
-        '</div>' +
-        '<button onclick="document.getElementById(\'audit-live-domain\').value=\'' + domain + '\'; setAuditMode(\'live\'); runAuditLive();" ' +
-          'style="margin-left:auto;flex-shrink:0;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:var(--mono);font-size:11px;padding:6px 12px;border-radius:6px;cursor:pointer;white-space:nowrap;">' +
-          'Full Report →' +
-        '</button>' +
-      '</div>';
-
-  } catch (err) {
-    resultEl.innerHTML = '<div class="error-box">Could not check ' + domain + '. Make sure the server is running.</div>';
-  }
-}
-
-
 // =============================================================
 // SECTION 9 — TEST YOUR OWN EMAIL
 // Calls POST /api/dmarc/test-email — either a raw pasted email
@@ -1132,6 +942,7 @@ async function testRawEmail() {
   if (!raw) { alert('Paste the raw email source first.'); return; }
 
   resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;color:var(--muted);"><div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--accent);animation:spin 0.8s linear infinite;"></div>Checking headers against live DNS...</div>';
+  resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   try {
     const response = await fetch('/api/dmarc/test-email', {
@@ -1235,6 +1046,7 @@ async function testSimpleEmail() {
   if (!fromAddress || !fromAddress.includes('@')) { alert('Enter the sender email address, e.g. security@paypal.com'); return; }
 
   resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;color:var(--muted);"><div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--accent);animation:spin 0.8s linear infinite;"></div>Checking...</div>';
+  resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   try {
     const response = await fetch('/api/dmarc/test-email', {
