@@ -167,6 +167,10 @@ function loadScenario(key) {
   detailCard.style.animation = "fadeUp 0.4s ease both";
 
   document.getElementById("result").style.display = "none";
+  document.getElementById("inline-comparison-trigger").style.display = "none";
+  document.getElementById("inline-comparison").style.display = "none";
+
+  detailCard.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 // Call backend: POST /api/dmarc/scenarios/:key
@@ -287,6 +291,15 @@ function renderResult(r) {
     subject:    s ? s.name : ''
   };
   document.getElementById("scenario-pipeline").innerHTML = buildPipelineHTML(r, pipelineEmail);
+
+  // The 4-policy comparison only has data for a handful of scenarios —
+  // only offer it when there's actually something to show.
+  const compareTrigger = document.getElementById("inline-comparison-trigger");
+  compareTrigger.style.display = comparisonScenarios[currentScenario] ? "block" : "none";
+  document.getElementById("inline-comparison").style.display = "none";
+  document.getElementById("compare-btn").textContent = "See this scenario across all 4 DMARC policies";
+
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 
@@ -481,26 +494,45 @@ const comparisonScenarios = {
   }
 };
 
+// Expand/collapse the inline 4-policy comparison beneath the current result,
+// loading it on first expand.
+function toggleInlineComparison() {
+  const wrap = document.getElementById('inline-comparison');
+  const btn  = document.getElementById('compare-btn');
+  const isHidden = wrap.style.display === 'none' || !wrap.style.display;
+
+  if (isHidden) {
+    wrap.style.display = 'block';
+    btn.textContent = 'Hide policy comparison';
+    loadComparison(currentScenario);
+  } else {
+    wrap.style.display = 'none';
+    btn.textContent = 'See this scenario across all 4 DMARC policies';
+  }
+}
+
 // Run all four policy columns for the selected attack
 async function loadComparison(key) {
   const s = comparisonScenarios[key];
   if (!s) return;
 
-  // Highlight selected button
-  document.querySelectorAll('#tab-comparison .scenario-btn').forEach(b => {
-    b.style.borderColor = '';
-    b.style.color = '';
-  });
-  event.currentTarget.style.borderColor = 'var(--accent)';
-  event.currentTarget.style.color = 'var(--accent)';
-
   // Show attack description
-  document.getElementById("comparison-attack-box").style.display = "block";
-  document.getElementById("comparison-attack-text").textContent = s.attack;
+  const attackBox = document.getElementById("inline-attack-box");
+  attackBox.style.display = "block";
+  attackBox.textContent = s.attack;
 
   // Show loading state
-  const resultEl = document.getElementById("comparison-result");
-  resultEl.style.display = "block";
+  const grid = document.getElementById("inline-comparison-grid");
+  const takeawayCard = document.getElementById("inline-takeaway-card");
+  const loadingBar = document.getElementById("inline-loading-bar");
+  const loadingText = document.getElementById("inline-loading-text");
+  grid.style.display = "none";
+  takeawayCard.style.display = "none";
+  loadingText.style.display = "block";
+  loadingText.textContent = "Running all four policy evaluations...";
+  loadingBar.style.width = "0";
+  void loadingBar.offsetWidth;
+  loadingBar.style.width = "90%";
   ['nodmarc','none','quarantine','reject'].forEach(id => {
     document.getElementById(`comp-col-${id}`).innerHTML = `<div style="color:var(--muted); font-family:var(--mono); font-size:12px; text-align:center; padding:20px;">Loading...</div>`;
   });
@@ -542,15 +574,20 @@ async function loadComparison(key) {
 
     document.getElementById("comparison-takeaway").textContent = s.takeaway;
 
-    // Animate in
-    resultEl.style.animation = "none";
-    void resultEl.offsetWidth;
-    resultEl.style.animation = "fadeUp 0.4s ease both";
+    loadingText.style.display = "none";
+    grid.style.display = "grid";
+    takeawayCard.style.display = "block";
+    grid.style.animation = "none";
+    void grid.offsetWidth;
+    grid.style.animation = "fadeUp 0.4s ease both";
+    grid.scrollIntoView({ behavior: "smooth", block: "start" });
 
   } catch (err) {
+    loadingText.textContent = "Could not reach server. Make sure node app.js is running.";
     ['nodmarc','none','quarantine','reject'].forEach(id => {
       document.getElementById(`comp-col-${id}`).innerHTML = `<div class="error-box">Server error. Make sure node app.js is running.</div>`;
     });
+    grid.style.display = "grid";
   }
 }
 
@@ -657,6 +694,7 @@ async function runAuditLive() {
       <div style="width:20px; height:20px; border-radius:50%; border:3px solid var(--border); border-top-color:var(--accent); animation:spin 0.8s linear infinite; flex-shrink:0;"></div>
       <div style="font-family:var(--mono); font-size:13px; color:var(--muted);">Fetching DNS record for ${domain}...</div>
     </div>`;
+  resultEl.scrollIntoView({ behavior: "smooth", block: "start" });
   try {
     const response = await fetch(`/api/dmarc/audit/${encodeURIComponent(domain)}`);
     if (!response.ok) throw new Error("Server error: " + response.status);
@@ -830,6 +868,7 @@ async function sendTestEmail(type) {
       <div style="width:20px; height:20px; border-radius:50%; border:3px solid var(--border); border-top-color:var(--accent); animation:spin 0.8s linear infinite; flex-shrink:0;"></div>
       <div style="font-family:var(--mono); font-size:13px; color:var(--muted);">Sending email — waiting for DMARC evaluation...</div>
     </div>`;
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   try { await fetch('/api/dmarc/smtp/latest', { method: 'DELETE' }); } catch (e) {}
   lastSeenTime = null;
   try {
@@ -1193,6 +1232,7 @@ async function testRawEmail() {
   if (!raw) { alert('Paste the raw email source first.'); return; }
 
   resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;color:var(--muted);"><div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--accent);animation:spin 0.8s linear infinite;"></div>Checking headers against live DNS...</div>';
+  resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   try {
     const response = await fetch('/api/dmarc/test-email', {
@@ -1296,6 +1336,7 @@ async function testSimpleEmail() {
   if (!fromAddress || !fromAddress.includes('@')) { alert('Enter the sender email address, e.g. security@paypal.com'); return; }
 
   resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;color:var(--muted);"><div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--accent);animation:spin 0.8s linear infinite;"></div>Checking...</div>';
+  resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   try {
     const response = await fetch('/api/dmarc/test-email', {
