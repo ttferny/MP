@@ -32,6 +32,14 @@
       font-family: var(--sans);
       margin: 0;
       padding: 0;
+      min-height: 100vh;
+    }
+
+    body:not(.legacy-theme) {
+      background:
+        radial-gradient(circle at top left, rgba(62, 156, 161, 0.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(231, 111, 81, 0.12), transparent 24%),
+        linear-gradient(180deg, #101a1f 0%, #121f25 38%, #16252c 100%);
     }
 
     .auto-studio {
@@ -43,6 +51,25 @@
     .header-section {
       text-align: center;
       margin-bottom: 60px;
+      padding: 32px 28px 26px;
+      border-radius: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header-section::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(26, 122, 127, 0.12), rgba(231, 111, 81, 0.08));
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 22px;
+      pointer-events: none;
+    }
+
+    body.legacy-theme .header-section::before {
+      border-color: rgba(35, 31, 26, 0.06);
+      background: linear-gradient(135deg, rgba(26, 122, 127, 0.08), rgba(231, 111, 81, 0.06));
     }
 
     .header-section h1 {
@@ -53,6 +80,8 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      position: relative;
+      z-index: 1;
     }
 
     .header-section p {
@@ -60,6 +89,8 @@
       color: var(--muted);
       max-width: 600px;
       margin: 0 auto;
+      position: relative;
+      z-index: 1;
     }
 
     .control-panel {
@@ -69,6 +100,16 @@
       padding: 40px;
       margin-bottom: 40px;
       box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .control-panel::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 32%);
+      pointer-events: none;
     }
 
     .input-group {
@@ -102,29 +143,32 @@
       font-size: 0.95rem;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
     }
 
     .btn-primary {
-      background: var(--accent);
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
       color: #fff;
     }
 
     .btn-primary:hover {
-      background: var(--accent-dark);
+      background: linear-gradient(135deg, var(--accent-dark), var(--accent));
       transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(26, 122, 127, 0.24);
     }
 
     .btn-secondary {
-      background: var(--accent-warm);
+      background: linear-gradient(135deg, var(--accent-warm), #d88e47);
       color: #fff;
     }
 
     .btn-secondary:hover {
-      background: var(--accent-warm-dark);
+      background: linear-gradient(135deg, var(--accent-warm-dark), var(--accent-warm));
       transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(231, 111, 81, 0.22);
     }
 
     .btn:disabled {
@@ -200,6 +244,23 @@
       border-radius: 14px;
       padding: 28px;
       box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+    }
+
+    .result-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 24%);
+      pointer-events: none;
+    }
+
+    .result-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.18);
+      border-color: rgba(115, 157, 168, 0.28);
     }
 
     .result-card.full-span {
@@ -214,6 +275,57 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-toggle {
+      width: 100%;
+      padding: 0 0 20px;
+      border: none;
+      background: transparent;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font: inherit;
+    }
+
+    .card-toggle::after {
+      content: '▾';
+      margin-left: auto;
+      font-size: 0.95rem;
+      color: var(--muted);
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    .card-toggle:hover::after,
+    .card-toggle:focus-visible::after {
+      color: var(--accent);
+    }
+
+    .card-toggle:focus-visible {
+      outline: 2px solid rgba(26, 122, 127, 0.45);
+      outline-offset: 4px;
+      border-radius: 10px;
+    }
+
+    .collapsible-card.collapsed .card-toggle {
+      padding-bottom: 0;
+    }
+
+    .collapsible-card.collapsed .card-toggle::after {
+      transform: rotate(-90deg);
+    }
+
+    .collapsible-content {
+      display: block;
+    }
+
+    .collapsible-card.collapsed .collapsible-content {
+      display: none;
     }
 
     .result-icon {
@@ -249,14 +361,45 @@
       border: 1px solid rgba(217, 119, 6, 0.35);
     }
 
+    .severity-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 8px;
+      margin-bottom: 8px;
+    }
+
+    .severity-badge.high {
+      background: rgba(185, 28, 28, 0.12);
+      color: var(--danger);
+      border: 1px solid rgba(185, 28, 28, 0.35);
+    }
+
+    .severity-badge.medium {
+      background: rgba(217, 119, 6, 0.12);
+      color: var(--warn);
+      border: 1px solid rgba(217, 119, 6, 0.35);
+    }
+
+    .severity-badge.low {
+      background: rgba(26, 122, 127, 0.12);
+      color: var(--accent);
+      border: 1px solid rgba(26, 122, 127, 0.35);
+    }
+
     .record-item {
       background: var(--bg-alt);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 14px;
+      padding: 16px;
       margin-bottom: 12px;
       font-family: 'IBM Plex Mono', monospace;
       font-size: 0.85rem;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
 
     .record-key {
@@ -361,8 +504,9 @@
       background: linear-gradient(135deg, rgba(26, 122, 127, 0.1), rgba(231, 111, 81, 0.08));
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 14px;
+      padding: 16px 14px;
       text-align: center;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
     .stat-label {
@@ -396,6 +540,8 @@
       margin-top: 14px;
       display: flex;
       justify-content: center;
+      position: relative;
+      z-index: 1;
     }
 
     .theme-toggle-btn {
@@ -413,9 +559,236 @@
       border-color: var(--accent);
       color: var(--accent);
     }
+
+    .config-panel {
+      margin-top: 16px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .config-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .config-panel-grid {
+      margin-top: 10px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .profile-panel-grid {
+      grid-template-columns: minmax(220px, 280px) 1fr;
+      align-items: start;
+    }
+
+    .provider-panel-grid {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .config-input {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .config-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(26, 122, 127, 0.18);
+    }
+
+    .profile-summary {
+      margin: 0;
+      min-height: 100%;
+    }
+
+    body:not(.legacy-theme) .config-panel {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+      border-color: rgba(255, 255, 255, 0.12);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 10px 26px rgba(0, 0, 0, 0.14);
+    }
+
+    body:not(.legacy-theme) .config-panel strong {
+      color: #f4efe7;
+    }
+
+    body:not(.legacy-theme) .config-input {
+      background: rgba(12, 18, 24, 0.58);
+      border-color: rgba(115, 157, 168, 0.4);
+      color: #f5f7fa;
+    }
+
+    body:not(.legacy-theme) .profile-summary {
+      background: rgba(12, 18, 24, 0.52);
+      border-color: rgba(115, 157, 168, 0.32);
+      color: #edf2f7;
+    }
+
+    body:not(.legacy-theme) .control-panel,
+    body:not(.legacy-theme) .result-card,
+    body:not(.legacy-theme) .apply-confirm-modal {
+      background: linear-gradient(180deg, rgba(21, 31, 37, 0.94), rgba(18, 28, 34, 0.92));
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 18px 46px rgba(0, 0, 0, 0.24);
+    }
+
+    body:not(.legacy-theme) .record-item,
+    body:not(.legacy-theme) .stat,
+    body:not(.legacy-theme) #exportPreview {
+      background: linear-gradient(180deg, rgba(10, 16, 21, 0.86), rgba(14, 21, 27, 0.8));
+      border-color: rgba(115, 157, 168, 0.2);
+    }
+
+    body:not(.legacy-theme) .header-section p,
+    body:not(.legacy-theme) .propagation-hint,
+    body:not(.legacy-theme) .record-key,
+    body:not(.legacy-theme) .stat-label,
+    body:not(.legacy-theme) #refreshTimestamp {
+      color: #9db1ba;
+    }
+
+    body:not(.legacy-theme) .theme-toggle-btn {
+      background: rgba(14, 21, 27, 0.7);
+      border-color: rgba(115, 157, 168, 0.22);
+      color: #edf2f7;
+    }
+
+    body:not(.legacy-theme) .theme-toggle-btn:hover {
+      border-color: rgba(115, 157, 168, 0.42);
+      color: #ffffff;
+    }
+
+    @media (max-width: 900px) {
+      .profile-panel-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .apply-confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 18, 16, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 1000;
+      backdrop-filter: blur(3px);
+    }
+
+    .apply-confirm-modal {
+      width: min(760px, 100%);
+      max-height: 86vh;
+      overflow: auto;
+      background: linear-gradient(160deg, var(--card) 0%, var(--bg-alt) 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+      padding: 26px;
+    }
+
+    .apply-confirm-title {
+      margin: 0 0 12px;
+      color: var(--ink);
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .apply-confirm-meta {
+      margin-bottom: 14px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.86rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .apply-confirm-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .apply-change-row {
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      align-items: center;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.88rem;
+      color: var(--ink);
+    }
+
+    .apply-change-symbol {
+      font-weight: 700;
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    .apply-change-symbol.add {
+      color: var(--success);
+    }
+
+    .apply-change-symbol.update {
+      color: var(--warn);
+    }
+
+    .apply-change-symbol.delete {
+      color: var(--danger);
+    }
+
+    .apply-confirm-empty {
+      margin-top: 12px;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.88rem;
+      color: var(--muted);
+      background: var(--bg-alt);
+    }
+
+    .apply-confirm-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    body.modal-open {
+      overflow: hidden;
+    }
   </style>
 </head>
 <body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-text">Email Authentication Studio</span>
+      </div>
+      <nav class="site-nav">
+        <a class="nav-link" href="index.html">SPF Lab</a>
+        <a class="nav-link" href="dmarc.html">DMARC Lab</a>
+        <a class="nav-link active" href="dns-studio.html">DNS Automation</a>
+        <a class="nav-link featured" href="dns-manager.html">DNS Manager</a>
+      </nav>
+    </div>
+  </header>
 
   <div class="auto-studio">
     <!-- Header -->
@@ -423,7 +796,7 @@
       <h1>🔍 Automated DNS & DKIM Studio</h1>
       <p>Enter a domain to automatically check DNS records, SPF, DMARC, and DKIM configuration</p>
       <div class="theme-toggle-wrap">
-        <button id="themeToggleBtn" class="theme-toggle-btn" type="button" title="Switch between the shared studio colors and legacy DNS Studio colors.">Switch to Legacy Colors</button>
+        <button id="themeToggleBtn" class="theme-toggle-btn" type="button" title="Switch between Studio Mode and Light Mode.">Switch to Light Mode</button>
       </div>
     </div>
 
@@ -453,18 +826,33 @@
         spellcheck="false"
       ></textarea>
 
-      <div class="config-panel" style="margin-top: 16px; border: 1px solid var(--border); border-radius: 10px; padding: 14px; background: rgba(255,255,255,0.03);">
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <div class="config-panel">
+        <div class="config-panel-header">
+          <strong>Security Profile</strong>
+          <span id="policyProfileBadge" class="status-badge found">Balanced</span>
+        </div>
+        <div class="config-panel-grid profile-panel-grid">
+          <select id="policyProfileSelect" class="config-input">
+            <option value="basic">Basic</option>
+            <option value="balanced" selected>Balanced</option>
+            <option value="strict">Strict</option>
+          </select>
+          <div id="policyProfileSummary" class="record-item profile-summary">Balanced profile: SPF uses <strong>-all</strong> and DMARC uses <strong>p=quarantine</strong>.</div>
+        </div>
+      </div>
+
+      <div class="config-panel">
+        <div class="config-panel-header">
           <strong>Cloudflare provider</strong>
           <span id="providerBadge" class="status-badge not-found">Checking…</span>
         </div>
-        <div style="margin-top: 10px; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
-          <select id="providerModeSelect" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.04); color: var(--text);">
+        <div class="config-panel-grid provider-panel-grid">
+          <select id="providerModeSelect" class="config-input">
             <option value="local-memory">Local memory</option>
             <option value="cloudflare">Cloudflare</option>
           </select>
-          <input id="cloudflareTokenInput" type="password" placeholder="Cloudflare API Token" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.04); color: var(--text);" />
-          <input id="cloudflareZoneInput" type="text" placeholder="Cloudflare Zone ID" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.04); color: var(--text);" />
+          <input id="cloudflareTokenInput" class="config-input" type="password" placeholder="Cloudflare API Token" />
+          <input id="cloudflareZoneInput" class="config-input" type="text" placeholder="Cloudflare Zone ID" />
         </div>
         <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
           <button id="saveConfigBtn" class="btn btn-secondary" title="Save provider mode and Cloudflare credentials for DNS automation actions.">Save Provider Config</button>
@@ -485,65 +873,113 @@
     <div id="resultsContainer" class="hidden">
       <div class="results-section">
         <!-- DNS Results -->
-        <div class="result-card">
-          <h3>
+        <div class="result-card collapsible-card" data-card-id="dns-records">
+          <button class="card-toggle" type="button" aria-expanded="true">
             <span class="result-icon">📋</span>
             DNS Records
-          </h3>
-          <div id="dnsResults"></div>
+          </button>
+          <div class="collapsible-content">
+            <div id="dnsResults"></div>
+          </div>
         </div>
 
         <!-- DKIM Results -->
-        <div class="result-card">
-          <h3>
+        <div class="result-card collapsible-card" data-card-id="dkim-configuration">
+          <button class="card-toggle" type="button" aria-expanded="true">
             <span class="result-icon">🔐</span>
             DKIM Configuration
-          </h3>
-          <div id="dkimResults"></div>
+          </button>
+          <div class="collapsible-content">
+            <div id="dkimResults"></div>
+          </div>
         </div>
 
         <!-- Automation Results -->
-        <div class="result-card">
-          <h3>
+        <div class="result-card collapsible-card" data-card-id="policy-comparison">
+          <button class="card-toggle" type="button" aria-expanded="true">
             <span class="result-icon">⚙️</span>
             Recommended Policy Comparison
-          </h3>
-          <div id="automationResults"></div>
+          </button>
+          <div class="collapsible-content">
+            <div id="automationResults"></div>
+          </div>
         </div>
 
-        <div class="result-card full-span">
-          <h3>
+        <div class="result-card collapsible-card" data-card-id="security-findings">
+          <button class="card-toggle" type="button" aria-expanded="true">
+            <span class="result-icon">🚨</span>
+            Security Findings
+          </button>
+          <div class="collapsible-content">
+            <div id="riskFindings"></div>
+          </div>
+        </div>
+
+        <div class="result-card collapsible-card" data-card-id="export-report">
+          <button class="card-toggle" type="button" aria-expanded="true">
+            <span class="result-icon">🧾</span>
+            Export Report
+          </button>
+          <div class="collapsible-content">
+            <div class="propagation-hint">Generate an Email Security Assessment report from the latest check.</div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+              <button id="exportJsonBtn" class="btn btn-secondary" type="button">Export JSON</button>
+              <button id="exportPdfBtn" class="btn btn-primary" type="button">Export PDF</button>
+            </div>
+            <div id="exportPreview" class="record-item">Run Check DNS to generate an export report preview.</div>
+          </div>
+        </div>
+
+        <div class="result-card full-span collapsible-card" data-card-id="propagation-monitor">
+          <button class="card-toggle" type="button" aria-expanded="true">
             <span class="result-icon">🌍</span>
             Propagation Monitor
-          </h3>
-          <div class="propagation-hint">Choose what to verify. SPF, DMARC, and DKIM presets auto-fill record details.</div>
-          <div id="dkimSelectorWarning" class="propagation-warning hidden">⚠ DKIM requires a selector from the email header.<br/>Example: <strong>s=selector1</strong></div>
-          <div class="propagation-controls">
-            <select id="propagationPresetSelect" class="propagation-input">
-              <option value="spf">SPF (root TXT)</option>
-              <option value="dmarc">DMARC (_dmarc)</option>
-              <option value="dkim">DKIM (selector1._domainkey)</option>
-              <option value="custom">Custom</option>
-            </select>
-            <input id="propagationRecordNameInput" class="propagation-input" type="text" placeholder="Record name" />
-            <input id="propagationExpectedInput" class="propagation-input" type="text" placeholder="Expected TXT snippet" value="v=spf1" />
-            <button id="propagationBtn" class="btn btn-secondary" title="Query multiple public resolvers to see whether this TXT change has propagated.">Check Propagation</button>
-          </div>
-          <div id="propagationResults">
-            <div class="record-item">Run a propagation check to see resolver-by-resolver status in this dedicated area.</div>
+          </button>
+          <div class="collapsible-content">
+            <div class="propagation-hint">Choose what to verify. SPF, DMARC, and DKIM presets auto-fill record details.</div>
+            <div id="dkimSelectorWarning" class="propagation-warning hidden">⚠ DKIM requires a selector from the email header.<br/>Example: <strong>s=selector1</strong></div>
+            <div class="propagation-controls">
+              <select id="propagationPresetSelect" class="propagation-input">
+                <option value="spf">SPF (root TXT)</option>
+                <option value="dmarc">DMARC (_dmarc)</option>
+                <option value="dkim">DKIM (selector1._domainkey)</option>
+                <option value="custom">Custom</option>
+              </select>
+              <input id="propagationRecordNameInput" class="propagation-input" type="text" placeholder="Record name" />
+              <input id="propagationExpectedInput" class="propagation-input" type="text" placeholder="Expected TXT snippet" value="v=spf1" />
+              <button id="propagationBtn" class="btn btn-secondary" title="Query multiple public resolvers to see whether this TXT change has propagated.">Check Propagation</button>
+            </div>
+            <div id="propagationResults">
+              <div class="record-item">Run a propagation check to see resolver-by-resolver status in this dedicated area.</div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Header Analysis (if provided) -->
       <div id="headerResultsContainer" class="hidden">
-        <div class="result-card">
-          <h3>
+        <div class="result-card collapsible-card" data-card-id="header-analysis">
+          <button class="card-toggle" type="button" aria-expanded="true">
             <span class="result-icon">✉️</span>
             Header Analysis
-          </h3>
-          <div id="headerResults"></div>
+          </button>
+          <div class="collapsible-content">
+            <div id="headerResults"></div>
+          </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="applyConfirmOverlay" class="apply-confirm-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="applyConfirmTitle">
+    <div class="apply-confirm-modal">
+      <h3 id="applyConfirmTitle" class="apply-confirm-title">⚠ Confirm DNS Changes</h3>
+      <div id="applyConfirmMeta" class="apply-confirm-meta"></div>
+      <div id="applyConfirmEmpty" class="apply-confirm-empty hidden">No DNS changes are currently required for this domain.</div>
+      <div id="applyConfirmList" class="apply-confirm-list"></div>
+      <div class="apply-confirm-actions">
+        <button id="applyConfirmCancelBtn" class="btn btn-secondary" type="button">Cancel</button>
+        <button id="applyConfirmApplyBtn" class="btn btn-primary" type="button">Confirm & Apply</button>
       </div>
     </div>
   </div>
@@ -569,19 +1005,198 @@
     const cloudflareZoneInput = document.getElementById('cloudflareZoneInput');
     const saveConfigBtn = document.getElementById('saveConfigBtn');
     const testCloudflareBtn = document.getElementById('testCloudflareBtn');
+    const policyProfileSelect = document.getElementById('policyProfileSelect');
+    const policyProfileBadge = document.getElementById('policyProfileBadge');
+    const policyProfileSummary = document.getElementById('policyProfileSummary');
+    const exportJsonBtn = document.getElementById('exportJsonBtn');
+    const exportPdfBtn = document.getElementById('exportPdfBtn');
+    const exportPreview = document.getElementById('exportPreview');
     const loadingState = document.getElementById('loadingState');
     const errorBox = document.getElementById('errorBox');
     const resultsContainer = document.getElementById('resultsContainer');
     const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const riskFindings = document.getElementById('riskFindings');
+    const applyConfirmOverlay = document.getElementById('applyConfirmOverlay');
+    const applyConfirmMeta = document.getElementById('applyConfirmMeta');
+    const applyConfirmList = document.getElementById('applyConfirmList');
+    const applyConfirmEmpty = document.getElementById('applyConfirmEmpty');
+    const applyConfirmCancelBtn = document.getElementById('applyConfirmCancelBtn');
+    const applyConfirmApplyBtn = document.getElementById('applyConfirmApplyBtn');
     let lastRefreshAt = null;
+    let latestAssessmentReport = null;
+
+    function setCardCollapsed(card, collapsed) {
+      card.classList.toggle('collapsed', collapsed);
+      const toggle = card.querySelector('.card-toggle');
+      if (toggle) {
+        toggle.setAttribute('aria-expanded', String(!collapsed));
+      }
+
+      const cardId = card.dataset.cardId;
+      if (cardId) {
+        localStorage.setItem(`dnsStudioCard:${cardId}`, collapsed ? 'collapsed' : 'expanded');
+      }
+    }
+
+    function initializeCollapsibleCards() {
+      document.querySelectorAll('.collapsible-card').forEach((card) => {
+        const toggle = card.querySelector('.card-toggle');
+        if (!toggle || toggle.dataset.bound === 'true') {
+          return;
+        }
+
+        toggle.dataset.bound = 'true';
+        const cardId = card.dataset.cardId;
+        const storedState = cardId ? localStorage.getItem(`dnsStudioCard:${cardId}`) : null;
+        if (storedState === 'collapsed') {
+          setCardCollapsed(card, true);
+        }
+
+        toggle.addEventListener('click', () => {
+          setCardCollapsed(card, !card.classList.contains('collapsed'));
+        });
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderApplyChangeRows(changes) {
+      return changes.map((change) => {
+        const action = change.action === 'create' ? 'add' : change.action === 'update' ? 'update' : 'delete';
+        const symbol = action === 'add' ? '+' : action === 'update' ? '~' : '-';
+        const actionLabel = action === 'add' ? 'Add' : action === 'update' ? 'Update' : 'Delete';
+        const recordType = escapeHtml(change.record?.type || 'record');
+        const recordName = escapeHtml(change.record?.name || '@');
+
+        return `
+          <div class="apply-change-row">
+            <span class="apply-change-symbol ${action}">${symbol}</span>
+            <div>${actionLabel} ${recordType} ${recordName}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function showApplyConfirmModal({ domain, providerMode, changes }) {
+      applyConfirmMeta.innerHTML = `
+        Domain: <strong>${escapeHtml(domain)}</strong><br/>
+        Provider: <strong>${escapeHtml(providerMode)}</strong>
+      `;
+
+      applyConfirmList.innerHTML = renderApplyChangeRows(changes);
+      applyConfirmEmpty.classList.toggle('hidden', changes.length > 0);
+      applyConfirmApplyBtn.disabled = changes.length === 0;
+
+      applyConfirmOverlay.classList.remove('hidden');
+      document.body.classList.add('modal-open');
+      applyConfirmApplyBtn.focus();
+
+      return new Promise((resolve) => {
+        const cleanup = () => {
+          applyConfirmOverlay.classList.add('hidden');
+          document.body.classList.remove('modal-open');
+          applyConfirmCancelBtn.removeEventListener('click', onCancel);
+          applyConfirmApplyBtn.removeEventListener('click', onConfirm);
+          applyConfirmOverlay.removeEventListener('click', onOverlayClick);
+          document.removeEventListener('keydown', onKeydown);
+        };
+
+        const onCancel = () => {
+          cleanup();
+          resolve(false);
+        };
+
+        const onConfirm = () => {
+          cleanup();
+          resolve(true);
+        };
+
+        const onOverlayClick = (event) => {
+          if (event.target === applyConfirmOverlay) {
+            onCancel();
+          }
+        };
+
+        const onKeydown = (event) => {
+          if (event.key === 'Escape') {
+            onCancel();
+          }
+        };
+
+        applyConfirmCancelBtn.addEventListener('click', onCancel);
+        applyConfirmApplyBtn.addEventListener('click', onConfirm);
+        applyConfirmOverlay.addEventListener('click', onOverlayClick);
+        document.addEventListener('keydown', onKeydown);
+      });
+    }
+
+    function normalizeDnsStudioTheme(theme) {
+      if (theme === 'legacy' || theme === 'light') return 'light';
+      if (theme === 'shared' || theme === 'studio') return 'studio';
+      return 'studio';
+    }
+
+    function getPolicyProfileConfig(profile, domain) {
+      const safeDomain = (domain || 'example.com').trim() || 'example.com';
+      const profileMap = {
+        basic: {
+          label: 'Basic',
+          summary: 'Basic profile: SPF uses <strong>~all</strong> and DMARC uses <strong>p=none</strong> for monitor-only rollout.',
+          desiredRecords: [
+            { type: 'TXT', name: '', content: 'v=spf1 a mx ~all', ttl: 3600, purpose: 'spf' },
+            { type: 'TXT', name: '_dmarc', content: `v=DMARC1; p=none; rua=mailto:postmaster@${safeDomain}`, ttl: 3600, purpose: 'dmarc' },
+          ],
+        },
+        balanced: {
+          label: 'Balanced',
+          summary: 'Balanced profile: SPF uses <strong>-all</strong> and DMARC uses <strong>p=quarantine</strong>.',
+          desiredRecords: [
+            { type: 'TXT', name: '', content: 'v=spf1 a mx -all', ttl: 3600, purpose: 'spf' },
+            { type: 'TXT', name: '_dmarc', content: `v=DMARC1; p=quarantine; rua=mailto:postmaster@${safeDomain}`, ttl: 3600, purpose: 'dmarc' },
+          ],
+        },
+        strict: {
+          label: 'Strict',
+          summary: 'Strict profile: SPF uses <strong>-all</strong> and DMARC uses <strong>p=reject</strong> for strongest enforcement.',
+          desiredRecords: [
+            { type: 'TXT', name: '', content: 'v=spf1 a mx -all', ttl: 3600, purpose: 'spf' },
+            { type: 'TXT', name: '_dmarc', content: `v=DMARC1; p=reject; rua=mailto:postmaster@${safeDomain}`, ttl: 3600, purpose: 'dmarc' },
+          ],
+        },
+      };
+
+      return profileMap[profile] || profileMap.balanced;
+    }
+
+    function getSelectedPolicyProfile(domain = domainInput?.value || '') {
+      return getPolicyProfileConfig(policyProfileSelect?.value || 'balanced', domain);
+    }
+
+    function updatePolicyProfileSummary() {
+      const profile = getSelectedPolicyProfile(domainInput?.value || '');
+      if (policyProfileBadge) {
+        policyProfileBadge.textContent = profile.label;
+      }
+      if (policyProfileSummary) {
+        policyProfileSummary.innerHTML = profile.summary;
+      }
+    }
 
     function applyDnsStudioTheme(theme) {
-      const useLegacy = theme === 'legacy';
+      const normalizedTheme = normalizeDnsStudioTheme(theme);
+      const useLegacy = normalizedTheme === 'light';
       document.body.classList.toggle('legacy-theme', useLegacy);
       if (themeToggleBtn) {
-        themeToggleBtn.textContent = useLegacy ? 'Switch to Shared Studio Colors' : 'Switch to Legacy Colors';
+        themeToggleBtn.textContent = useLegacy ? 'Switch to Studio Mode' : 'Switch to Light Mode';
       }
-      localStorage.setItem('dnsStudioTheme', useLegacy ? 'legacy' : 'shared');
+      localStorage.setItem('dnsStudioTheme', normalizedTheme);
     }
 
     /**
@@ -595,6 +1210,297 @@
       return String(record);
     }
 
+    function parseSpfMechanisms(record) {
+      if (!record) return [];
+      return String(record)
+        .trim()
+        .split(/\s+/)
+        .slice(1)
+        .map((token) => token.replace(/^[+\-~?]/, ''));
+    }
+
+    function mapIncludeToProvider(includeDomain) {
+      const domain = String(includeDomain || '').toLowerCase();
+      if (domain.includes('spf.protection.outlook.com')) return 'Microsoft 365 servers are allowed to send emails.';
+      if (domain.includes('_spf.google.com') || domain.includes('google.com')) return 'Google Workspace servers are allowed to send emails.';
+      if (domain.includes('sendgrid.net')) return 'SendGrid servers are allowed to send emails.';
+      if (domain.includes('mailgun.org')) return 'Mailgun servers are allowed to send emails.';
+      if (domain.includes('amazonses.com')) return 'Amazon SES servers are allowed to send emails.';
+      return '';
+    }
+
+    function getSpfMeaning(spfRecord, spfStatus) {
+      if (spfStatus !== 'found' || !spfRecord) {
+        return 'No SPF policy was found. Receiving mail systems cannot verify which servers are allowed to send for this domain.';
+      }
+
+      const mechanisms = parseSpfMechanisms(spfRecord);
+      const includes = mechanisms
+        .filter((mech) => mech.toLowerCase().startsWith('include:'))
+        .map((mech) => mech.split(':').slice(1).join(':'));
+
+      const providerMeanings = includes
+        .map((includeDomain) => mapIncludeToProvider(includeDomain))
+        .filter(Boolean);
+
+      let enforcementMeaning = 'Unauthorized servers are not explicitly blocked by this SPF policy.';
+      if (/\s-all(\s|$)/i.test(spfRecord)) {
+        enforcementMeaning = 'Unauthorized servers will fail SPF.';
+      } else if (/\s~all(\s|$)/i.test(spfRecord)) {
+        enforcementMeaning = 'Unauthorized servers will soft-fail SPF and are usually treated as suspicious.';
+      } else if (/\s\?all(\s|$)/i.test(spfRecord)) {
+        enforcementMeaning = 'This SPF policy is neutral and does not enforce blocking on unauthorized servers.';
+      }
+
+      if (providerMeanings.length) {
+        return `${providerMeanings[0]} ${enforcementMeaning}`;
+      }
+
+      return `This SPF record defines which mail infrastructure can send for this domain. ${enforcementMeaning}`;
+    }
+
+    function getDmarcMeaning(dmarcRecord, dmarcStatus) {
+      if (dmarcStatus !== 'found' || !dmarcRecord) {
+        return {
+          policy: 'not set',
+          meaning: 'No DMARC policy was found. Receiving systems are not instructed how to handle spoofed messages from this domain.',
+        };
+      }
+
+      const policy = parseDmarcPolicy(dmarcRecord) || 'unknown';
+      if (policy === 'reject') {
+        return {
+          policy,
+          meaning: 'Suspicious emails should be rejected before delivery.',
+        };
+      }
+
+      if (policy === 'quarantine') {
+        return {
+          policy,
+          meaning: 'Suspicious emails should be treated as spam.',
+        };
+      }
+
+      if (policy === 'none') {
+        return {
+          policy,
+          meaning: 'This DMARC policy is monitor-only. Suspicious emails are still delivered while you review reports.',
+        };
+      }
+
+      return {
+        policy,
+        meaning: 'A DMARC record is present, but the policy value could not be clearly interpreted.',
+      };
+    }
+
+    function getDkimHeaderMeaning(dkim) {
+      const status = String(dkim?.status || 'unknown').toLowerCase();
+
+      if (status === 'pass') {
+        return 'The DKIM signature was validated. This means the message content was signed by the sending domain and was not altered in transit.';
+      }
+
+      if (status === 'fail') {
+        return 'The DKIM signature check failed. This can mean the message was altered, signed with the wrong key, or the key is missing/mismatched.';
+      }
+
+      if (status === 'none') {
+        return 'No DKIM signature was found in the header, so DKIM authentication could not be performed.';
+      }
+
+      return 'DKIM results were inconclusive. Provide a full raw header with DKIM-Signature for a complete validation.';
+    }
+
+    function getRiskFindingsData(dnsData) {
+      const findings = [];
+      const records = dnsData?.records || {};
+
+      const dmarcStatus = records.dmarc?.status;
+      const dmarcRecord = records.dmarc?.record || '';
+
+      if (dmarcStatus !== 'found' || !dmarcRecord) {
+        findings.push({
+          severity: 'HIGH',
+          summary: 'No DMARC record detected',
+          details: 'Publish a DMARC TXT record at _dmarc to prevent unauthenticated mail abuse.',
+        });
+      } else {
+        const dmarcPolicy = parseDmarcPolicy(dmarcRecord);
+        if (dmarcPolicy === 'quarantine') {
+          findings.push({
+            severity: 'MEDIUM',
+            summary: 'DMARC policy is set to quarantine',
+            details: 'Quarantine protects better than p=none, but some spoofed mail may still reach junk folders.',
+          });
+        }
+      }
+
+      const spfStatus = records.spf?.status;
+      const spfRecord = records.spf?.record || '';
+      if (spfStatus === 'found' && spfRecord) {
+        const ipMechanismCount = countSpfIpMechanisms(spfRecord);
+        if (ipMechanismCount >= 5) {
+          findings.push({
+            severity: 'LOW',
+            summary: 'SPF contains many IP mechanisms',
+            details: `Found ${ipMechanismCount} direct IP entries (ip4/ip6). Large SPF lists are harder to maintain safely over time.`,
+          });
+        }
+      }
+
+      return findings;
+    }
+
+    function toAssessmentStatus(value, fallback = 'FAIL') {
+      const normalized = String(value || '').toLowerCase();
+      if (['found', 'pass'].includes(normalized)) return 'PASS';
+      if (['not_found', 'none', 'not tested', 'unknown'].includes(normalized)) return 'NOT TESTED';
+      if (['fail', 'error'].includes(normalized)) return 'FAIL';
+      return fallback;
+    }
+
+    function formatAssessmentDate(date) {
+      return date.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+    }
+
+    function buildAssessmentReport(dnsData, headerCheck = null, findings = []) {
+      const reportDate = new Date();
+      const dmarcPolicy = parseDmarcPolicy(dnsData?.records?.dmarc?.record || '') || 'not set';
+      const dkimSelectorFound = Array.isArray(dnsData?.records?.dkim)
+        && dnsData.records.dkim.some((entry) => entry?.status === 'found');
+
+      let dkimStatus = dkimSelectorFound ? 'PASS' : 'FAIL';
+      if (headerCheck?.dkim?.status) {
+        dkimStatus = toAssessmentStatus(headerCheck.dkim.status, dkimStatus);
+      }
+
+      const recommendations = findings.length
+        ? findings.map((finding) => `${finding.severity}: ${finding.summary} ${finding.details}`)
+        : ['No urgent security findings detected. Continue monitoring SPF, DKIM, and DMARC alignment.'];
+
+      return {
+        title: 'Email Security Assessment',
+        domain: dnsData?.domain || domainInput.value.trim() || 'Unknown domain',
+        date: formatAssessmentDate(reportDate),
+        generatedAt: reportDate.toISOString(),
+        results: {
+          spf: toAssessmentStatus(dnsData?.records?.spf?.status),
+          dkim: dkimStatus,
+          dmarc: toAssessmentStatus(dnsData?.records?.dmarc?.status),
+        },
+        dmarcPolicy,
+        recommendations,
+      };
+    }
+
+    function buildAssessmentReportText(report) {
+      const recommendations = report.recommendations.length
+        ? report.recommendations.map((item) => `- ${item}`).join('\n')
+        : '- None';
+
+      return [
+        'Email Security Assessment',
+        '',
+        `Domain:`,
+        `${report.domain}`,
+        '',
+        `Date:`,
+        `${report.date}`,
+        '',
+        'Results:',
+        '',
+        `SPF:`,
+        `${report.results.spf}`,
+        '',
+        `DKIM:`,
+        `${report.results.dkim}`,
+        '',
+        `DMARC:`,
+        `${report.results.dmarc}`,
+        '',
+        `DMARC Policy:`,
+        `${report.dmarcPolicy}`,
+        '',
+        'Recommendations:',
+        recommendations,
+      ].join('\n');
+    }
+
+    function updateExportPreview(report) {
+      if (!report) {
+        exportPreview.textContent = 'Run Check DNS to generate an export report preview.';
+        return;
+      }
+
+      exportPreview.innerHTML = `<pre style="margin:0; white-space:pre-wrap; font-family:'IBM Plex Mono', monospace;">${escapeHtml(buildAssessmentReportText(report))}</pre>`;
+    }
+
+    function downloadFile(fileName, content, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = fileName;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportAssessmentJson() {
+      if (!latestAssessmentReport) {
+        showError('Run Check DNS before exporting a report');
+        return;
+      }
+
+      const safeDomain = latestAssessmentReport.domain.replace(/[^a-z0-9.-]/gi, '_');
+      const jsonPayload = JSON.stringify(latestAssessmentReport, null, 2);
+      downloadFile(`email-security-assessment-${safeDomain}.json`, jsonPayload, 'application/json');
+    }
+
+    function exportAssessmentPdf() {
+      if (!latestAssessmentReport) {
+        showError('Run Check DNS before exporting a report');
+        return;
+      }
+
+      const reportText = buildAssessmentReportText(latestAssessmentReport);
+      const printWindow = window.open('', '_blank', 'width=900,height=700');
+      if (!printWindow) {
+        showError('Pop-up blocked. Allow pop-ups to export PDF.');
+        return;
+      }
+
+      const printable = escapeHtml(reportText);
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <title>Email Security Assessment</title>
+          <style>
+            body { font-family: 'IBM Plex Mono', monospace; margin: 32px; color: #1f2937; }
+            h1 { margin: 0 0 18px; font-size: 24px; }
+            pre { white-space: pre-wrap; line-height: 1.5; font-size: 13px; }
+            .hint { margin-top: 20px; font-size: 12px; color: #6b7280; }
+          </style>
+        </head>
+        <body>
+          <h1>Email Security Assessment</h1>
+          <pre>${printable}</pre>
+          <div class="hint">Use your browser Print dialog and choose "Save as PDF".</div>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+    }
+
     /**
      * Build DNS results HTML
      */
@@ -605,6 +1511,7 @@
       if (data.records.spf) {
         const spfStatus = data.records.spf.status;
         const badgeClass = spfStatus === 'found' ? 'found' : 'not-found';
+        const spfMeaning = getSpfMeaning(data.records.spf.record, spfStatus);
         html += `
           <div class="record-item">
             <div class="record-key">SPF Record</div>
@@ -612,6 +1519,7 @@
             ${data.records.spf.record ? `
               <div class="record-value" style="margin-top: 8px;">${formatRecord(data.records.spf.record)}</div>
             ` : ''}
+            <div class="record-value" style="margin-top: 10px;"><strong>Meaning:</strong><br/>${spfMeaning}</div>
           </div>
         `;
       }
@@ -620,6 +1528,7 @@
       if (data.records.dmarc) {
         const dmarcStatus = data.records.dmarc.status;
         const badgeClass = dmarcStatus === 'found' ? 'found' : 'not-found';
+        const dmarcGuidance = getDmarcMeaning(data.records.dmarc.record, dmarcStatus);
         html += `
           <div class="record-item">
             <div class="record-key">DMARC Record</div>
@@ -627,6 +1536,7 @@
             ${data.records.dmarc.record ? `
               <div class="record-value" style="margin-top: 8px;">${formatRecord(data.records.dmarc.record)}</div>
             ` : ''}
+            <div class="record-value" style="margin-top: 10px;"><strong>Policy:</strong> ${dmarcGuidance.policy}<br/><strong>Meaning:</strong><br/>${dmarcGuidance.meaning}</div>
           </div>
         `;
       }
@@ -641,15 +1551,15 @@
       let html = '';
 
       if (!data.records.dkim) {
-        return '<div class="record-item">No DKIM records found</div>';
+        return '<div class="record-item"><div class="record-key">DKIM</div><div class="record-value">No DKIM records found.</div><div class="record-value" style="margin-top: 10px;"><strong>Meaning:</strong><br/>No public DKIM key was detected for common selectors, so DKIM signatures may not validate unless a custom selector is used.</div></div>';
       }
 
       if (data.records.dkim.length === 0) {
-        return '<div class="record-item">No DKIM records found for common selectors</div>';
+        return '<div class="record-item"><div class="record-key">DKIM</div><div class="record-value">No DKIM records found for common selectors.</div><div class="record-value" style="margin-top: 10px;"><strong>Meaning:</strong><br/>If your sender uses a custom selector, it may still work, but it is not visible in this quick scan.</div></div>';
       }
 
       if (data.records.dkim[0].status === 'none_found') {
-        return '<div class="record-item">No DKIM records found</div>';
+        return '<div class="record-item"><div class="record-key">DKIM</div><div class="record-value">No DKIM records found.</div><div class="record-value" style="margin-top: 10px;"><strong>Meaning:</strong><br/>No public DKIM key was detected for common selectors, so mailbox providers cannot verify DKIM signatures from those selectors.</div></div>';
       }
 
       data.records.dkim.forEach((dkim) => {
@@ -660,6 +1570,7 @@
             ${dkim.record ? `
               <div class="record-value" style="margin-top: 8px;">${formatRecord(dkim.record)}</div>
             ` : ''}
+            <div class="record-value" style="margin-top: 10px;"><strong>Meaning:</strong><br/>This selector publishes a DKIM public key. Emails signed with selector "${dkim.selector}" can be cryptographically verified by receiving servers.</div>
           </div>
         `;
       });
@@ -699,21 +1610,41 @@
 
       const dkim = data.dkim || {};
       const statusClass = dkim.status === 'pass' ? 'found' : dkim.status === 'fail' ? 'not-found' : 'error';
+      const dkimMeaning = getDkimHeaderMeaning(dkim);
+      const fromValue = data.header?.from || '';
+      const fromDomainValue = data.header?.fromDomain || '';
+      const hasHeaderMetadata = Boolean(fromValue || fromDomainValue);
 
       let html = `
         <div class="record-item">
+          <div class="record-key">DKIM Validation</div>
+          <span class="status-badge ${statusClass}">${dkim.status || 'unknown'}</span>
+          ${dkim.reason ? `<div class="record-value" style="margin-top: 8px;">${dkim.reason}</div>` : ''}
+          <div class="record-value" style="margin-top: 10px;"><strong>Meaning:</strong><br/>${dkimMeaning}</div>
+        </div>
+      `;
+
+      if (hasHeaderMetadata) {
+        html += `
+        <div class="record-item">
           <div class="record-key">From</div>
-          <div class="record-value">${data.header?.from || 'N/A'}</div>
+          <div class="record-value">${fromValue || 'N/A'}</div>
         </div>
         <div class="record-item">
           <div class="record-key">Domain</div>
-          <div class="record-value">${data.header?.fromDomain || 'N/A'}</div>
+          <div class="record-value">${fromDomainValue || 'N/A'}</div>
         </div>
+        `;
+      } else {
+        html += `
         <div class="record-item">
-          <div class="record-key">DKIM Status</div>
-          <span class="status-badge ${statusClass}">${dkim.status || 'unknown'}</span>
-          ${dkim.reason ? `<div class="record-value" style="margin-top: 8px;">${dkim.reason}</div>` : ''}
+          <div class="record-key">Header Metadata</div>
+          <div class="record-value">Unavailable</div>
         </div>
+        `;
+      }
+
+      html += `
         ${dkim.publicKeyFound ? `
           <div class="record-item" style="border-left: 3px solid var(--success);">
             <div class="record-key">✓ Public Key Found</div>
@@ -725,10 +1656,91 @@
       return html;
     }
 
+    function getChangeCategory(change) {
+      const purpose = String(change?.record?.purpose || '').toLowerCase();
+      const recordName = String(change?.record?.name || '').toLowerCase();
+
+      if (purpose) return purpose;
+      if (recordName === '_dmarc') return 'dmarc';
+      if (recordName.includes('_domainkey')) return 'dkim';
+      return 'spf';
+    }
+
+    function getAutomationImpact(change) {
+      const category = getChangeCategory(change);
+      const action = String(change?.action || 'create').toLowerCase();
+
+      if (category === 'dmarc') {
+        if (action === 'create') {
+          return {
+            level: 'HIGH',
+            description: 'Attackers can spoof this domain because receiving mail servers have no DMARC instructions.',
+            actionText: 'Deploy DMARC quarantine policy.',
+          };
+        }
+
+        return {
+          level: 'HIGH',
+          description: 'DMARC enforcement is weaker or different from the selected policy, which can reduce spoofing protection.',
+          actionText: 'Align the published DMARC policy with the selected enforcement profile.',
+        };
+      }
+
+      if (category === 'spf') {
+        return {
+          level: action === 'create' ? 'HIGH' : 'MEDIUM',
+          description: action === 'create'
+            ? 'Sending servers are not clearly authorised, so mailbox providers cannot reliably verify legitimate mail sources.'
+            : 'The SPF policy differs from the selected profile, which can weaken sender verification or create delivery inconsistency.',
+          actionText: action === 'create'
+            ? 'Publish the recommended SPF record.'
+            : 'Update the SPF record to match the selected security profile.',
+        };
+      }
+
+      return {
+        level: 'MEDIUM',
+        description: 'This DNS authentication record does not match the selected protection baseline.',
+        actionText: 'Review and apply the recommended DNS authentication record.',
+      };
+    }
+
+    function renderAutomationChange(change) {
+      const actionLabel = change.action === 'update'
+        ? 'Review / Update'
+        : change.action === 'delete'
+          ? 'Delete'
+          : 'Create';
+      const borderColor = change.action === 'update'
+        ? 'var(--warn)'
+        : change.action === 'delete'
+          ? 'var(--danger)'
+          : 'var(--accent)';
+      const recordName = change.record?.name || '@';
+      const recordValue = change.record?.content || 'Not set';
+      const currentValue = change.currentValue || 'NOT FOUND';
+      const impact = getAutomationImpact(change);
+
+      return `
+        <div class="record-item" style="border-left: 3px solid ${borderColor};">
+          <div class="record-key">${actionLabel} ${change.record?.type || 'Record'}</div>
+          <div class="record-value"><strong>Record:</strong><br/>${recordName}</div>
+          <div class="record-value" style="margin-top: 10px;"><strong>Current:</strong><br/>${currentValue}</div>
+          <div class="record-value" style="margin-top: 10px;"><strong>Recommended:</strong><br/>${recordValue}</div>
+          <div class="record-value" style="margin-top: 10px;"><strong>Security Impact:</strong><br/>${impact.level}</div>
+          <div class="record-value" style="margin-top: 10px;">${impact.description}</div>
+          <div class="record-value" style="margin-top: 10px;"><strong>Action:</strong><br/>${impact.actionText}</div>
+          ${change.reason ? `<div class="record-value" style="margin-top: 10px;"><strong>Why flagged:</strong><br/>${change.reason}</div>` : ''}
+        </div>
+      `;
+    }
+
     function renderAutomationResults(plan) {
       if (!plan || !plan.summary) {
         return '<div class="record-item">No policy comparison available.</div>';
       }
+
+      const selectedProfile = getSelectedPolicyProfile();
 
       const changes = plan.changes || [];
       const createCount = plan.summary.createCount || 0;
@@ -747,7 +1759,15 @@
         </div>
         <div class="record-item">
           <div class="record-key">Recommended Policy Baseline</div>
-          <div class="record-value">SPF and DMARC are compared against the recommended policy. Existing records that differ are flagged for review instead of being treated as missing.</div>
+          <div class="record-value">Using the <strong>${selectedProfile.label}</strong> profile. SPF and DMARC are compared against the selected policy rather than a fixed standard.</div>
+        </div>
+        <div class="record-item">
+          <div class="record-key">Recommended SPF</div>
+          <div class="record-value">${selectedProfile.desiredRecords.find((record) => record.purpose === 'spf')?.content || 'Not set'}</div>
+        </div>
+        <div class="record-item">
+          <div class="record-key">Recommended DMARC</div>
+          <div class="record-value">${selectedProfile.desiredRecords.find((record) => record.purpose === 'dmarc')?.content || 'Not set'}</div>
         </div>
       `;
 
@@ -755,28 +1775,57 @@
         html += '<div class="record-item">Your live SPF and DMARC records already match the recommended policy.</div>';
       } else {
         changes.forEach((change) => {
-          const actionLabel = change.action === 'update'
-            ? 'Review / Update'
-            : change.action === 'delete'
-              ? 'Delete'
-              : 'Create';
-          const borderColor = change.action === 'update'
-            ? 'var(--warn)'
-            : change.action === 'delete'
-              ? 'var(--danger)'
-              : 'var(--accent)';
-          const recordName = change.record.name || '@';
-          const recordValue = change.record.content || '';
-          html += `
-            <div class="record-item" style="border-left: 3px solid ${borderColor};">
-              <div class="record-key">${actionLabel} ${change.record.type}</div>
-              <div class="record-value">Name: ${recordName}<br/>Value: ${recordValue}${change.currentValue ? `<br/>Existing: ${change.currentValue}` : ''}${change.reason ? `<br/>Reason: ${change.reason}` : ''}</div>
-            </div>
-          `;
+          html += renderAutomationChange(change);
         });
       }
 
       return html;
+    }
+
+    function parseDmarcPolicy(record) {
+      if (!record) return '';
+      const match = String(record).match(/(?:^|;\s*)p\s*=\s*([^;\s]+)/i);
+      return match ? String(match[1]).toLowerCase() : '';
+    }
+
+    function countSpfIpMechanisms(record) {
+      if (!record) return 0;
+      return String(record)
+        .trim()
+        .split(/\s+/)
+        .map((token) => token.replace(/^[+\-~?]/, '').toLowerCase())
+        .filter((token) => token.startsWith('ip4:') || token.startsWith('ip6:'))
+        .length;
+    }
+
+    function renderRiskFindings(dnsData) {
+      const findings = getRiskFindingsData(dnsData);
+
+      if (findings.length === 0) {
+        return `
+          <div class="record-item" style="border-left: 3px solid var(--success);">
+            <div class="record-key">Security Findings</div>
+            <div class="record-value">No high, medium, or low findings were detected from the current DMARC/SPF checks.</div>
+          </div>
+        `;
+      }
+
+      return findings.map((finding) => {
+        const severityClass = finding.severity.toLowerCase();
+        const borderColor = finding.severity === 'HIGH'
+          ? 'var(--danger)'
+          : finding.severity === 'MEDIUM'
+            ? 'var(--warn)'
+            : 'var(--accent)';
+
+        return `
+          <div class="record-item" style="border-left: 3px solid ${borderColor};">
+            <div class="record-key">${finding.severity}</div>
+            <span class="severity-badge ${severityClass}">${finding.severity}</span>
+            <div class="record-value"><strong>${finding.summary}</strong><br/>${finding.details}</div>
+          </div>
+        `;
+      }).join('');
     }
 
     /**
@@ -934,16 +1983,14 @@
         }
 
         const dnsResult = await parseJsonResponse(dnsResponse);
+        const selectedProfile = getSelectedPolicyProfile(domain);
 
         const automationResponse = await fetch(`${apiBase}/api/dns-automation/plan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             domain,
-            desiredRecords: [
-              { type: 'TXT', name: '', content: 'v=spf1 a mx -all', ttl: 3600, purpose: 'spf' },
-              { type: 'TXT', name: '_dmarc', content: 'v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com', ttl: 3600, purpose: 'dmarc' },
-            ],
+            desiredRecords: selectedProfile.desiredRecords,
             existingRecords: dnsResult.data?.dnsCheck?.records || {},
           }),
         });
@@ -981,15 +2028,44 @@
 
       try {
         const apiBase = getApiBase();
+        const desiredRecords = getSelectedPolicyProfile(domain).desiredRecords;
+
+        const planResponse = await fetch(`${apiBase}/api/dns-automation/plan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            domain,
+            desiredRecords,
+          }),
+        });
+
+        const planResult = await parseJsonResponse(planResponse);
+        if (!planResponse.ok || !planResult.success) {
+          throw new Error(planResult.error || 'Unable to generate apply plan');
+        }
+
+        const changes = planResult.data?.changes || [];
+        const providerMode = providerModeSelect?.value || 'local-memory';
+
+        loadingState.classList.add('hidden');
+        const confirmed = await showApplyConfirmModal({
+          domain,
+          providerMode,
+          changes,
+        });
+        if (!confirmed) {
+          showError('Apply fixes cancelled');
+          return;
+        }
+
+        loadingState.classList.remove('hidden');
+
         const response = await fetch(`${apiBase}/api/dns-automation/apply`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             domain,
-            desiredRecords: [
-              { type: 'TXT', name: '', content: 'v=spf1 a mx -all', ttl: 3600, purpose: 'spf' },
-              { type: 'TXT', name: '_dmarc', content: 'v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com', ttl: 3600, purpose: 'dmarc' },
-            ],
+            desiredRecords,
             dryRun: false,
           }),
         });
@@ -1127,16 +2203,14 @@
         const endpoint = action === 'apply'
           ? `${apiBase}/api/dns-automation/live-sync-apply`
           : `${apiBase}/api/dns-automation/live-sync-plan`;
+        const desiredRecords = getSelectedPolicyProfile(domain).desiredRecords;
 
         const response = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             domain,
-            desiredRecords: [
-              { type: 'TXT', name: '', content: 'v=spf1 a mx -all', ttl: 3600, purpose: 'spf' },
-              { type: 'TXT', name: '_dmarc', content: 'v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com', ttl: 3600, purpose: 'dmarc' },
-            ],
+            desiredRecords,
             dryRun: action !== 'apply',
           }),
         });
@@ -1198,12 +2272,29 @@
       document.getElementById('dnsResults').innerHTML = renderDnsResults(dnsData.dnsCheck);
       document.getElementById('dkimResults').innerHTML = renderDkimResults(dnsData.dnsCheck);
       document.getElementById('automationResults').innerHTML = renderAutomationResults(automationData);
+      riskFindings.innerHTML = renderRiskFindings(dnsData.dnsCheck);
+      latestAssessmentReport = buildAssessmentReport(
+        dnsData.dnsCheck,
+        dnsData.headerCheck,
+        getRiskFindingsData(dnsData.dnsCheck),
+      );
+      updateExportPreview(latestAssessmentReport);
 
       if (dnsData.headerCheck) {
         document.getElementById('headerResults').innerHTML = renderHeaderResults(dnsData.headerCheck);
         document.getElementById('headerResultsContainer').classList.remove('hidden');
       } else {
-        document.getElementById('headerResultsContainer').classList.add('hidden');
+        document.getElementById('headerResults').innerHTML = `
+          <div class="record-item">
+            <div class="record-key">DKIM</div>
+            <span class="status-badge not-found">Not tested</span>
+          </div>
+          <div class="record-item">
+            <div class="record-key">Reason</div>
+            <div class="record-value">No DKIM-Signature header provided</div>
+          </div>
+        `;
+        document.getElementById('headerResultsContainer').classList.remove('hidden');
       }
 
       resultsContainer.classList.remove('hidden');
@@ -1230,6 +2321,8 @@
       headerInput.value = '';
       resultsContainer.classList.add('hidden');
       errorBox.classList.add('hidden');
+      latestAssessmentReport = null;
+      updateExportPreview(null);
       domainInput.focus();
     }
 
@@ -1241,7 +2334,7 @@
     propagationBtn.addEventListener('click', runPropagationCheck);
     propagationPresetSelect.addEventListener('change', updatePropagationPreset);
     themeToggleBtn.addEventListener('click', () => {
-      const nextTheme = document.body.classList.contains('legacy-theme') ? 'shared' : 'legacy';
+      const nextTheme = document.body.classList.contains('legacy-theme') ? 'studio' : 'light';
       applyDnsStudioTheme(nextTheme);
     });
     refreshResultsBtn.addEventListener('click', () => {
@@ -1254,6 +2347,12 @@
     clearBtn.addEventListener('click', clearAll);
     saveConfigBtn.addEventListener('click', saveProviderConfig);
     testCloudflareBtn.addEventListener('click', testCloudflareConnection);
+    exportJsonBtn.addEventListener('click', exportAssessmentJson);
+    exportPdfBtn.addEventListener('click', exportAssessmentPdf);
+    policyProfileSelect.addEventListener('change', () => {
+      localStorage.setItem('policyProfile', policyProfileSelect.value);
+      updatePolicyProfileSummary();
+    });
     cloudflareTokenInput.addEventListener('change', () => {
       if (cloudflareTokenInput.value.trim()) {
         localStorage.setItem('cloudflareApiToken', cloudflareTokenInput.value.trim());
@@ -1272,13 +2371,18 @@
     const storedToken = localStorage.getItem('cloudflareApiToken') || '';
     const storedZone = localStorage.getItem('cloudflareZoneId') || '';
     const storedMode = localStorage.getItem('providerMode') || 'local-memory';
-    const storedTheme = localStorage.getItem('dnsStudioTheme') || 'shared';
+    const storedTheme = localStorage.getItem('dnsStudioTheme') || 'studio';
+    const storedPolicyProfile = localStorage.getItem('policyProfile') || 'balanced';
     if (storedToken) cloudflareTokenInput.value = storedToken;
     if (storedZone) cloudflareZoneInput.value = storedZone;
     providerModeSelect.value = storedMode;
+    policyProfileSelect.value = storedPolicyProfile;
     applyDnsStudioTheme(storedTheme);
     refreshProviderStatus();
     updatePropagationPreset();
+    updatePolicyProfileSummary();
+    updateExportPreview(null);
+    initializeCollapsibleCards();
     domainInput.focus();
   </script>
 

@@ -2478,5 +2478,2534 @@
         "reason": "dmarc record missing"
       }
     ]
+  },
+  {
+    "id": "1786077959532-1i8j7n",
+    "timestamp": "2026-08-07T04:45:59.532Z",
+    "kind": "plan",
+    "domain": "grab.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": []
+  },
+  {
+    "id": "1786078123017-ap91l8",
+    "timestamp": "2026-08-07T04:48:43.017Z",
+    "kind": "plan",
+    "domain": "tryhackme.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786078156898-nfmsjc",
+    "timestamp": "2026-08-07T04:49:16.898Z",
+    "kind": "plan",
+    "domain": "tryhackme.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786078157270-80842k",
+    "timestamp": "2026-08-07T04:49:17.270Z",
+    "kind": "plan",
+    "domain": "tryhackme.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786078157452-lacy0l",
+    "timestamp": "2026-08-07T04:49:17.452Z",
+    "kind": "plan",
+    "domain": "tryhackme.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786078182652-c89bc0",
+    "timestamp": "2026-08-07T04:49:42.652Z",
+    "kind": "plan",
+    "domain": "tryhackme.co",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 1,
+      "createCount": 1,
+      "missingCount": 1,
+      "updateCount": 1,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 ip6:fdcf:abda:4154::/48 -all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 ip6:fdcf:abda:4154::/48 -all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786078758050-n9fuse",
+    "timestamp": "2026-08-07T04:59:18.050Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": []
+  },
+  {
+    "id": "1786078766702-id4qvt",
+    "timestamp": "2026-08-07T04:59:26.702Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": []
+  },
+  {
+    "id": "1786079319263-ng5qms",
+    "timestamp": "2026-08-07T05:08:39.263Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": []
+  },
+  {
+    "id": "1786079333347-1xgurx",
+    "timestamp": "2026-08-07T05:08:53.347Z",
+    "kind": "plan",
+    "domain": "abdul.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 1,
+      "createCount": 1,
+      "missingCount": 1,
+      "updateCount": 1,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 -all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 -all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786079334275-m82fq1",
+    "timestamp": "2026-08-07T05:08:54.275Z",
+    "kind": "plan",
+    "domain": "abdul.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 1,
+      "createCount": 1,
+      "missingCount": 1,
+      "updateCount": 1,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 -all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 -all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786079515742-sdivnt",
+    "timestamp": "2026-08-07T05:11:55.743Z",
+    "kind": "plan",
+    "domain": "ntuc.org.sg",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 ip4:20.33.35.94 ip4:20.157.31.26 ip4:202.176.197.134 ip4:202.176.197.152 ip4:202.176.197.153 ip4:202.176.197.154 ip4:202.176.197.155 ip4:20.205.240.236 ip4:20.24.128.115 include:spf.protection.outlook.com include:spf.seg.trustwave.com include:emsd1.com include:_spf.psm.knowbe4.com include:sendgrid.net -all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 ip4:20.33.35.94 ip4:20.157.31.26 ip4:202.176.197.134 ip4:202.176.197.152 ip4:202.176.197.153 ip4:202.176.197.154 ip4:202.176.197.155 ip4:20.205.240.236 ip4:20.24.128.115 include:spf.protection.outlook.com include:spf.seg.trustwave.com include:emsd1.com include:_spf.psm.knowbe4.com include:sendgrid.net -all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; rua=mailto:itsecurity@ntuc.org.sg,mailto:singtelitsecurity@ntuc.org.sg; ruf=mailto:itsecurity@ntuc.org.sg,mailto:singtelitsecurity@ntuc.org.sg;",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:itsecurity@ntuc.org.sg,mailto:singtelitsecurity@ntuc.org.sg; ruf=mailto:itsecurity@ntuc.org.sg,mailto:singtelitsecurity@ntuc.org.sg;",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786079685221-6wlwvm",
+    "timestamp": "2026-08-07T05:14:45.221Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": []
+  },
+  {
+    "id": "1786079691293-uf88r3",
+    "timestamp": "2026-08-07T05:14:51.293Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": []
+  },
+  {
+    "id": "1786080087850-bbij0q",
+    "timestamp": "2026-08-07T05:21:27.850Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": []
+  },
+  {
+    "id": "1786080108358-fwct0u",
+    "timestamp": "2026-08-07T05:21:48.358Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": []
+  },
+  {
+    "id": "1786080328473-a5xszh",
+    "timestamp": "2026-08-07T05:25:28.473Z",
+    "kind": "plan",
+    "domain": "grab.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": []
+  },
+  {
+    "id": "1786080636262-iaogk1",
+    "timestamp": "2026-08-07T05:30:36.262Z",
+    "kind": "plan",
+    "domain": "grab.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": []
+  },
+  {
+    "id": "1786080656574-r0wp4w",
+    "timestamp": "2026-08-07T05:30:56.574Z",
+    "kind": "plan",
+    "domain": "evil.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786080656749-zmd9f9",
+    "timestamp": "2026-08-07T05:30:56.749Z",
+    "kind": "plan",
+    "domain": "evil.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786082428308-97whnc",
+    "timestamp": "2026-08-07T06:00:28.308Z",
+    "kind": "plan",
+    "domain": "ntuc.org.sg",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 ip4:20.33.35.94 ip4:20.157.31.26 ip4:202.176.197.134 ip4:202.176.197.152 ip4:202.176.197.153 ip4:202.176.197.154 ip4:202.176.197.155 ip4:20.205.240.236 ip4:20.24.128.115 include:spf.protection.outlook.com include:spf.seg.trustwave.com include:emsd1.com include:_spf.psm.knowbe4.com include:sendgrid.net -all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 ip4:20.33.35.94 ip4:20.157.31.26 ip4:202.176.197.134 ip4:202.176.197.152 ip4:202.176.197.153 ip4:202.176.197.154 ip4:202.176.197.155 ip4:20.205.240.236 ip4:20.24.128.115 include:spf.protection.outlook.com include:spf.seg.trustwave.com include:emsd1.com include:_spf.psm.knowbe4.com include:sendgrid.net -all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; rua=mailto:itsecurity@ntuc.org.sg,mailto:singtelitsecurity@ntuc.org.sg; ruf=mailto:itsecurity@ntuc.org.sg,mailto:singtelitsecurity@ntuc.org.sg;",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:itsecurity@ntuc.org.sg,mailto:singtelitsecurity@ntuc.org.sg; ruf=mailto:itsecurity@ntuc.org.sg,mailto:singtelitsecurity@ntuc.org.sg;",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786082446015-duc9m2",
+    "timestamp": "2026-08-07T06:00:46.015Z",
+    "kind": "plan",
+    "domain": "tryhackme.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786082446051-4ahi2c",
+    "timestamp": "2026-08-07T06:00:46.051Z",
+    "kind": "plan",
+    "domain": "tryhackme.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786082682505-1jc9sa",
+    "timestamp": "2026-08-07T06:04:42.505Z",
+    "kind": "plan",
+    "domain": "tryhackme.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786082800878-57fr7z",
+    "timestamp": "2026-08-07T06:06:40.878Z",
+    "kind": "plan",
+    "domain": "hosthavoc.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:amazonses.com include:_spf.emfwd.name-services.com ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:amazonses.com include:_spf.emfwd.name-services.com ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1;  p=none; rua=mailto:6a59b7f74bf24f4fba629fff7bdec6f0@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1;  p=none; rua=mailto:6a59b7f74bf24f4fba629fff7bdec6f0@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786082837890-fam0p3",
+    "timestamp": "2026-08-07T06:07:17.890Z",
+    "kind": "plan",
+    "domain": "hosthavoc.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:amazonses.com include:_spf.emfwd.name-services.com ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:amazonses.com include:_spf.emfwd.name-services.com ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1;  p=none; rua=mailto:6a59b7f74bf24f4fba629fff7bdec6f0@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1;  p=none; rua=mailto:6a59b7f74bf24f4fba629fff7bdec6f0@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786083224066-2c63wi",
+    "timestamp": "2026-08-07T06:13:44.066Z",
+    "kind": "plan",
+    "domain": "hosthavoc.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:amazonses.com include:_spf.emfwd.name-services.com ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:amazonses.com include:_spf.emfwd.name-services.com ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1;  p=none; rua=mailto:6a59b7f74bf24f4fba629fff7bdec6f0@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1;  p=none; rua=mailto:6a59b7f74bf24f4fba629fff7bdec6f0@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786085079043-hwu2ry",
+    "timestamp": "2026-08-07T06:44:39.043Z",
+    "kind": "plan",
+    "domain": "hosthavoc.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:amazonses.com include:_spf.emfwd.name-services.com ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:amazonses.com include:_spf.emfwd.name-services.com ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1;  p=none; rua=mailto:6a59b7f74bf24f4fba629fff7bdec6f0@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1;  p=none; rua=mailto:6a59b7f74bf24f4fba629fff7bdec6f0@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786085305112-n8xcim",
+    "timestamp": "2026-08-07T06:48:25.112Z",
+    "kind": "plan",
+    "domain": "tryhackme.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx ~all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=none; rua=mailto:postmaster@tryhackme.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786085401744-xsdo1s",
+    "timestamp": "2026-08-07T06:50:01.744Z",
+    "kind": "plan",
+    "domain": "hosthavoc.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx ~all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:amazonses.com include:_spf.emfwd.name-services.com ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:amazonses.com include:_spf.emfwd.name-services.com ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=none; rua=mailto:postmaster@hosthavoc.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1;  p=none; rua=mailto:6a59b7f74bf24f4fba629fff7bdec6f0@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1;  p=none; rua=mailto:6a59b7f74bf24f4fba629fff7bdec6f0@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786085401879-9ilr0f",
+    "timestamp": "2026-08-07T06:50:01.879Z",
+    "kind": "plan",
+    "domain": "hosthavoc.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx ~all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:amazonses.com include:_spf.emfwd.name-services.com ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:amazonses.com include:_spf.emfwd.name-services.com ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=none; rua=mailto:postmaster@hosthavoc.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1;  p=none; rua=mailto:6a59b7f74bf24f4fba629fff7bdec6f0@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1;  p=none; rua=mailto:6a59b7f74bf24f4fba629fff7bdec6f0@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786085422263-g2v23a",
+    "timestamp": "2026-08-07T06:50:22.263Z",
+    "kind": "plan",
+    "domain": "hosthavoc.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:amazonses.com include:_spf.emfwd.name-services.com ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:amazonses.com include:_spf.emfwd.name-services.com ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=reject; rua=mailto:postmaster@hosthavoc.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1;  p=none; rua=mailto:6a59b7f74bf24f4fba629fff7bdec6f0@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1;  p=none; rua=mailto:6a59b7f74bf24f4fba629fff7bdec6f0@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786085538063-6n8gpy",
+    "timestamp": "2026-08-07T06:52:18.063Z",
+    "kind": "plan",
+    "domain": "example-security-test.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example-security-test.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786085742085-af393j",
+    "timestamp": "2026-08-07T06:55:42.085Z",
+    "kind": "plan",
+    "domain": "example-security-test.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example-security-test.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786085912253-vgdtl0",
+    "timestamp": "2026-08-07T06:58:32.253Z",
+    "kind": "plan",
+    "domain": "tryhackme.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@tryhackme.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786086041908-9vl7jf",
+    "timestamp": "2026-08-07T07:00:41.908Z",
+    "kind": "plan",
+    "domain": "tryhackme.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@tryhackme.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786086171471-h9llsd",
+    "timestamp": "2026-08-07T07:02:51.471Z",
+    "kind": "plan",
+    "domain": "example-security-test.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example-security-test.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786086210507-adbxef",
+    "timestamp": "2026-08-07T07:03:30.507Z",
+    "kind": "plan",
+    "domain": "example-security-test.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 0,
+      "createCount": 2,
+      "missingCount": 2,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": false,
+      "hasDmarc": false,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "spf record missing"
+      },
+      {
+        "action": "create",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example-security-test.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "dmarc record missing"
+      }
+    ]
+  },
+  {
+    "id": "1786086235061-4h1a84",
+    "timestamp": "2026-08-07T07:03:55.061Z",
+    "kind": "plan",
+    "domain": "ntuc.org.sg",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 ip4:20.33.35.94 ip4:20.157.31.26 ip4:202.176.197.134 ip4:202.176.197.152 ip4:202.176.197.153 ip4:202.176.197.154 ip4:202.176.197.155 ip4:20.205.240.236 ip4:20.24.128.115 include:spf.protection.outlook.com include:spf.seg.trustwave.com include:emsd1.com include:_spf.psm.knowbe4.com include:sendgrid.net -all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 ip4:20.33.35.94 ip4:20.157.31.26 ip4:202.176.197.134 ip4:202.176.197.152 ip4:202.176.197.153 ip4:202.176.197.154 ip4:202.176.197.155 ip4:20.205.240.236 ip4:20.24.128.115 include:spf.protection.outlook.com include:spf.seg.trustwave.com include:emsd1.com include:_spf.psm.knowbe4.com include:sendgrid.net -all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@ntuc.org.sg",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; rua=mailto:itsecurity@ntuc.org.sg,mailto:singtelitsecurity@ntuc.org.sg; ruf=mailto:itsecurity@ntuc.org.sg,mailto:singtelitsecurity@ntuc.org.sg;",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:itsecurity@ntuc.org.sg,mailto:singtelitsecurity@ntuc.org.sg; ruf=mailto:itsecurity@ntuc.org.sg,mailto:singtelitsecurity@ntuc.org.sg;",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786086258656-u87gd3",
+    "timestamp": "2026-08-07T07:04:18.656Z",
+    "kind": "plan",
+    "domain": "ntuc.org.sg",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 ip4:20.33.35.94 ip4:20.157.31.26 ip4:202.176.197.134 ip4:202.176.197.152 ip4:202.176.197.153 ip4:202.176.197.154 ip4:202.176.197.155 ip4:20.205.240.236 ip4:20.24.128.115 include:spf.protection.outlook.com include:spf.seg.trustwave.com include:emsd1.com include:_spf.psm.knowbe4.com include:sendgrid.net -all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 ip4:20.33.35.94 ip4:20.157.31.26 ip4:202.176.197.134 ip4:202.176.197.152 ip4:202.176.197.153 ip4:202.176.197.154 ip4:202.176.197.155 ip4:20.205.240.236 ip4:20.24.128.115 include:spf.protection.outlook.com include:spf.seg.trustwave.com include:emsd1.com include:_spf.psm.knowbe4.com include:sendgrid.net -all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@ntuc.org.sg",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; rua=mailto:itsecurity@ntuc.org.sg,mailto:singtelitsecurity@ntuc.org.sg; ruf=mailto:itsecurity@ntuc.org.sg,mailto:singtelitsecurity@ntuc.org.sg;",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:itsecurity@ntuc.org.sg,mailto:singtelitsecurity@ntuc.org.sg; ruf=mailto:itsecurity@ntuc.org.sg,mailto:singtelitsecurity@ntuc.org.sg;",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786086293890-i7jbo8",
+    "timestamp": "2026-08-07T07:04:53.890Z",
+    "kind": "plan",
+    "domain": "grab.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 ip4:160.34.47.16/28 include:_s0.grab.com exists:%{i}._spf.mta.salesforce.com include:_netblocks.google.com include:_netblocks2.google.com include:_netblocks3.google.com include:spf_c.oraclecloud.com ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 ip4:160.34.47.16/28 include:_s0.grab.com exists:%{i}._spf.mta.salesforce.com include:_netblocks.google.com include:_netblocks2.google.com include:_netblocks3.google.com include:spf_c.oraclecloud.com ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@grab.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; pct=100; rua=mailto:re+yzqj1dlqsgd@dmarc.postmarkapp.com; sp=quarantine; aspf=r;",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; pct=100; rua=mailto:re+yzqj1dlqsgd@dmarc.postmarkapp.com; sp=quarantine; aspf=r;",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786086297823-vewakk",
+    "timestamp": "2026-08-07T07:04:57.823Z",
+    "kind": "plan",
+    "domain": "grab.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 ip4:160.34.47.16/28 include:_s0.grab.com exists:%{i}._spf.mta.salesforce.com include:_netblocks.google.com include:_netblocks2.google.com include:_netblocks3.google.com include:spf_c.oraclecloud.com ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 ip4:160.34.47.16/28 include:_s0.grab.com exists:%{i}._spf.mta.salesforce.com include:_netblocks.google.com include:_netblocks2.google.com include:_netblocks3.google.com include:spf_c.oraclecloud.com ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=reject; rua=mailto:postmaster@grab.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; pct=100; rua=mailto:re+yzqj1dlqsgd@dmarc.postmarkapp.com; sp=quarantine; aspf=r;",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; pct=100; rua=mailto:re+yzqj1dlqsgd@dmarc.postmarkapp.com; sp=quarantine; aspf=r;",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786086362233-9i76fb",
+    "timestamp": "2026-08-07T07:06:02.233Z",
+    "kind": "plan",
+    "domain": "grab.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 ip4:160.34.47.16/28 include:_s0.grab.com exists:%{i}._spf.mta.salesforce.com include:_netblocks.google.com include:_netblocks2.google.com include:_netblocks3.google.com include:spf_c.oraclecloud.com ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 ip4:160.34.47.16/28 include:_s0.grab.com exists:%{i}._spf.mta.salesforce.com include:_netblocks.google.com include:_netblocks2.google.com include:_netblocks3.google.com include:spf_c.oraclecloud.com ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=reject; rua=mailto:postmaster@grab.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; pct=100; rua=mailto:re+yzqj1dlqsgd@dmarc.postmarkapp.com; sp=quarantine; aspf=r;",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; pct=100; rua=mailto:re+yzqj1dlqsgd@dmarc.postmarkapp.com; sp=quarantine; aspf=r;",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786086386851-ujj7o9",
+    "timestamp": "2026-08-07T07:06:26.851Z",
+    "kind": "plan",
+    "domain": "tryhackme.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=reject; rua=mailto:postmaster@tryhackme.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786086472104-c8r30r",
+    "timestamp": "2026-08-07T07:07:52.104Z",
+    "kind": "plan",
+    "domain": "tryhackme.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com include:email.chargebee.com include:7168674.spf05.hubspotemail.net ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=reject; rua=mailto:postmaster@tryhackme.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; pct=5; rua=mailto:3c01de90206f495794daaa800026b08d@dmarc-reports.cloudflare.net",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786086657132-ot94jj",
+    "timestamp": "2026-08-07T07:10:57.132Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 2,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "cloudflare"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 a mx -all",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "spf"
+        },
+        "reason": "SPF record differs from recommended policy",
+        "currentValue": "v=spf1 include:_spf.google.com ~all",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "",
+          "content": "v=spf1 include:_spf.google.com ~all",
+          "source": "dns-check",
+          "purpose": "spf"
+        },
+        "reviewRequired": true
+      },
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=reject; rua=mailto:postmaster@google.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=reject; rua=mailto:mailauth-reports@google.com",
+        "existingRecord": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=reject; rua=mailto:mailauth-reports@google.com",
+          "source": "dns-check",
+          "purpose": "dmarc"
+        },
+        "reviewRequired": true
+      }
+    ]
   }
 ]
