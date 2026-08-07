@@ -2478,5 +2478,23 @@
         "reason": "dmarc record missing"
       }
     ]
+  },
+  {
+    "id": "1786065040346-2u1mte",
+    "timestamp": "2026-08-07T01:10:40.347Z",
+    "kind": "plan",
+    "domain": "google.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 0,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": []
   }
 ]
