@@ -73,15 +73,72 @@ function buildPipelineHTML(r, e) {
     }
   ];
 
+  return renderPipelineSteps(steps);
+}
+
+// Shared renderer for any step list built by the buildXPipelineHTML functions —
+// keeps the markup identical across the DMARC verdict, audit, and analyzer pipelines.
+function renderPipelineSteps(steps) {
   return `<div class="pipeline">${steps.map((s, i) => `
     <div class="pipeline-step ${s.status || ''}">
       <div class="pipeline-num">${i + 1}</div>
       <div class="pipeline-body">
-        <div class="pipeline-title">${s.title}${s.status ? `<span class="pipeline-tag ${s.status}">${s.status === 'pass' ? 'Passed' : s.status === 'fail' ? 'Failed' : 'Note'}</span>` : ''}</div>
+        <div class="pipeline-title">${s.title}${s.status ? `<span class="pipeline-tag ${s.status}">${s.status === 'pass' ? 'Passed' : s.status === 'fail' ? 'Failed' : s.status === 'warn' ? 'Warning' : 'Note'}</span>` : ''}</div>
         <div class="pipeline-desc">${s.desc}</div>
       </div>
     </div>
     ${i < steps.length - 1 ? '<div class="pipeline-connector"></div>' : ''}`).join('')}</div>`;
+}
+
+// Builds a step-by-step breakdown of how a domain's DMARC grade was reached,
+// mirroring the real deduction logic in server/services/dmarcAuditor.js.
+function buildAuditPipelineHTML(r) {
+  const d = r.dmarc;
+  const steps = [];
+
+  steps.push({
+    status: d ? 'pass' : 'fail',
+    title: 'DNS Lookup',
+    desc: d
+      ? `Found a DMARC record published for ${r.domain}.`
+      : `No DMARC record found in DNS for ${r.domain} — there's nothing to enforce.`
+  });
+
+  if (d) {
+    steps.push({
+      status: d.policy === 'reject' ? 'pass' : d.policy === 'quarantine' ? 'warn' : 'fail',
+      title: 'Policy Strength (p=)',
+      desc: d.policy === 'reject'
+        ? 'p=reject — the strongest setting. Mail that fails DMARC is blocked outright.'
+        : d.policy === 'quarantine'
+          ? 'p=quarantine — mail that fails DMARC is moved to spam, but still reaches the recipient.'
+          : `p=${d.policy || 'missing'} — monitoring only, or missing entirely. No enforcement happens.`
+    });
+
+    steps.push({
+      status: d.pct === 100 ? 'pass' : d.pct <= 25 ? 'fail' : 'warn',
+      title: 'Enforcement Coverage (pct=)',
+      desc: d.pct === 100
+        ? 'pct=100 — the policy applies to every failing email, no gaps.'
+        : `pct=${d.pct} — the policy only applies to ${d.pct}% of failing mail. The rest slips through unenforced.`
+    });
+
+    steps.push({
+      status: d.rua ? 'pass' : 'fail',
+      title: 'Reporting Configured (rua=)',
+      desc: d.rua
+        ? 'An aggregate report address is configured — the domain owner gets visibility into who is sending mail as them.'
+        : 'No rua= address configured — the domain owner has no reports on spoofing attempts against their domain.'
+    });
+  }
+
+  steps.push({
+    status: (r.grade === 'A' || r.grade === 'B') ? 'pass' : r.grade === 'C' ? 'warn' : 'fail',
+    title: `Final Grade: ${r.grade} (${r.score}/100)`,
+    desc: r.gradeDescription || ''
+  });
+
+  return renderPipelineSteps(steps);
 }
 
 // Load scenario details into Step 2 panel
@@ -630,7 +687,9 @@ async function runAuditLive() {
       <div id="audit-recs-section" style="display:none;">
         <div style="font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); margin-bottom:10px;">Recommendations</div>
         <div id="audit-recs"></div>
-      </div>`;
+      </div>
+      <div class="card-title" style="margin-top:20px;">Step-by-Step: How This Domain Was Graded</div>
+      <div id="audit-pipeline"></div>`;
     renderAuditResult(result);
   } catch (err) {
     resultEl.innerHTML = `<div class="error-box">Could not fetch DNS record for ${domain}: ${err.message}</div>`;
@@ -698,6 +757,8 @@ function renderAuditResult(r) {
     recsSec.style.display = "block";
     recsEl.innerHTML = r.recommendations.map(rec => `<div class="audit-rec">→ ${rec}</div>`).join("");
   } else { recsSec.style.display = "none"; }
+  const pipelineEl = document.getElementById("audit-pipeline");
+  if (pipelineEl) pipelineEl.innerHTML = buildAuditPipelineHTML(r);
   el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 

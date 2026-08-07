@@ -481,6 +481,9 @@
           <div style="font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); margin-bottom:10px;">Recommendations</div>
           <div id="audit-recs"></div>
         </div>
+
+        <div class="card-title" style="margin-top:20px;">Step-by-Step: How This Domain Was Graded</div>
+        <div id="audit-pipeline"></div>
       </div>
     </div><!-- end tab-audit -->
 
@@ -582,6 +585,34 @@
         <p style="color:var(--muted); font-size:14px; margin-bottom:20px;">
           Every scenario and test email you've run gets logged automatically, so you can look back at what happened and export the results.
         </p>
+
+        <div class="card-title" style="font-size:12px; margin-bottom:12px;">Step-by-Step: How This List Is Built</div>
+        <div class="pipeline" style="margin-bottom:20px;">
+          <div class="pipeline-step">
+            <div class="pipeline-num">1</div>
+            <div class="pipeline-body">
+              <div class="pipeline-title">Something Gets Evaluated</div>
+              <div class="pipeline-desc">A scenario from Try an Attack, a test email from Watch it Live, or a "Test Your Own Email" check runs through the DMARC policy engine.</div>
+            </div>
+          </div>
+          <div class="pipeline-connector"></div>
+          <div class="pipeline-step">
+            <div class="pipeline-num">2</div>
+            <div class="pipeline-body">
+              <div class="pipeline-title">The Result Is Logged</div>
+              <div class="pipeline-desc">Status, action, policy, risk score, and domain are recorded automatically — no extra step needed.</div>
+            </div>
+          </div>
+          <div class="pipeline-connector"></div>
+          <div class="pipeline-step">
+            <div class="pipeline-num">3</div>
+            <div class="pipeline-body">
+              <div class="pipeline-title">Everything Below Is Aggregated</div>
+              <div class="pipeline-desc">The totals, pass/fail counts, and breakdowns you see are computed live from every logged result — load or export them any time.</div>
+            </div>
+          </div>
+        </div>
+
         <button class="btn-secondary" onclick="loadReportSummary()">Load Reports</button>
         <div id="report-summary"></div>
       </div>
@@ -756,6 +787,14 @@
               <h3>Recommendations</h3>
             </div>
             <div class="recommendations-list" id="recommendationsList"></div>
+          </div>
+
+          <!-- Step-by-Step methodology -->
+          <div class="result-card">
+            <div class="card-header">
+              <h3>Step-by-Step: How This Report Was Analyzed</h3>
+            </div>
+            <div id="analyzer-pipeline"></div>
           </div>
 
         </div>
