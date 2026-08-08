@@ -5180,5 +5180,109 @@
         "reviewRequired": true
       }
     ]
+  },
+  {
+    "id": "1786088683680-fs18xh",
+    "timestamp": "2026-08-07T07:44:43.680Z",
+    "kind": "plan",
+    "domain": "grab.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 1,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=reject; rua=mailto:postmaster@grab.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+        "existingRecord": {
+          "id": "grab.com_1786034412405_rmnuh8o1j",
+          "domain": "grab.com",
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "createdAt": "2026-08-06T16:40:12.405Z",
+          "updatedAt": "2026-08-06T16:40:12.405Z"
+        },
+        "reviewRequired": true
+      }
+    ]
+  },
+  {
+    "id": "1786108378936-ngjowu",
+    "timestamp": "2026-08-07T13:12:58.936Z",
+    "kind": "plan",
+    "domain": "grab.com",
+    "summary": {
+      "desiredCount": 2,
+      "existingCount": 2,
+      "createCount": 0,
+      "missingCount": 0,
+      "updateCount": 1,
+      "deleteCount": 0,
+      "hasSpf": true,
+      "hasDmarc": true,
+      "provider": "local-memory"
+    },
+    "changes": [
+      {
+        "action": "update",
+        "record": {
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=reject; rua=mailto:postmaster@grab.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "purpose": "dmarc"
+        },
+        "reason": "DMARC record differs from recommended policy",
+        "currentValue": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+        "existingRecord": {
+          "id": "grab.com_1786034412405_rmnuh8o1j",
+          "domain": "grab.com",
+          "type": "TXT",
+          "name": "_dmarc",
+          "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com",
+          "ttl": 3600,
+          "priority": null,
+          "weight": null,
+          "port": null,
+          "flag": null,
+          "tag": null,
+          "createdAt": "2026-08-06T16:40:12.405Z",
+          "updatedAt": "2026-08-06T16:40:12.405Z"
+        },
+        "reviewRequired": true
+      }
+    ]
   }
 ]
